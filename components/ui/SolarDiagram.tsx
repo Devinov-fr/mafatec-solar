@@ -168,20 +168,27 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
       .text("Axe des hauteurs (en degrés)");
   };
 
-  const calculateSunPathData = (monthIndex: number): SunPathData[] => {
-    const declination = declinaisonSolaire(monthIndex);
-    const sunPathData: SunPathData[] = [];
+// List of days of the year corresponding to key points in the solar cycle
+const joursDeLAnnee = [355, 20, 50, 80, 110, 140, 170];
 
-    for (let heureSolaire = 4; heureSolaire <= 22; heureSolaire += 2) {
-      const altitude = altitudeSoleil(latitude, declination, heureSolaire);
-      const azimuth = angleHoraire(heureSolaire) + 180;
+const calculateSunPathData = (monthIndex: number): SunPathData[] => {
+  // Use the day of the year instead of the month index
+  const jourDeLAnnee = joursDeLAnnee[monthIndex];
+  const declination = declinaisonSolaire(jourDeLAnnee);
+  const sunPathData: SunPathData[] = [];
 
-      if (azimuth >= 30 && azimuth <= 330) {
-        sunPathData.push({ azimuth, altitude });
-      }
+  for (let heureSolaire = 4; heureSolaire <= 22; heureSolaire += 2) {
+    const altitude = altitudeSoleil(latitude, declination, heureSolaire);
+    const azimuth = angleHoraire(heureSolaire) + 180;
+
+    if (azimuth >= 30 && azimuth <= 330) {
+      sunPathData.push({ azimuth, altitude });
     }
-    return sunPathData;
-  };
+  }
+
+  return sunPathData;
+};
+
 
   const declinaisonSolaire = (jourDeLAnnee: number): number => {
     return (
