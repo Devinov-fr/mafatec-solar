@@ -11,7 +11,6 @@ const Header: React.FC = () => {
   };
 
   const handleMouseLeave = () => {
-    // Check if the mouse is outside the menu and submenu
     const menu = menuRef.current;
     const subMenu = subMenuRef.current;
 
@@ -36,8 +35,12 @@ const Header: React.FC = () => {
         </div>
         <div className='hidden md:flex relative w-[45%]'>
           <ul className='flex justify-center items-center w-[100%] gap-4'>
-            <li className='text-[13px]'>Accueil</li>
-            <li className='text-[13px]'>À propos</li>
+            <li className='text-[13px]'>
+              <a href='https://mafatec.com/' className='block'>Accueil</a>
+            </li>
+            <li className='text-[13px]'>
+              <a href='https://mafatec.com/a-propos/' className='block'>À propos</a>
+            </li>
             <li
               className='relative text-[13px]'
               onMouseEnter={handleMouseEnter}
@@ -48,8 +51,8 @@ const Header: React.FC = () => {
               {isSubMenuOpen && (
                 <ul
                   className='absolute left-0 z-[9999] bg-white shadow-lg mt-2 w-[300px] rounded-lg p-2'
-                  onMouseEnter={handleMouseEnter} // Keep submenu open on hover
-                  onMouseLeave={handleMouseLeave} // Close submenu on mouse leave
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                   ref={subMenuRef}
                 >
                   <li className='py-1'>
@@ -73,8 +76,12 @@ const Header: React.FC = () => {
                 </ul>
               )}
             </li>
-            <li className='text-[13px]'>Certifications et Partenariats</li>
-            <li className='text-[13px]'>Contact</li>
+            <li className='text-[13px]'>
+              <a href='https://mafatec.com/certifications-et-partenariats/' className='block'>Certifications et Partenariats</a>
+            </li>
+            <li className='text-[13px]'>
+              <a href='https://mafatec.com/contact/' className='block'>Contact</a>
+            </li>
           </ul>
         </div>
         {/* Mobile Menu Button */}
@@ -82,21 +89,25 @@ const Header: React.FC = () => {
           className='md:hidden p-2 text-gray-600 focus:outline-none'
           onClick={toggleMenu}
         >
-          {isMenuOpen ? '✖️' : '☰'} {/* Change icon based on menu state */}
+          {isMenuOpen ? '✖️' : '☰'}
         </button>
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className='absolute top-16 left-0 right-0 bg-white shadow-lg z-10'>
             <ul className='flex flex-col items-center gap-2 p-4'>
-              <li className='cursor-pointer'><a href='https://mafatec.com/'>Accueil </a></li>
-              <li className='cursor-pointer'><a href='https://mafatec.com/a-propos/'>À propos</a></li>
+              <li className='cursor-pointer'>
+                <a href='https://mafatec.com/'>Accueil</a>
+              </li>
+              <li className='cursor-pointer'>
+                <a href='https://mafatec.com/a-propos/'>À propos</a>
+              </li>
               <li 
                 className='relative cursor-pointer'
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 ref={menuRef}
               >
-                <span className='cursor-pointer'><a href='https://mafatec.com/nos-services/'>Nos Services</a></span>
+                <span className='cursor-pointer'>Nos Services</span>
                 {isSubMenuOpen && (
                   <ul className='absolute left-0 z-10 bg-white shadow-lg mt-2 w-48 rounded-lg p-2' ref={subMenuRef}>
                     <li className='py-1 cursor-pointer'>
@@ -120,8 +131,12 @@ const Header: React.FC = () => {
                   </ul>
                 )}
               </li>
-              <li className='cursor-pointer'><a href='https://mafatec.com/certifications-et-partenariats/'>Certifications et Partenariats</a></li>
-              <li className='cursor-pointer'><a href='https://mafatec.com/contact/'>Contact</a></li>
+              <li className='cursor-pointer'>
+                <a href='https://mafatec.com/certifications-et-partenariats/'>Certifications et Partenariats</a>
+              </li>
+              <li className='cursor-pointer'>
+                <a href='https://mafatec.com/contact/'>Contact</a>
+              </li>
             </ul>
           </div>
         )}
