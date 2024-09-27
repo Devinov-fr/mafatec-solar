@@ -33,40 +33,62 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
 
   const drawSolarDiagram = () => {
     const svg = d3.select<SVGSVGElement, unknown>("#solarSvg");
+  
+    // Log the number of elements before clearing
+    const elementsBeforeClear = svg.selectAll("*").size();
+    console.log(`Elements before clear: ${elementsBeforeClear}`);
+  
     svg.selectAll("*").remove(); // Clear previous drawings
-
+  
+    // Log the number of elements after clearing
+    const elementsAfterClear = svg.selectAll("*").size();
+    console.log(`Elements after clear: ${elementsAfterClear}`);
+  
     const graphWidth = width - padding * 2;
-    const graphHeight = height - padding * 2; // Now accessible for both functions
-
+    const graphHeight = height - padding * 2;
+  
     const xScale = d3
       .scaleLinear()
       .domain([30, 330])
       .range([padding, width - padding]);
-
+  
     const yScale = d3
       .scaleLinear()
       .domain([0, 90])
       .range([height - padding, padding]);
-
+  
     // Draw axes
     drawAxes(svg, xScale, yScale, graphWidth, graphHeight, height, padding);
-
+  
     // Adjusted to include all months
     const monthsColors = [
       "#EE82EE", "#FF8C69", "#8B4513", "#008000",
       "#87CEEB", "#FF0000", "#4B0082", "#0000FF" 
     ];
-    const monthsLabels = ['21/12', '20/01 - 22/11', '18/02 - 20/10', '21/03 - 23/09', '17/04 - 28/08', '21/05 - 23/07', '21/06'];
-
+    const monthsLabels = [
+      "21/12",  // December Solstice
+      "20/01",  // January
+      "18/02",  // February
+      "21/03",  // March Equinox
+      "17/04",  // April
+      "21/05",  // May
+      "21/06"   // June Solstice
+    ];
+  
     monthsColors.forEach((color, monthIndex) => {
-      const sunPathData: SunPathData[] = calculateSunPathData(monthIndex);
-      drawSunCurve(svg, sunPathData, xScale, yScale, color, monthIndex);
-      drawMonthLabel(svg, monthsLabels[monthIndex], color, xScale, monthIndex);
+      if (monthsLabels[monthIndex]) {
+        const sunPathData: SunPathData[] = calculateSunPathData(monthIndex);
+        console.log(`Data for month ${monthIndex}:`, sunPathData);
+        drawSunCurve(svg, sunPathData, xScale, yScale, color, monthIndex);
+        drawMonthLabel(svg, monthsLabels[monthIndex], color, xScale, monthIndex);
+      }
     });
-
+    
+  
     // Draw static obstacles
-    drawStaticObstacles(svg, xScale, yScale, graphHeight); // Pass graphHeight as a parameter
+    drawStaticObstacles(svg, xScale, yScale, graphHeight);
   };
+  
 
   const drawMonthLabel = (
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -75,9 +97,9 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
     xScale: d3.ScaleLinear<number, number>,
     monthIndex: number
   ) => {
-    // Positioning the label based on the azimuth of the first point
-    const x = xScale(30 + monthIndex * 15); // Assuming azimuth starts at 30 and increments by 15 degrees
-    const y = height - padding + 20; // Adjust y position
+    const azimuth = 30 + monthIndex * 45;
+    const x = xScale(azimuth);
+    const y = height - padding + 30; // Increase the y position to spread labels further down
 
     svg
       .append("text")
@@ -184,7 +206,8 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
             Math.cos((declinaison * Math.PI) / 180) *
             Math.cos((angleHoraire(heureSolaire) * Math.PI) / 180)
       ) *
-        180) / Math.PI
+        180) /
+      Math.PI
     );
   };
 
@@ -234,17 +257,16 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
     graphHeight: number
   ) => {
     obstacles.forEach((obstacle) => {
-      const baseHeight = 0; // Adjust this if there's a base height for the obstacles
+      const baseHeight = 0;
       const obstacleHeight = baseHeight + obstacle.height;
 
-      // Draw the obstacle
       svg
         .append("rect")
         .attr("x", xScale(obstacle.azimuth) - 5) 
         .attr("y", yScale(obstacleHeight))
         .attr("width", 10)
         .attr("height", graphHeight - yScale(obstacleHeight))
-        .attr("fill", "brown");
+        .attr("fill", "grey");
     });
   };
 
