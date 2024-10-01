@@ -421,13 +421,15 @@ const Home = () => {
     <div>
       <Header />
 
-      <div className="max-w-[1200px] mx-auto flex flex-col mb-2">
+      <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
         <h1 className="text-center text-4xl font-bold lg:p-10 p-2">
           Étude de Production Photovoltaïque
         </h1>
         <main className="flex lg:flex-row flex-col gap-2   lg:p-10 p-2">
           {/* Left Side (Form) */}
-          <div className="lg:w-[40%] w-full flex flex-col gap-6 lg:overflow-y-auto lg:p-10 p-2 no-scrollbar">
+          <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[40%] w-full flex flex-col gap-6 lg:overflow-y-auto py-2 p-[0px] px-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
+
+
             <h2 className="font-semibold text-black text-[1.2rem] underline">ADRESSE</h2>
             <p className="italic font-medium text-[#0F427C] text-[1rem]">
               Veuillez sélectionner votre position exacte sur la carte ou entrer
@@ -459,14 +461,14 @@ const Home = () => {
             </div>
             <div className="flex justify-between">
               <h2 className="font-semibold text-black text-[1.2rem] underline">
-                Utiliser les ombres du terrain
+                Obstacles
               </h2>
               {showObstacleInputs && (
                 <Button
                   onClick={addObstacle}
                   className="bg-[#0F427C] text-white"
                 >
-                  Ajouter un obstacle
+                  +
                 </Button>
               )}
             </div>
@@ -494,9 +496,10 @@ const Home = () => {
               <div className="mt-4">
                 {obstacles.map((obstacle, index) => (
                   <div key={index} className="flex flex-col gap-4 mb-4">
+                    <h3 className="text-green-600 italic">Obstacle {index + 1}</h3>
                     <div>
                       <Label>
-                        Azimut <span className="text-red-500">*</span>
+                        Azimut de l'obstacle<span className="text-red-500">*</span>
                       </Label>
                       <Input
                         className=" mt-2"
@@ -509,7 +512,7 @@ const Home = () => {
                     </div>
                     <div>
                       <Label>
-                        Hauteur <span className="text-red-500">*</span>
+                        Hauteur de l'obstacle<span className="text-red-500">*</span>
                       </Label>
                       <Input
                         className=" mt-2"
@@ -590,7 +593,7 @@ const Home = () => {
           </div>
 
           {/* Right Side (Map) */}
-          <div className="lg:w-[60%] w-full ">
+          <div className="lg:w-[60%] w-full rounded-[20px] ">
             <DynamicMap onPositionChange={handlePositionChange} />
           </div>
         </main>

@@ -39,11 +39,11 @@ const MapComponent: React.FC<MapComponentProps> = ({ onPositionChange }) => {
   };
 
   return (
-    <div style={{ height: '600px', width: '100%' }} className='rounded-lg'>
+    <div style={{ height: '600px', width: '100%' }} className='rounded-[20px]'>
       <MapContainer
         center={[46.603354, 1.888334]} // France's central coordinates
         zoom={6} // Adjust the zoom level for a broader view of France
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', borderRadius: '20px' }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
