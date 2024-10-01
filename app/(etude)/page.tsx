@@ -364,7 +364,7 @@ const Home = () => {
     };
 
     try {
-      const response = await fetch("http://162.19.233.48:8080/calculate", {
+      const response = await fetch("https://162.19.233.48:8080/calculate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
