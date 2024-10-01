@@ -287,7 +287,7 @@ const Home = () => {
   const [puissancePv, setPuissancePv] = useState("");
   const [systemLosses, setSystemLosses] = useState("14");
   const [inclinaison, setInclinaison] = useState("35");
-  const [azimut, setAzimut] = useState("");
+  const [azimut, setAzimut] = useState("0");
   const [data, setData] = useState<Data | null>(null);
 
   const [selectedChart, setSelectedChart] = useState<
