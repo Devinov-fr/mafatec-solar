@@ -24,7 +24,7 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
   onObstacleChange,
 }) => {
   const width = 1000;
-  const height = 400;
+  const height = 620;
   const padding = 100;
 
   useEffect(() => {

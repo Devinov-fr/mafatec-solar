@@ -477,7 +477,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                     {/* Chart selection and display */}
                     <div className="lg:w-full w-full flex flex-row justify-between gap-2 mb-2">
                       <div className="w-full lg:w-[40%]">
-                        <ResponsiveContainer width="100%" height={400}>
+                        <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={chartDataProduction}>
                             <XAxis dataKey="month" />
                             <YAxis />
@@ -497,7 +497,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                       </div>
 
                       <div className="w-full lg:w-[40%]">
-                        <ResponsiveContainer width="100%" height={400}>
+                        <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={chartDataIrradiation}>
                             <XAxis dataKey="month" />
                             <YAxis />
@@ -517,7 +517,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                       </div>
 
                       <div className="w-full lg:w-[40%]">
-                        <ResponsiveContainer width="100%" height={400}>
+                        <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={chartDataVariability}>
                             <XAxis dataKey="month" />
                             <YAxis />
