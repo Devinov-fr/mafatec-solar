@@ -428,8 +428,8 @@ const Home = () => {
         <main className="flex lg:flex-row flex-col gap-2   lg:p-10 p-2">
           {/* Left Side (Form) */}
           <div className="lg:w-[40%] w-full flex flex-col gap-6 lg:overflow-y-auto lg:p-10 p-2 no-scrollbar">
-            <h2 className="font-semibold text-black text-2xl">ADRESSE</h2>
-            <p className="italic font-medium text-[#0F427C]">
+            <h2 className="font-semibold text-black text-[1.2rem] underline">ADRESSE</h2>
+            <p className="italic font-medium text-[#0F427C] text-[1rem]">
               Veuillez sélectionner votre position exacte sur la carte ou entrer
               les coordonnées exactes de latitude et longitude de votre adresse.
             </p>
@@ -458,7 +458,7 @@ const Home = () => {
               />
             </div>
             <div className="flex justify-between">
-              <h2 className="font-semibold text-black text-2xl">
+              <h2 className="font-semibold text-black text-[1.2rem] underline">
                 Utiliser les ombres du terrain
               </h2>
               {showObstacleInputs && (
@@ -525,10 +525,10 @@ const Home = () => {
               </div>
             )}
 
-            <h2 className="font-semibold text-black text-2xl">
+            <h2 className="font-semibold text-black text-[1.2rem] underline">
               PERFORMANCE DU SYSTÈME PV
             </h2>
-            <p className="italic font-medium text-[#0F427C]">
+            <p className="italic font-medium text-[#0F427C] text-[1rem]">
               Veuillez indiquer la puissance souhaitée pour l'installation.
             </p>
             <div>
@@ -555,7 +555,7 @@ const Home = () => {
               />
             </div>
 
-            <h2 className="font-semibold text-black text-2xl">
+            <h2 className="font-semibold text-black text-[1.2rem] underline">
               PARAMÈTRES INCLINAISON ET AZIMUT
             </h2>
             <div>
