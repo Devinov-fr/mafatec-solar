@@ -39,7 +39,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ onPositionChange }) => {
   };
 
   return (
-    <div style={{ height: '600px', width: '100%' }} className='rounded-[20px]'>
+    <div style={{ height: '800px', width: '100%' }} className='rounded-[20px]'>
       <MapContainer
         center={[46.603354, 1.888334]} // France's central coordinates
         zoom={6} // Adjust the zoom level for a broader view of France

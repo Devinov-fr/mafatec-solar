@@ -364,7 +364,7 @@ const Home = () => {
     };
 
     try {
-      const response = await fetch("https://162.19.233.48:8080/calculate", {
+      const response = await fetch("https://solaire.mafatec.com:8080/calculate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -461,16 +461,8 @@ const Home = () => {
             </div>
             <div className="flex justify-between">
               <h2 className="font-semibold text-black text-[1.2rem] underline">
-                Obstacles
+                Utilisier les ombres du terrain
               </h2>
-              {showObstacleInputs && (
-                <Button
-                  onClick={addObstacle}
-                  className="bg-[#0F427C] text-white"
-                >
-                  +
-                </Button>
-              )}
             </div>
             <div className="flex justify-between">
               <p className=" text-black">
@@ -491,6 +483,19 @@ const Home = () => {
                   <Label htmlFor="non">Non</Label>
                 </div>
               </RadioGroup>
+            </div>
+            <div className="flex justify-between items-center font-semibold">
+            {showObstacleInputs && (
+              <h3>Obstacles</h3>
+            )}
+            {showObstacleInputs && (
+                <Button
+                  onClick={addObstacle}
+                  className="bg-[#0F427C] text-white"
+                >
+                  +
+                </Button>
+              )}
             </div>
             {showObstacleInputs && (
               <div className="mt-4">
