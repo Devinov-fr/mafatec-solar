@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 //import MapComponent from "@/components/ui/Map";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import SolarDiagram from "@/components/ui/SolarDiagram";
-
+import ReactToPrint from "react-to-print";
 // app/(etude)/page.tsx
 import dynamic from "next/dynamic";
 import SunPathDiagram from "@/components/ui/SunPathDiagram";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
+import PrintComponent from "@/components/ui/PrintComponent";
 
 // Dynamically import the Map component without SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), { ssr: false });
@@ -272,7 +273,7 @@ interface Obstacle {
   height: number; // Assuming height is a number
 }
 
-export default function Home() {
+const Home = () => {
   const [clickedPosition, setClickedPosition] = useState<{
     lat: number;
     lng: number;
@@ -282,12 +283,13 @@ export default function Home() {
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     { azimuth: 0, height: 0 },
   ]);
-
+  const componentRef = useRef<HTMLDivElement | null>(null);
   const [puissancePv, setPuissancePv] = useState("");
-  const [systemLosses, setSystemLosses] = useState("");
-  const [inclinaison, setInclinaison] = useState("");
+  const [systemLosses, setSystemLosses] = useState("14");
+  const [inclinaison, setInclinaison] = useState("35");
   const [azimut, setAzimut] = useState("");
   const [data, setData] = useState<Data | null>(null);
+
   const [selectedChart, setSelectedChart] = useState<
     "production" | "irradiation" | "variability"
   >("production");
@@ -356,11 +358,13 @@ export default function Home() {
       aspect: parseFloat(azimut),
       outputformat: "json",
       usehorizon: useTerrainShadows === "oui" ? 0 : 1,
-      ...(useTerrainShadows !== "oui" ? { userhorizon: azimuthList } : {}),
+      ...(useTerrainShadows !== "oui"
+        ? { userhorizon: azimuthList }
+        : { userhorizon: "0" }),
     };
 
     try {
-      const response = await fetch("https://solaire.mafatec.com/calculate", {
+      const response = await fetch("http://162.19.233.48:8080/calculate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -414,8 +418,9 @@ export default function Home() {
   const chartData = prepareChartData(selectedChart);
 
   return (
-    <>
+    <div>
       <Header />
+
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2">
         <h1 className="text-center text-4xl font-bold lg:p-10 p-2">
           Étude de Production Photovoltaïque
@@ -589,182 +594,20 @@ export default function Home() {
             <DynamicMap onPositionChange={handlePositionChange} />
           </div>
         </main>
+
         {data && (
-          <>
-            <div className="h-full">
-              <div className="lg:px-20 lg:py-5 px-0 py-0 flex lg:flex-row flex-col justify-between gap-4">
-                <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
-                  <h2 className="text-xl font-bold text-[#0f459e] ">
-                    Entrées fournies
-                  </h2>
-                  <ul>
-                    <li>
-                      <span>Latitude:</span> {data.inputs.location.latitude}
-                    </li>
-                    <li>
-                      <span>Longitude:</span> {data.inputs.location.longitude}
-                    </li>
-                    <li>
-                      <span>Horizon:</span> Calculé
-                    </li>
-                    <li>
-                      <span>PV installée:</span>{" "}
-                      {data.inputs.pv_module.peak_power} kWc
-                    </li>
-                    <li>
-                      <span>Pertes du système:</span>{" "}
-                      {data.inputs.pv_module.system_loss} %
-                    </li>
-                  </ul>
-                </div>
-                <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
-                  <h2 className="text-xl font-bold text-[#0f459e] ">
-                    Résultats de la simulation
-                  </h2>
-                  <ul>
-                    <li>
-                      <span>Angle d’inclinaison:</span>{" "}
-                      {Math.round(data.outputs.totals.fixed.E_d)}
-                    </li>
-                    <li>
-                      <span>Angle d’azimut:</span> {azimut}
-                    </li>
-                    <li>
-                      <span>Production annuelle PV:</span>{" "}
-                      {data.outputs.totals.fixed.E_y}
-                    </li>
-                    <li>
-                      <span>Irradiation annuelle:</span>{" "}
-                      {data.outputs.totals.fixed["H(i)_y"]}
-                    </li>
-                    <li>
-                      <span>Variabilité interannuelle:</span>{" "}
-                      {data.outputs.totals.fixed.SD_y}
-                    </li>
-                  </ul>
-                </div>
-                <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
-                  <h2 className="text-xl font-bold text-[#0f459e] ">
-                    Changements de la production à cause de
-                  </h2>
-                  <ul>
-                    <li>
-                      <span>Angle d’incidence:</span>{" "}
-                      {data.outputs.totals.fixed.l_aoi}
-                    </li>
-                    <li>
-                      <span>Effets spectraux:</span>{" "}
-                      {data.outputs.totals.fixed.l_spec}
-                    </li>
-                    <li>
-                      <span>Température et irradiance faible:</span>{" "}
-                      {data.outputs.totals.fixed.l_tg}%
-                    </li>
-                    <li>
-                      <span>Pertes totales:</span>{" "}
-                      {data.outputs.totals.fixed.l_total}
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div className="lg:px-20 lg:py-5 px-0 py-0 flex lg:flex-col flex-col justify-between">
-                <h2 className="text-xl font-bold text-[#0f459e] mb-2">
-                  Énergie PV et irradiation solaire mensuelle
-                </h2>
-                <div className="flex lg:flex-row flex-col justify-center gap-20">
-                  <div className="overflow-x-auto lg:w-1/2 w-full">
-                    <table className="min-w-full bg-white border border-gray-300">
-                      <thead>
-                        <tr>
-                          <th className="py-2 px-4 border-b">Month</th>
-                          <th className="py-2 px-4 border-b">
-                            Production (kWh)
-                          </th>
-                          <th className="py-2 px-4 border-b">
-                            Irradiation (kWh/m²)
-                          </th>
-                          <th className="py-2 px-4 border-b">
-                            Variabilité (kWh)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.outputs.monthly.fixed.map(
-                          (monthlyData, index) => (
-                            <tr key={index} className="border-t">
-                              <td className="py-2 px-4 border-b text-center bg-[#0f459e] text-white">
-                                {monthNames[index]}
-                              </td>
-                              <td className="py-2 px-4 border-b text-center">
-                                {monthlyData.E_m.toFixed(2)}
-                              </td>
-                              <td className="py-2 px-4 border-b text-center">
-                                {monthlyData["H(i)_m"].toFixed(2)}
-                              </td>
-                              <td className="py-2 px-4 border-b text-center">
-                                {monthlyData.SD_m.toFixed(2)}
-                              </td>
-                            </tr>
-                          )
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="lg:w-1/2 w-full flex flex-col gap-6">
-                    <div className="flex lg:flex-row flex-col justify-around mb-4 gap-2">
-                      <Button
-                        onClick={() => setSelectedChart("production")}
-                        className={`lg:w-1/3 w-full ${
-                          selectedChart === "production"
-                            ? "bg-blue-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        Production (kWh)
-                      </Button>
-                      <Button
-                        onClick={() => setSelectedChart("irradiation")}
-                        className={`lg:w-1/3 w-full ${
-                          selectedChart === "irradiation"
-                            ? "bg-blue-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        Irradiation (kWh/m²)
-                      </Button>
-                      <Button
-                        onClick={() => setSelectedChart("variability")}
-                        className={`lg:w-1/3 w-full ${
-                          selectedChart === "variability"
-                            ? "bg-blue-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        Variabilité (kWh)
-                      </Button>
-                    </div>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={chartData}>
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="value" fill="#e00814" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <SolarDiagram
-              latitude={clickedPosition?.lat ?? 0}
-              obstacles={obstacles}
-              onObstacleChange={onObstacleChange}
-            />
-          </>
+          <PrintComponent
+            data={data}
+            monthNames={monthNames}
+            azimut={azimut}
+            ref={componentRef}
+          />
         )}
+
       </div>
       <Footer />
-    </>
+    </div>
   );
-}
+};
+
+export default Home;

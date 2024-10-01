@@ -86,3 +86,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .print-hidden {
+    display: none;
+  }
+  .print-visible {
+    display: block; /* Or any other display property */
+  }
+}

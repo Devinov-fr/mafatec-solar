@@ -28,26 +28,25 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className='h-[80px] bg-white'>
-      <div className='max-w-[1200px] mx-auto flex justify-between items-center px-4'>
-        <div className='w-[15%]'>
-          <img src='/Logo.png' alt='logo' className='w-[100%]' />
+    <header className='h-[80px] bg-white pt-4 shadow-md'>
+      <div className='max-w-[1200px] mx-auto flex justify-start items-center px-4'>
+        <div className='w-[12%]'>
+          <img src='/logo-mafatec-2048x423.png' alt='logo' className='max-w-[150px] h-auto' />
         </div>
-        <div className='hidden md:flex relative w-[45%]'>
-          <ul className='flex justify-center items-center w-[100%] gap-4'>
-            <li className='text-[13px]'>
+        <div className='hidden md:flex relative w-[40%]'>
+        <ul className='flex justify-center items-center w-[100%] gap-4'>
+            <li className='text-[13px] relative group'>
               <a href='https://mafatec.com/' className='block'>Accueil</a>
-            </li>
-            <li className='text-[13px]'>
-              <a href='https://mafatec.com/a-propos/' className='block'>À propos</a>
+             <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
             </li>
             <li
-              className='relative text-[13px]'
+              className='relative text-[13px] group'
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
               ref={menuRef}
             >
               <span className='cursor-pointer'>Nos Services</span>
+             <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
               {isSubMenuOpen && (
                 <ul
                   className='absolute left-0 z-[9999] bg-white shadow-lg mt-2 w-[300px] rounded-lg p-2'
@@ -75,12 +74,19 @@ const Header: React.FC = () => {
                   </li>
                 </ul>
               )}
+            </li>            
+            <li className='text-[13px] relative group'>
+              <a href='https://mafatec.com/certifications-et-partenariats/' className='block'>Certifications</a>
+             <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
             </li>
-            <li className='text-[13px]'>
-              <a href='https://mafatec.com/certifications-et-partenariats/' className='block'>Certifications et Partenariats</a>
-            </li>
-            <li className='text-[13px]'>
+            <li className='text-[13px] relative group'>
+              <a href='https://mafatec.com/a-propos/' className='block'>À propos</a>
+              <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
+            
+            </li>            
+            <li className='text-[13px] relative group'>
               <a href='https://mafatec.com/contact/' className='block'>Contact</a>
+             <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
             </li>
           </ul>
         </div>
@@ -97,9 +103,6 @@ const Header: React.FC = () => {
             <ul className='flex flex-col items-center gap-2 p-4'>
               <li className='cursor-pointer'>
                 <a href='https://mafatec.com/'>Accueil</a>
-              </li>
-              <li className='cursor-pointer'>
-                <a href='https://mafatec.com/a-propos/'>À propos</a>
               </li>
               <li 
                 className='relative cursor-pointer'
@@ -130,10 +133,16 @@ const Header: React.FC = () => {
                     </li>
                   </ul>
                 )}
-              </li>
+              </li>  
+
               <li className='cursor-pointer'>
-                <a href='https://mafatec.com/certifications-et-partenariats/'>Certifications et Partenariats</a>
+                <a href='https://mafatec.com/certifications-et-partenariats/'>Certifications</a>
+              </li>                          
+              <li className='cursor-pointer'>
+                <a href='https://mafatec.com/a-propos/'>À propos</a>
               </li>
+
+
               <li className='cursor-pointer'>
                 <a href='https://mafatec.com/contact/'>Contact</a>
               </li>
