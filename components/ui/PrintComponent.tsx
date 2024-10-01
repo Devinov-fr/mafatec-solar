@@ -344,6 +344,9 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
     return (
       <div>
         <div className="py-4 "></div>
+        <Button onClick={generatePDF} className="mt-4">
+        Générer un PDF
+        </Button>
         <div ref={ref} style={{ position: "relative" }}>
         <div className="flex justify-center mb-6">
           <img src='/mafatec-logo-rge.png' alt="rge logo" className="w-[20%] h-auto mt-4 " />
@@ -547,9 +550,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
             </div>
           )}
         </div>
-        <Button onClick={generatePDF} className="mt-4">
-          Generate PDF
-        </Button>
+
       </div>
     );
   }

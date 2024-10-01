@@ -486,7 +486,7 @@ const Home = () => {
             </div>
             <div className="flex justify-between items-center font-semibold">
             {showObstacleInputs && (
-              <h3 className="bg-[#0F427C] font-[20px]">Obstacles</h3>
+              <h3 className="text-[#0F427C] font-[20px]">Obstacles</h3>
             )}
             {showObstacleInputs && (
                 <Button
