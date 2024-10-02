@@ -149,13 +149,13 @@ const Header: React.FC = () => {
               </li>
             </ul>
             <div className='flex flex-col lg:hidden justify-center gap-2 w-full'>
-          <button className='p-[10px] mx-auto w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/etude/'}>Étude gratuite de production</button>
+          <button className='p-[10px] mx-auto w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://solaire.mafatec.com/'}>Étude gratuite de production</button>
           <button className='p-[10px] mx-auto w-[200px] mb-10 rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/contact/'}>Demande de devis</button>
         </div>
           </div>
         )}
         <div className='hidden lg:flex justify-between gap-2 w-[35%] '>
-          <button className='p-[10px] w-[220px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/etude/'}>Étude gratuite de production</button>
+          <button className='p-[10px] w-[220px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://solaire.mafatec.com/'}>Étude gratuite de production</button>
           <button className='p-[10px] w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/contact/'}>Demande de devis</button>
         </div>
       </div>
