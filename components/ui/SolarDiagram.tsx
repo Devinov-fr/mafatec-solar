@@ -31,6 +31,30 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
     drawSolarDiagram();
   }, [latitude, obstacles]);
 
+  const drawObstacles = (
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    xScale: d3.ScaleLinear<number, number>,
+    yScale: d3.ScaleLinear<number, number>,
+    obstacles: { azimuth: number; height: number }[]
+  ) => {
+
+    console.log("obstaclesobstaclesobstacles", obstacles)
+    // Loop through each obstacle and draw it
+    obstacles.forEach((obstacle) => {
+      const azimuth = obstacle.azimuth;
+      const height = obstacle.height;
+  
+      svg
+        .append("rect")
+        .attr("x", xScale(azimuth) - 5) // Adjust x based on azimuth
+        .attr("y", yScale(height)) // Use the height for the y position
+        .attr("width", 10) // Set a constant width
+        .attr("height", yScale(0) - yScale(height)) // Height of the obstacle
+        .attr("fill", "gray"); // Color of the obstacle
+    });
+  };
+  
+
   const drawSolarDiagram = () => {
     const svg = d3.select<SVGSVGElement, unknown>("#solarSvg");
 
@@ -108,8 +132,14 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
     });
     
 
+    console.log("test drawStaticObstacles")
+    console.log("test drawStaticObstacles svg", svg)
+    console.log("test drawStaticObstacles xScale", xScale)
+    console.log("test drawStaticObstacles yScale", yScale)
+    console.log("test drawStaticObstacles graphHeight", graphHeight)
     // Draw static obstacles
     drawStaticObstacles(svg, xScale, yScale, graphHeight);
+    drawObstacles(svg, xScale, yScale, obstacles);
   };
 
   const drawMonthLabel = (
@@ -345,19 +375,25 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
     yScale: d3.ScaleLinear<number, number>,
     graphHeight: number
   ) => {
+    console.log("testing test")
     obstacles.forEach((obstacle) => {
+      console.log("testing test2")
       const baseHeight = 0;
       const obstacleHeight = baseHeight + obstacle.height;
-
+      console.log("bstacle.height", obstacle.height)
+      console.log("obstacleHeight", obstacleHeight)
+      console.log("entered drawStaticObstacles")
       svg
         .append("rect")
-        .attr("x", xScale(obstacle.azimuth) - 5)
+        .attr("x", xScale(obstacle.azimuth) - 5) 
         .attr("y", yScale(obstacleHeight))
         .attr("width", 10)
         .attr("height", graphHeight - yScale(obstacleHeight))
         .attr("fill", "grey");
     });
   };
+
+
 
   return (
     <div className="flex justify-center flex-col  items-center px-10 ">

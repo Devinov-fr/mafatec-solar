@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 
 const Header: React.FC = () => {
@@ -29,7 +30,7 @@ const Header: React.FC = () => {
 
   return (
     <header className='h-[80px] bg-white pt-4 shadow-md'>
-      <div className='max-w-[1200px] mx-auto flex justify-start items-center px-4'>
+      <div className='max-w-[1200px] mx-auto flex lg:justify-start justify-between items-center px-4'>
         <div className='w-[12%]'>
           <img src='/logo-mafatec-2048x423.png' alt='logo' className='max-w-[150px] h-auto' />
         </div>
@@ -95,7 +96,7 @@ const Header: React.FC = () => {
           className='md:hidden p-2 text-gray-600 focus:outline-none'
           onClick={toggleMenu}
         >
-          {isMenuOpen ? '✖️' : '☰'}
+          {isMenuOpen ? <X/> : '☰'}
         </button>
         {/* Mobile Menu */}
         {isMenuOpen && (
@@ -147,9 +148,13 @@ const Header: React.FC = () => {
                 <a href='https://mafatec.com/contact/'>Contact</a>
               </li>
             </ul>
+            <div className='flex flex-col lg:hidden justify-center gap-2 w-full'>
+          <button className='p-[10px] mx-auto w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/etude/'}>Étude gratuite de production</button>
+          <button className='p-[10px] mx-auto w-[200px] mb-10 rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/contact/'}>Demande de devis</button>
+        </div>
           </div>
         )}
-        <div className='flex justify-between gap-2 w-[35%]'>
+        <div className='hidden lg:flex justify-between gap-2 w-[35%] '>
           <button className='p-[10px] w-[220px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/etude/'}>Étude gratuite de production</button>
           <button className='p-[10px] w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/contact/'}>Demande de devis</button>
         </div>

@@ -292,10 +292,21 @@ const Home = () => {
   const [azimut, setAzimut] = useState("0");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
+  const [formErrors, setFormErrors] = useState({
+    latitude: false,
+    longitude: false,
+    puissancePv: false,
+    systemLosses: false,
+    azimut: false,
+    obstacles: [{ azimuth: false, height: false }],
+    inclinaison: false
+  });
 
   const [selectedChart, setSelectedChart] = useState<
     "production" | "irradiation" | "variability"
   >("production");
+
+  console.log("tobstable first", obstacles)
 
   const handlePositionChange = (position: { lat: number; lng: number }) => {
     setClickedPosition(position);
@@ -351,19 +362,47 @@ const Home = () => {
 
   const azimuthList = obstacles.map((obstacle) => obstacle.height).join(",");
 
+  const validateForm = () => {
+    const obstacleErrors = useTerrainShadows === "non" 
+    ? obstacles.map((obstacle) => ({
+        azimuth: obstacle.azimuth === 0,
+        height: obstacle.height === 0,
+      }))
+    : [];
+
+    const newFormErrors = {
+      latitude: clickedPosition.lat === 0,
+      longitude: clickedPosition.lng === 0,
+      puissancePv: puissancePv.trim() === "" || parseFloat(puissancePv) === 0,
+      systemLosses: systemLosses.trim() === "" || parseFloat(systemLosses) === 0,
+      azimut: azimut.trim() === "" || parseFloat(azimut) === 0,
+      obstacles: obstacleErrors,
+      inclinaison: inclinaison.trim() === "" || parseFloat(inclinaison) === 0,
+    };
+
+    setFormErrors(newFormErrors);
+    return !Object.values(newFormErrors).some((error) =>
+      typeof error === "boolean" ? error : error.some((obstacleError) => Object.values(obstacleError).some(Boolean))
+    );
+  };
+
   const handleVisualiserResultats = async () => {
+    // Validate form before submission
+    if (!validateForm()) {
+      setError("Veuillez remplir les champs manquants.");
+      return;
+    }
+
     const requestData = {
-      lat: clickedPosition?.lat,
-      lon: clickedPosition?.lng,
+      lat: clickedPosition.lat,
+      lon: clickedPosition.lng,
       peakpower: parseFloat(puissancePv),
       loss: parseFloat(systemLosses),
       angle: parseFloat(inclinaison),
       aspect: parseFloat(azimut),
       outputformat: "json",
       usehorizon: useTerrainShadows === "oui" ? 0 : 1,
-      ...(useTerrainShadows !== "oui"
-        ? { userhorizon: azimuthList }
-        : { userhorizon: "0" }),
+      userhorizon: useTerrainShadows !== "oui" ? obstacles.map((o) => o.height).join(",") : "0",
     };
 
     try {
@@ -380,9 +419,8 @@ const Home = () => {
       }
 
       const result = await response.json();
-      {result.error && setError("Veuillez vérifier votre adresse.")}
       setData(result);
-      console.log("Solar energy output result:", result);
+      setError(""); // Clear error if submission is successful
     } catch (error) {
       console.error("Error while fetching results:", error);
     }
@@ -517,7 +555,7 @@ const Home = () => {
                         </Label>
                         <Input
                           type="number"
-                          className=" mt-0"
+                          className={`mt-0 ${formErrors.obstacles?.[index]?.azimuth ? "border-red-500" : ""}`}
                           placeholder={`Azimut °`}
                           value={obstacle.azimuth}
                           onChange={(e) =>
@@ -531,7 +569,7 @@ const Home = () => {
                         </Label>
                         <Input
                         type="number"
-                          className=" mt-0"
+                        className={`mt-0 ${formErrors.obstacles?.[index]?.height ? "border-red-500" : ""}`}
                           placeholder={`Hauteur ° `}
                           value={obstacle.height}
                           onChange={(e) =>
@@ -563,7 +601,7 @@ const Home = () => {
                 <span className="text-red-500">*</span>
               </Label>
               <Input
-                className=" mt-2"
+                className={`mt-2 ${formErrors.puissancePv ? "border-red-500" : ""}`}
                 value={puissancePv}
                 onChange={(e) => setPuissancePv(e.target.value)}
                 placeholder="Puissance PV"
@@ -574,7 +612,7 @@ const Home = () => {
                 Pertes du système [%] <span className="text-red-500">*</span>
               </Label>
               <Input
-                className=" mt-2"
+                className={`mt-2 ${formErrors.systemLosses ? "border-red-500" : ""}`}
                 value={systemLosses}
                 onChange={(e) => setSystemLosses(e.target.value)}
                 placeholder="Pertes du système"
@@ -589,7 +627,7 @@ const Home = () => {
                   Inclinaison [°] <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  className=" mt-2"
+                  className={`mt-2 ${formErrors.inclinaison ? "border-red-500" : ""}`}
                   value={inclinaison}
                   onChange={(e) => setInclinaison(e.target.value)}
                   placeholder="Inclinaison"
@@ -600,7 +638,7 @@ const Home = () => {
                   Azimut [°] <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  className=" mt-2"
+                  className={`mt-2 ${formErrors.azimut ? "border-red-500" : ""}`}
                   value={azimut}
                   onChange={(e) => setAzimut(e.target.value)}
                   placeholder="Azimut"
@@ -629,6 +667,7 @@ const Home = () => {
             ref={componentRef}
             inclinaison={inclinaison}
             error={error}
+            obstacles={obstacles}
           />
         )}
 

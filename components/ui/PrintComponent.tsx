@@ -273,13 +273,28 @@ interface PrintComponentProps {
   azimut: string;
   inclinaison: string;
   error?: string;
+  obstacles?: Obstacle[];
 }
 
 const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
-  ({ data, monthNames, azimut, inclinaison, error }, ref) => {
+  ({ data, monthNames, azimut, inclinaison, error, obstacles }, ref) => {
     const [selectedChart, setSelectedChart] = useState<
       "production" | "irradiation" | "variability"
     >("production");
+
+    console.log(
+      "tobstable:",
+      obstacles?.map(obstacle => `Azimuth: ${obstacle.azimuth}, Height: ${obstacle.height}`)
+    );
+
+    const obstacles2 = obstacles?.map(obstacle => {
+      
+      return {
+        azimuth: obstacle.azimuth,
+        height: obstacle.height
+      };
+    });
+    
 
     const chartData = data.outputs.monthly.fixed.map((monthlyData, index) => ({
       month: monthNames[index],
@@ -346,7 +361,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
 
     return (
       <div className="">
-        <div className="py-4 "></div>
+        <div className="py-4 lg:px-0 px-4 "></div>
         <div className="flex justify-end z-1000 max-w-[1200px] mx-auto px-10">
           <Button onClick={generatePDF} className="mt-4 bg-[#0F427C] text-white !rounded-['10px']">
             <Download className="h-6 w-6 text-white mr-2"/> Télécharger
@@ -358,7 +373,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
         </div>
           {data && (
             <div>
-              <div className="h-full z-10 border-t-gray-500">
+              <div className="h-full z-10 border-t-gray-500 lg:px-0 px-10">
                 <div className="lg:px-20 lg:py-2 px-0 py-0 flex lg:flex-row flex-col justify-between gap-4">
                   {/* Inputs section */}
                   <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl border boder-[#cfcfcf]">
@@ -549,7 +564,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
               </div>
               <SolarDiagram
                 latitude={data.inputs.location.latitude}
-                obstacles={[]} // Adjust based on your implementation
+                obstacles={obstacles2 || []}  // Adjust based on your implementation
                 onObstacleChange={() => {}} // Adjust based on your implementation
               />
             </div>
