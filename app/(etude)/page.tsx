@@ -611,10 +611,10 @@ const Home = () => {
 
 
         </main>
-          <div className="flex justify-end  w-full mx-auto lg:px-10 px-2">
+          <div className="flex justify-end  w-full mx-auto lg:px-10 px-2 z-[1000]">
         <Button
               onClick={handleVisualiserResultats}
-              className=" bg-black text-white  lg:w-[39%] w-full ml-8 "
+              className=" bg-[#008F31] text-white  lg:w-[39%] w-full ml-8 !rounded-['10px']"
             >
               Visualiser Résultats
             </Button>

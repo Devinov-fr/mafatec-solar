@@ -12,6 +12,7 @@ import {
 import SolarDiagram from "./SolarDiagram";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { Download } from "lucide-react";
 
 // Define types for monthly data and inputs
 interface MonthlyData {
@@ -344,11 +345,13 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
     };
 
     return (
-      <div>
+      <div className="">
         <div className="py-4 "></div>
-        <Button onClick={generatePDF} className="mt-4 float-right">
-          Télécharger
-        </Button>
+        <div className="flex justify-end z-1000 max-w-[1200px] mx-auto px-10">
+          <Button onClick={generatePDF} className="mt-4 bg-[#0F427C] text-white !rounded-['10px']">
+            <Download className="h-6 w-6 text-white mr-2"/> Télécharger
+          </Button>
+        </div>
         <div ref={ref} style={{ position: "relative" }}>
         <div className="flex justify-center mb-6">
           <img src='/mafatec-logo-rge.png' alt="rge logo" className="w-[20%] h-auto mt-4 " />
@@ -358,8 +361,8 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
               <div className="h-full z-10 border-t-gray-500">
                 <div className="lg:px-20 lg:py-2 px-0 py-0 flex lg:flex-row flex-col justify-between gap-4">
                   {/* Inputs section */}
-                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
-                    <h2 className="text-xl font-bold text-[#0f459e] ">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl border boder-[#cfcfcf]">
+                    <h2 className="text-xl font-bold text-[#0f459e] mb-[10px] ">
                       Entrées fournies
                     </h2>
                     <ul>
@@ -384,8 +387,8 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                   </div>
 
                   {/* Results section */}
-                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
-                    <h2 className="text-xl font-bold text-[#0f459e] ">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl border boder-[#cfcfcf]">
+                    <h2 className="text-xl font-bold text-[#0f459e] mb-[10px]">
                       Résultats de la simulation
                     </h2>
                     <ul>
@@ -412,8 +415,8 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                   </div>
 
                   {/* Loss section */}
-                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
-                    <h2 className="text-xl font-bold text-[#0f459e] ">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl border boder-[#cfcfcf]">
+                    <h2 className="text-xl font-bold text-[#0f459e] mb-[10px]">
                       Changements de la production à cause de
                     </h2>
                     <ul>
@@ -439,7 +442,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
 
                 {/* Monthly data section */}
                 <div className="lg:px-20 lg:py-5 px-0 py-0 flex lg:flex-col flex-col justify-between">
-                  <h2 className="text-xl font-bold text-[#0f459e] mb-2">
+                  <h2 className="text-xl font-bold text-[#0f459e] mb-[10px]">
                     Énergie PV et irradiation solaire mensuelle
                   </h2>
                   <div className="flex lg:flex-col flex-col justify-center gap-20">
