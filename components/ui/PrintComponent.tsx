@@ -270,10 +270,12 @@ interface PrintComponentProps {
   data: Data;
   monthNames: string[];
   azimut: string;
+  inclinaison: string;
+  error?: string;
 }
 
 const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
-  ({ data, monthNames, azimut }, ref) => {
+  ({ data, monthNames, azimut, inclinaison, error }, ref) => {
     const [selectedChart, setSelectedChart] = useState<
       "production" | "irradiation" | "variability"
     >("production");
@@ -344,8 +346,8 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
     return (
       <div>
         <div className="py-4 "></div>
-        <Button onClick={generatePDF} className="mt-4">
-        Générer un PDF
+        <Button onClick={generatePDF} className="mt-4 float-right">
+          Télécharger
         </Button>
         <div ref={ref} style={{ position: "relative" }}>
         <div className="flex justify-center mb-6">
@@ -356,79 +358,79 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
               <div className="h-full z-10 border-t-gray-500">
                 <div className="lg:px-20 lg:py-2 px-0 py-0 flex lg:flex-row flex-col justify-between gap-4">
                   {/* Inputs section */}
-                  <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
                     <h2 className="text-xl font-bold text-[#0f459e] ">
                       Entrées fournies
                     </h2>
                     <ul>
-                      <li>
-                        <span>Latitude:</span> {data.inputs.location.latitude}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Latitude:</span> {data.inputs.location.latitude}
                       </li>
-                      <li>
-                        <span>Longitude:</span> {data.inputs.location.longitude}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Longitude:</span> {data.inputs.location.longitude}
                       </li>
-                      <li>
-                        <span>Horizon:</span> Calculé
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Horizon:</span> Calculé
                       </li>
-                      <li>
-                        <span>PV installée:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">PV installée:</span>{" "}
                         {data.inputs.pv_module.peak_power} kWc
                       </li>
-                      <li>
-                        <span>Pertes du système:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Pertes du système:</span>{" "}
                         {data.inputs.pv_module.system_loss} %
                       </li>
                     </ul>
                   </div>
 
                   {/* Results section */}
-                  <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
                     <h2 className="text-xl font-bold text-[#0f459e] ">
                       Résultats de la simulation
                     </h2>
                     <ul>
-                      <li>
-                        <span>Angle d’inclinaison:</span>{" "}
-                        {Math.round(data.outputs.totals.fixed.E_d)}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Angle d’inclinaison:</span>{" "}
+                        {inclinaison}
                       </li>
-                      <li>
-                        <span>Angle d’azimut:</span> {azimut}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Angle d’azimut:</span> {azimut}
                       </li>
-                      <li>
-                        <span>Production annuelle PV:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Production annuelle PV:</span>{" "}
                         {data.outputs.totals.fixed.E_y}
                       </li>
-                      <li>
-                        <span>Irradiation annuelle:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Irradiation annuelle:</span>{" "}
                         {data.outputs.totals.fixed["H(i)_y"]}
                       </li>
-                      <li>
-                        <span>Variabilité interannuelle:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Variabilité interannuelle:</span>{" "}
                         {data.outputs.totals.fixed.SD_y}
                       </li>
                     </ul>
                   </div>
 
                   {/* Loss section */}
-                  <div className="lg:w-[30%] w-full p-6 bg-slate-50 rounded-xl">
+                  <div className="lg:w-[33%] w-full p-6 bg-slate-50 rounded-xl">
                     <h2 className="text-xl font-bold text-[#0f459e] ">
                       Changements de la production à cause de
                     </h2>
                     <ul>
-                      <li>
-                        <span>Angle d’incidence:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                        <span className="font-[700] text-[14px] text-black">Angle d’incidence:</span>{" "}
                         {data.outputs.totals.fixed.l_aoi}
                       </li>
-                      <li>
-                        <span>Effets spectraux:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Effets spectraux:</span>{" "}
                         {data.outputs.totals.fixed.l_spec}
                       </li>
-                      <li>
-                        <span>Température et irradiance faible:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Température et irradiance faible:</span>{" "}
                         {data.outputs.totals.fixed.l_tg}%
                       </li>
-                      <li>
-                        <span>Pertes totales:</span>{" "}
+                      <li className="mb-[5px] text-[#1e3a8a]">
+                      <span className="font-[700] text-[14px] text-black">Pertes totales:</span>{" "}
                         {data.outputs.totals.fixed.l_total}
                       </li>
                     </ul>
@@ -458,16 +460,16 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                           {data.outputs.monthly.fixed.map(
                             (monthlyData: MonthlyData, index: number) => (
                               <tr key={index} className="border-t">
-                                <td className="p-1 border-b text-center bg-[#0f459e] text-white items-center">
+                                <td className="capitalize p-1 border-b text-center bg-[#0f459e] text-white items-center">
                                   {monthNames[index]}
                                 </td>
-                                <td className="p-1 border-b text-center items-center">
+                                <td className=" capitalize p-1 border-b text-center items-center">
                                   {monthlyData.E_m.toFixed(2)}
                                 </td>
-                                <td className="p-1 border-b text-center items-center">
+                                <td className="capitalize p-1 border-b text-center items-center">
                                   {monthlyData["H(i)_m"].toFixed(2)}
                                 </td>
-                                <td className="p-1 border-b text-center items-center">
+                                <td className="capitalize p-1 border-b text-center items-center">
                                   {monthlyData.SD_m.toFixed(2)}
                                 </td>
                               </tr>

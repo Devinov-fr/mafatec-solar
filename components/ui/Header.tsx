@@ -34,7 +34,7 @@ const Header: React.FC = () => {
           <img src='/logo-mafatec-2048x423.png' alt='logo' className='max-w-[150px] h-auto' />
         </div>
         <div className='hidden md:flex relative w-[40%]'>
-        <ul className='flex justify-center items-center w-[100%] gap-4'>
+        <ul className='flex justify-center items-center w-[100%] gap-4 text-black'>
             <li className='text-[13px] relative group'>
               <a href='https://mafatec.com/' className='block'>Accueil</a>
              <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
@@ -49,7 +49,7 @@ const Header: React.FC = () => {
              <div className='absolute left-0 h-[2px] bg-[#d32f2f] w-0 transition-all duration-300 group-hover:w-full'></div>
               {isSubMenuOpen && (
                 <ul
-                  className='absolute left-0 z-[9999] bg-white shadow-lg mt-2 w-[300px] rounded-lg p-2'
+                  className='absolute left-0 z-[9999] bg-white shadow-lg mt-2 w-[300px] rounded-lg p-2 text-[1rem]'
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   ref={subMenuRef}
@@ -100,7 +100,7 @@ const Header: React.FC = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className='absolute top-16 left-0 right-0 bg-white shadow-lg z-10'>
-            <ul className='flex flex-col items-center gap-2 p-4'>
+            <ul className='flex flex-col items-center gap-2 p-4 text-black'>
               <li className='cursor-pointer'>
                 <a href='https://mafatec.com/'>Accueil</a>
               </li>
@@ -150,8 +150,8 @@ const Header: React.FC = () => {
           </div>
         )}
         <div className='flex justify-between gap-2 w-[35%]'>
-          <button className='p-[10px] w-[220px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer'>Étude gratuite de production</button>
-          <button className='p-[10px] w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer'>Demande de devis</button>
+          <button className='p-[10px] w-[220px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/etude/'}>Étude gratuite de production</button>
+          <button className='p-[10px] w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer' onClick={() => window.location.href = 'https://mafatec.com/contact/'}>Demande de devis</button>
         </div>
       </div>
     </header>

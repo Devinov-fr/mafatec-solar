@@ -22,6 +22,8 @@ import SunPathDiagram from "@/components/ui/SunPathDiagram";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
+import { Plus } from "lucide-react";
+import Hero from "@/components/ui/Hero";
 
 // Dynamically import the Map component without SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), { ssr: false });
@@ -289,6 +291,7 @@ const Home = () => {
   const [inclinaison, setInclinaison] = useState("35");
   const [azimut, setAzimut] = useState("0");
   const [data, setData] = useState<Data | null>(null);
+  const [error, setError] = useState("");
 
   const [selectedChart, setSelectedChart] = useState<
     "production" | "irradiation" | "variability"
@@ -377,6 +380,7 @@ const Home = () => {
       }
 
       const result = await response.json();
+      {result.error && setError("Veuillez vérifier votre adresse.")}
       setData(result);
       console.log("Solar energy output result:", result);
     } catch (error) {
@@ -420,58 +424,62 @@ const Home = () => {
   return (
     <div>
       <Header />
-
+      <Hero/>
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
-        <h1 className="text-center text-4xl font-bold lg:p-10 p-2">
-          Étude de Production Photovoltaïque
-        </h1>
-        <main className="flex lg:flex-row flex-col gap-2   lg:p-10 p-2">
+
+        <main className="flex lg:flex-row flex-col gap-[10px] lg:px-10 pb-4 lg:pt-10 p-2 mt-[40px]">
+          {/* Right Side (Map) */}
+          <div className="lg:w-[30%] w-full rounded-[20px] ">
+            <DynamicMap onPositionChange={handlePositionChange} />
+          </div>
+
           {/* Left Side (Form) */}
-          <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[40%] w-full flex flex-col gap-6 lg:overflow-y-auto py-2 p-[0px] px-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
-
-
-            <h2 className="font-semibold text-black text-[1.2rem] underline">ADRESSE</h2>
-            <p className="italic font-medium text-[#0F427C] text-[1rem]">
-              Veuillez sélectionner votre position exacte sur la carte ou entrer
-              les coordonnées exactes de latitude et longitude de votre adresse.
+          <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[30%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
+            <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline">ADRESSE</h2>
+            <p className="italic font-medium text-[#008f31] text-[13px] mb-[20px]">
+              Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte.
             </p>
-            <div>
-              <Label>
-                Latitude <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                className="mt-2"
-                name="latitude"
-                placeholder="Enter latitude"
-                value={clickedPosition.lat}
-                onChange={handleInputChange}
-              />
+            <div className="flex justify-between gap-2">
+              <div>
+                <Label className="text-[13px] ">
+                  Latitude <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  className="mt-2"
+                  name="latitude"
+                  placeholder="Enter latitude"
+                  value={clickedPosition.lat}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label className="text-[13px] ">
+                  Longitude <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  className="mt-2"
+                  name="longitude"
+                  placeholder="Enter longitude"
+                  value={clickedPosition.lng}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
-            <div>
-              <Label>
-                Longitude <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                className="mt-2"
-                name="longitude"
-                placeholder="Enter longitude"
-                value={clickedPosition.lng}
-                onChange={handleInputChange}
-              />
-            </div>
+            {error && (<p className="text-red-500">{error}</p>)}
+            <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="flex justify-between">
-              <h2 className="font-semibold text-black text-[1.2rem] underline">
+              <h2 className="font-semibold text-black text-[1.2rem]  mb-[10px] ">
                 Utilisier les ombres du terrain
               </h2>
             </div>
             <div className="flex justify-between">
-              <p className=" text-black">
+              <Label className="text-[13px] text-wrap">
                 Calcul automatique de l'horizon{" "}
                 <span className="text-red-500">*</span>
-              </p>
+              </Label>
               <RadioGroup
                 onValueChange={(value) => handleTerrainShadowsChange(value)}
-                className="flex gap-6"
+                className="flex gap-2"
                 value={useTerrainShadows}
               >
                 <div>
@@ -484,63 +492,73 @@ const Home = () => {
                 </div>
               </RadioGroup>
             </div>
-            <div className="flex justify-between items-center font-semibold">
+            <div className="flex justify-between items-center font-semibold mt-[30px]">
             {showObstacleInputs && (
-              <h3 className="text-[#0F427C] font-[20px]">Obstacles</h3>
+              <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline uppercase">Obstacles</h2>
             )}
             {showObstacleInputs && (
                 <Button
                   onClick={addObstacle}
-                  className="bg-[#0F427C] text-white"
+                  className="bg-[#0F427C] text-white text-[40px] p-2"
                 >
-                  +
+                  <Plus className="h-6 w-6"/>
                 </Button>
               )}
             </div>
             {showObstacleInputs && (
-              <div className="mt-4">
+              <div >
                 {obstacles.map((obstacle, index) => (
-                  <div key={index} className="flex flex-col gap-4 mb-4">
-                    <h3 className="text-green-600 italic">Obstacle {index + 1}</h3>
-                    <div>
-                      <Label>
-                        Azimut de l'obstacle<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        className=" mt-2"
-                        placeholder={`Azimut (°) - Obstacle ${index + 1}`}
-                        value={obstacle.azimuth}
-                        onChange={(e) =>
-                          handleObstacleChange(index, "azimuth", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>
-                        Hauteur de l'obstacle<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        className=" mt-2"
-                        placeholder={`Hauteur (m) - Obstacle ${index + 1}`}
-                        value={obstacle.height}
-                        onChange={(e) =>
-                          handleObstacleChange(index, "height", e.target.value)
-                        }
-                      />
+                  <div key={index} className="flex flex-col gap-4 mb-0">
+                    <h3 className="text-green-600 italic mt-[10px] mb-[-15px]">Obstacle {index + 1}</h3>
+                    <div className="flex justify-between gap-2 mt-[-10px]">
+                      <div>
+                        <Label className="text-[13px]">
+                          Azimut [°] <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          className=" mt-0"
+                          placeholder={`Azimut °`}
+                          value={obstacle.azimuth}
+                          onChange={(e) =>
+                            handleObstacleChange(index, "azimuth", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[13px]">
+                          Hauteur [°] <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                        type="number"
+                          className=" mt-0"
+                          placeholder={`Hauteur ° `}
+                          value={obstacle.height}
+                          onChange={(e) =>
+                            handleObstacleChange(index, "height", e.target.value)
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            <h2 className="font-semibold text-black text-[1.2rem] underline">
+
+
+
+          </div>
+
+          <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[39%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto  p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
+          <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline ">
               PERFORMANCE DU SYSTÈME PV
             </h2>
-            <p className="italic font-medium text-[#0F427C] text-[1rem]">
+            <p className="italic font-medium text-[#008f31] text-[13px] mb-[20px]">
               Veuillez indiquer la puissance souhaitée pour l'installation.
             </p>
             <div>
-              <Label>
+              <Label className="text-[13px]">
                 Puissance PV crête installée [kW]{" "}
                 <span className="text-red-500">*</span>
               </Label>
@@ -552,7 +570,7 @@ const Home = () => {
               />
             </div>
             <div>
-              <Label>
+              <Label className="text-[13px]">
                 Pertes du système [%] <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -563,52 +581,54 @@ const Home = () => {
               />
             </div>
 
-            <h2 className="font-semibold text-black text-[1.2rem] underline">
-              PARAMÈTRES INCLINAISON ET AZIMUT
-            </h2>
-            <div>
-              <Label>
-                Inclinaison [°] <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                className=" mt-2"
-                value={inclinaison}
-                onChange={(e) => setInclinaison(e.target.value)}
-                placeholder="Inclinaison"
-              />
-            </div>
-            <div>
-              <Label>
-                Azimut [°] <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                className=" mt-2"
-                value={azimut}
-                onChange={(e) => setAzimut(e.target.value)}
-                placeholder="Azimut"
-              />
-            </div>
+            <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
 
-            <Button
+            <div className="flex justify-between gap-2">
+              <div>
+                <Label className="text-[13px]">
+                  Inclinaison [°] <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  className=" mt-2"
+                  value={inclinaison}
+                  onChange={(e) => setInclinaison(e.target.value)}
+                  placeholder="Inclinaison"
+                />
+              </div>
+              <div>
+                <Label className="text-[13px]">
+                  Azimut [°] <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  className=" mt-2"
+                  value={azimut}
+                  onChange={(e) => setAzimut(e.target.value)}
+                  placeholder="Azimut"
+                />
+              </div>
+            </div>
+          </div>
+
+
+        </main>
+          <div className="flex justify-end  w-full mx-auto lg:px-10 px-2">
+        <Button
               onClick={handleVisualiserResultats}
-              className=" bg-black text-white mt-6"
+              className=" bg-black text-white  lg:w-[39%] w-full ml-8 "
             >
               Visualiser Résultats
             </Button>
-          </div>
+            </div>
 
-          {/* Right Side (Map) */}
-          <div className="lg:w-[60%] w-full rounded-[20px] ">
-            <DynamicMap onPositionChange={handlePositionChange} />
-          </div>
-        </main>
 
-        {data && (
+        {data && (!error) && (
           <PrintComponent
             data={data}
             monthNames={monthNames}
             azimut={azimut}
             ref={componentRef}
+            inclinaison={inclinaison}
+            error={error}
           />
         )}
 
