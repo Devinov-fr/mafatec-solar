@@ -8,7 +8,7 @@ const Footer = () => {
       <div className='flex justify-center pb-4'>
         <img className="lg:w-[10%] w-[40%]" src='/Footer_logo.png' alt="Footer Logo" />
       </div>
-      <div className='flex justify-center gap-10 lg:flex-row flex-col text-center pb-2 text-white'>
+      <div className='flex justify-center lg:gap-10 gap-1 lg:flex-row flex-col text-center pb-2 text-white'>
         <a href="https://mafatec.com/certifications-et-partenariats/" className="hover:underline">Certifications</a>
         <a href="https://mafatec.com/demarches-administratives" className="hover:underline">Démarches Administratives</a>
         <a href="https://mafatec.com/contact" className="hover:underline">Contact</a>

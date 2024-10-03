@@ -493,6 +493,11 @@ const Home = () => {
       <Header />
       <Hero />
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
+      <div className="flex lg:flex-row flex-col lg:px-10 lg:pt-20 p-2 ">
+      {error && error === "Veuillez remplir les champs manquants." && (
+              <p className="text-red-500">{error}</p>
+            )}
+      </div>
         <main className="flex lg:flex-row flex-col gap-[10px] lg:px-10 pb-4 lg:pt-10 p-2 mt-[40px]">
           {/* Right Side (Map) */}
           <div className="lg:w-[30%] w-full rounded-[20px] ">
@@ -641,10 +646,9 @@ const Home = () => {
             )}
           </div>
 
+
           <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[39%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto  p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
-            {error && error === "Veuillez remplir les champs manquants." && (
-              <p className="text-red-500">{error}</p>
-            )}
+
             <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline ">
               PERFORMANCE DU SYSTÈME PV
             </h2>
