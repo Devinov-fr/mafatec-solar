@@ -298,8 +298,6 @@ const Home = () => {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [formErrors, setFormErrors] = useState({
-    latitude: false,
-    longitude: false,
     puissancePv: false,
     systemLosses: false,
     azimut: false,
@@ -378,8 +376,6 @@ const Home = () => {
         : [];
 
     const newFormErrors = {
-      latitude: clickedPosition.lat === 0,
-      longitude: clickedPosition.lng === 0,
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
       azimut: azimut.trim() === "",
@@ -405,8 +401,6 @@ const Home = () => {
     }
 
     const requestData = {
-      lat: clickedPosition.lat,
-      lon: clickedPosition.lng,
       peakpower: parseFloat(puissancePv),
       loss: parseFloat(systemLosses),
       angle: parseFloat(inclinaison),
@@ -436,14 +430,18 @@ const Home = () => {
       }
 
       const result = await response.json();
+      console.log("result", result);
       {
         result.error &&
           setError(
             "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte."
           );
       }
+
+
+      
       setData(result);
-      setError(""); // Clear error if submission is successful
+      //setError(""); // Clear error if submission is successful
     } catch (error) {
       console.error("Error while fetching results:", error);
     }
@@ -488,15 +486,15 @@ const Home = () => {
     console.log(`Latitudesss: ${lat}, Longitude: ${lng}`);
   };
 
+
+  console.log("error", error)
+
   return (
     <div>
       <Header />
       <Hero />
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
       <div className="flex lg:flex-row flex-col lg:px-10 lg:pt-20 p-2 ">
-      {error && error === "Veuillez remplir les champs manquants." && (
-              <p className="text-red-500">{error}</p>
-            )}
       </div>
         <main className="flex lg:flex-row flex-col gap-[10px] lg:px-10 pb-4 lg:pt-10 p-2 mt-[40px]">
           {/* Right Side (Map) */}
@@ -505,12 +503,6 @@ const Home = () => {
           </div>
 
           {/* Left Side (Form) */}
-          {error &&
-            error ===
-              "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
-              <p className="text-red-500">{error}</p>
-            )}
-
           <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[30%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
             <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline">
               ADRESSE
@@ -546,6 +538,13 @@ const Home = () => {
                 />
               </div>
             </div>
+
+            {error &&
+            error ===
+              "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
+              <p className="text-red-500 mt-2">{error}</p>
+            )}
+
             <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="flex justify-between">
               <h2 className="font-semibold text-black text-[1.2rem]  mb-[10px] ">
@@ -692,7 +691,7 @@ const Home = () => {
                 </Label>
                 <Input
                   className={`mt-2 ${
-                    formErrors.inclinaison ? "border-red-500" : ""
+                    formErrors.inclinaison ? "border-red-500 " : ""
                   }`}
                   value={inclinaison}
                   onChange={(e) => setInclinaison(e.target.value)}
@@ -712,7 +711,11 @@ const Home = () => {
                   placeholder="Azimut"
                 />
               </div>
+
             </div>
+            {error && error === "Veuillez remplir les champs manquants." && (
+              <p className="text-red-500 mt-2">{error}</p>
+            )}
           </div>
         </main>
         <div className="flex justify-end  w-full mx-auto lg:px-10 px-2 z-[1000]">
