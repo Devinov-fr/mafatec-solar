@@ -142,8 +142,6 @@ const Header: React.FC = () => {
               <li className='cursor-pointer'>
                 <a href='https://mafatec.com/a-propos/'>À propos</a>
               </li>
-
-
               <li className='cursor-pointer'>
                 <a href='https://mafatec.com/contact/'>Contact</a>
               </li>
