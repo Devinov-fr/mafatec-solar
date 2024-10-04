@@ -401,6 +401,8 @@ const Home = () => {
     }
 
     const requestData = {
+      lat: clickedPosition.lat,
+      lon: clickedPosition.lng,
       peakpower: parseFloat(puissancePv),
       loss: parseFloat(systemLosses),
       angle: parseFloat(inclinaison),
