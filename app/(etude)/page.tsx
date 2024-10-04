@@ -496,8 +496,7 @@ const Home = () => {
       <Header />
       <Hero />
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
-      <div className="flex lg:flex-row flex-col lg:px-10 lg:pt-20 p-2 ">
-      </div>
+
         <main className="flex lg:flex-row flex-col gap-[10px] lg:px-10 pb-4 lg:pt-10 p-2 mt-[40px]">
           {/* Right Side (Map) */}
           <div className="lg:w-[30%] w-full rounded-[20px] ">
