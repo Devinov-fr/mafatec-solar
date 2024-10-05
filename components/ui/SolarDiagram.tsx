@@ -342,7 +342,7 @@ const SolarDiagram: React.FC<SolarDiagramProps> = ({
       .curve(d3.curveBasis);
   
     // Filter out data points where altitude is less than 0
-    const validSunPathData = sunPathData.filter((d) => d.altitude >= -16);
+    const validSunPathData = sunPathData.filter((d) => d.altitude >= -0);
   
     svg
       .append("path")
