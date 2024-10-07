@@ -13,6 +13,10 @@ import SolarDiagram from "./SolarDiagram";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Download } from "lucide-react";
+import Altitude42 from "./Altitude42";
+import Altitude43 from "./Altitude43";
+import Altitude44 from "./Altitude44";
+import Altitude45 from "./Altitude45";
 
 // Define types for monthly data and inputs
 interface MonthlyData {
@@ -287,13 +291,18 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
       obstacles?.map(obstacle => `Azimuth: ${obstacle.azimuth}, Height: ${obstacle.height}`)
     );
 
-    const obstacles2 = obstacles?.map(obstacle => {
+    /*const obstacles2 = obstacles?.map(obstacle => {
       
       return {
         azimuth: obstacle.azimuth,
         height: obstacle.height
       };
-    });
+    });*/
+
+    const obstacles2 = obstacles?.map(obstacle => ({
+      azimuth: String(obstacle.azimuth),
+      height: obstacle.height
+    }));
     
 
     const chartData = data.outputs.monthly.fixed.map((monthlyData, index) => ({
@@ -562,11 +571,17 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                   </div>
                 </div>
               </div>
-              <SolarDiagram
+              {/*<SolarDiagram
                 latitude={data.inputs.location.latitude}
                 obstacles={obstacles2 || []}  // Adjust based on your implementation
                 onObstacleChange={() => {}} // Adjust based on your implementation
-              />
+              />*/}
+              <div>
+                {String(data.inputs.location.latitude).startsWith("42.") && <Altitude42 obstacles={obstacles2 || []} />}
+                {String(data.inputs.location.latitude).startsWith("43.") && <Altitude42 obstacles={obstacles2 || []} />}
+                {String(data.inputs.location.latitude).startsWith("44.") && <Altitude44 obstacles={obstacles2 || []} />}
+                {String(data.inputs.location.latitude).startsWith("45.") && <Altitude45 obstacles={obstacles2 || []} />}
+              </div>
             </div>
           )}
         </div>
