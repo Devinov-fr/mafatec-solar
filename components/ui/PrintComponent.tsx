@@ -569,7 +569,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#0faa58ff" />
+                            <Bar dataKey="value" fill="#0faa58ff" name="valeur"/>
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
