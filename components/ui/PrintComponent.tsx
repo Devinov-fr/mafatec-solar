@@ -294,7 +294,9 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
 
     console.log(
       "tobstable:",
-      obstacles?.map(obstacle => `Azimuth: ${obstacle.azimuth}, Height: ${obstacle.height}`)
+      obstacles?.map(
+        (obstacle) => `Azimuth: ${obstacle.azimuth}, Height: ${obstacle.height}`
+      )
     );
 
     /*const obstacles2 = obstacles?.map(obstacle => {
@@ -305,11 +307,10 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
       };
     });*/
 
-    const obstacles2 = obstacles?.map(obstacle => ({
+    const obstacles2 = obstacles?.map((obstacle) => ({
       azimuth: String(obstacle.azimuth),
-      height: obstacle.height
+      height: obstacle.height,
     }));
-    
 
     const chartData = data.outputs.monthly.fixed.map((monthlyData, index) => ({
       month: monthNames[index],
@@ -344,26 +345,41 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
 
     // Function to generate PDF
     const generatePDF = async () => {
-      const element = ref as React.RefObject<HTMLDivElement>; // Use type assertion here
-      const currentElement = element.current; // Get the current element
+      const element = ref as React.RefObject<HTMLDivElement>;
+      const currentElement = element.current;
 
-      if (!currentElement) return; // Check if currentElement is null
+      if (!currentElement) return;
 
-      const canvas = await html2canvas(currentElement);
+      // Set a larger width to simulate desktop view
+      currentElement.style.width = "1200px"; // Set a fixed width for desktop layout
+
+      // Generate the canvas
+      const canvas = await html2canvas(currentElement, {
+        width: 1200, // Simulate larger screen width
+      });
+
+      // Revert to the original width after the screenshot is taken
+      currentElement.style.width = "";
+
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const imgWidth = 190; // Define image width
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 190;
       const pageHeight = pdf.internal.pageSize.height;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
       let position = 0;
 
-      // Add image to PDF
+      // Add the image to the PDF
       pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      // Handle multiple pages if the content is too long
+      // Add extra pages if needed
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
@@ -371,21 +387,29 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
         heightLeft -= pageHeight;
       }
 
-      pdf.save("report.pdf"); // Save PDF with the name 'report.pdf'
+      // Save the generated PDF
+      pdf.save("report.pdf");
     };
 
     return (
       <div className="">
         <div className="py-4 lg:px-0 px-4 "></div>
         <div className="flex justify-end z-1000 max-w-[1200px] mx-auto px-10">
-          <Button onClick={generatePDF} className="mt-4 bg-[#0F427C] text-white !rounded-['10px']">
-            <Download className="h-6 w-6 text-white mr-2"/> Télécharger
+          <Button
+            onClick={generatePDF}
+            className="mt-4 bg-[#0F427C] text-white !rounded-['10px']"
+          >
+            <Download className="h-6 w-6 text-white mr-2" /> Télécharger
           </Button>
         </div>
         <div ref={ref} style={{ position: "relative" }}>
-        <div className="flex justify-center mb-6">
-          <img src='/mafatec-logo-rge.png' alt="rge logo" className="w-[20%] h-auto mt-4 " />
-        </div>
+          <div className="flex justify-center mb-6">
+            <img
+              src="/mafatec-logo-rge.png"
+              alt="rge logo"
+              className="w-[20%] h-auto mt-4 "
+            />
+          </div>
           {data && (
             <div>
               <div className="h-full z-10 border-t-gray-500 lg:px-0 px-10">
@@ -397,20 +421,33 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </h2>
                     <ul>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Latitude:</span> {data.inputs.location.latitude}
+                        <span className="font-[700] text-[14px] text-black">
+                          Latitude:
+                        </span>{" "}
+                        {data.inputs.location.latitude}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Longitude:</span> {data.inputs.location.longitude}
+                        <span className="font-[700] text-[14px] text-black">
+                          Longitude:
+                        </span>{" "}
+                        {data.inputs.location.longitude}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Horizon:</span> Calculé
+                        <span className="font-[700] text-[14px] text-black">
+                          Horizon:
+                        </span>{" "}
+                        Calculé
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">PV installée:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          PV installée:
+                        </span>{" "}
                         {data.inputs.pv_module.peak_power} kWc
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Pertes du système:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Pertes du système:
+                        </span>{" "}
                         {data.inputs.pv_module.system_loss} %
                       </li>
                     </ul>
@@ -423,22 +460,33 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </h2>
                     <ul>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Angle d’inclinaison:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Angle d’inclinaison:
+                        </span>{" "}
                         {inclinaison}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Angle d’azimut:</span> {azimut}
+                        <span className="font-[700] text-[14px] text-black">
+                          Angle d’azimut:
+                        </span>{" "}
+                        {azimut}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Production annuelle PV:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Production annuelle PV:
+                        </span>{" "}
                         {data.outputs.totals.fixed.E_y}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Irradiation annuelle:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Irradiation annuelle:
+                        </span>{" "}
                         {data.outputs.totals.fixed["H(i)_y"]}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Variabilité interannuelle:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Variabilité interannuelle:
+                        </span>{" "}
                         {data.outputs.totals.fixed.SD_y}
                       </li>
                     </ul>
@@ -451,19 +499,27 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </h2>
                     <ul>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                        <span className="font-[700] text-[14px] text-black">Angle d’incidence:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Angle d’incidence:
+                        </span>{" "}
                         {data.outputs.totals.fixed.l_aoi}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Effets spectraux:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Effets spectraux:
+                        </span>{" "}
                         {data.outputs.totals.fixed.l_spec}
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Température et irradiance faible:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Température et irradiance faible:
+                        </span>{" "}
                         {data.outputs.totals.fixed.l_tg}%
                       </li>
                       <li className="mb-[5px] text-[#1e3a8a]">
-                      <span className="font-[700] text-[14px] text-black">Pertes totales:</span>{" "}
+                        <span className="font-[700] text-[14px] text-black">
+                          Pertes totales:
+                        </span>{" "}
                         {data.outputs.totals.fixed.l_total}
                       </li>
                     </ul>
@@ -513,8 +569,8 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </div>
 
                     {/* Chart selection and display */}
-                    <div className="lg:w-full w-full flex flex-row justify-between gap-2 mb-2">
-                      <div className="w-full lg:w-[40%]">
+                    <div className="lg:w-full w-full flex lg:flex-row flex-col justify-between gap-2 mb-2">
+                      <div className="w-full lg:w-[40%] ">
                         <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={chartDataProduction}>
                             <XAxis dataKey="month" />
@@ -569,7 +625,11 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#0faa58ff" name="valeur"/>
+                            <Bar
+                              dataKey="value"
+                              fill="#0faa58ff"
+                              name="valeur"
+                            />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -583,26 +643,49 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                 onObstacleChange={() => {}} // Adjust based on your implementation
               />*/}
               <div>
-                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">Diagramme solaire avec masques d'ombrage</h2>
-                <div className="flex justify-center mx-auto  lg:w-[75%] w-full">
-                  {(String(data.inputs.location.latitude).startsWith("42.") || data.inputs.location.latitude < 42) && 
-                    <Altitude42 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("43.") && <Altitude43 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("44.") && <Altitude44 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("45.") && <Altitude45 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("46.") && <Altitude46 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("47.") && <Altitude47 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("48.") && <Altitude48 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("49.") && <Altitude49 obstacles={obstacles2 || []} />}
-                    {String(data.inputs.location.latitude).startsWith("50.") && <Altitude50 obstacles={obstacles2 || []} />}
-                    {(String(data.inputs.location.latitude).startsWith("51.") || data.inputs.location.latitude > 51) && 
-                    <Altitude51 obstacles={obstacles2 || []} />}
+                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
+                  Diagramme solaire avec masques d'ombrage
+                </h2>
+                <div className="flex justify-center mx-auto w-full lg:w-[75%] overflow-x-auto">
+                  <div className="flex flex-nowrap">
+                    {(String(data.inputs.location.latitude).startsWith("42.") ||
+                      data.inputs.location.latitude < 42) && (
+                      <Altitude42 obstacles={obstacles2 || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "43."
+                    ) && <Altitude43 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "44."
+                    ) && <Altitude44 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "45."
+                    ) && <Altitude45 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "46."
+                    ) && <Altitude46 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "47."
+                    ) && <Altitude47 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "48."
+                    ) && <Altitude48 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "49."
+                    ) && <Altitude49 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith(
+                      "50."
+                    ) && <Altitude50 obstacles={obstacles2 || []} />}
+                    {(String(data.inputs.location.latitude).startsWith("51.") ||
+                      data.inputs.location.latitude > 51) && (
+                      <Altitude51 obstacles={obstacles2 || []} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
-
       </div>
     );
   }
