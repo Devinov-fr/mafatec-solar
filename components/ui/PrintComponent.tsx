@@ -17,6 +17,12 @@ import Altitude42 from "./Altitude42";
 import Altitude43 from "./Altitude43";
 import Altitude44 from "./Altitude44";
 import Altitude45 from "./Altitude45";
+import Altitude47 from "./Altitude47";
+import Altitude46 from "./Altitude46";
+import Altitude48 from "./Altitude48";
+import Altitude49 from "./Altitude49";
+import Altitude50 from "./Altitude50";
+import Altitude51 from "./Altitude51";
 
 // Define types for monthly data and inputs
 interface MonthlyData {
@@ -577,10 +583,21 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                 onObstacleChange={() => {}} // Adjust based on your implementation
               />*/}
               <div>
-                {String(data.inputs.location.latitude).startsWith("42.") && <Altitude42 obstacles={obstacles2 || []} />}
-                {String(data.inputs.location.latitude).startsWith("43.") && <Altitude42 obstacles={obstacles2 || []} />}
-                {String(data.inputs.location.latitude).startsWith("44.") && <Altitude44 obstacles={obstacles2 || []} />}
-                {String(data.inputs.location.latitude).startsWith("45.") && <Altitude45 obstacles={obstacles2 || []} />}
+                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">Diagramme solaire avec masques d'ombrage</h2>
+                <div className="flex justify-center mx-auto  lg:w-[75%] w-full">
+                  {(String(data.inputs.location.latitude).startsWith("42.") || data.inputs.location.latitude < 42) && 
+                    <Altitude42 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("43.") && <Altitude43 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("44.") && <Altitude44 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("45.") && <Altitude45 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("46.") && <Altitude46 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("47.") && <Altitude47 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("48.") && <Altitude48 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("49.") && <Altitude49 obstacles={obstacles2 || []} />}
+                    {String(data.inputs.location.latitude).startsWith("50.") && <Altitude50 obstacles={obstacles2 || []} />}
+                    {(String(data.inputs.location.latitude).startsWith("51.") || data.inputs.location.latitude > 51) && 
+                    <Altitude51 obstacles={obstacles2 || []} />}
+                </div>
               </div>
             </div>
           )}

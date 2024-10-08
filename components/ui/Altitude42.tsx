@@ -17,6 +17,8 @@ const Altitude42: React.FC<ObstaclesProps & SVGProps<SVGSVGElement>> = ({
             data-name="Calque 1"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 731.23 471.83"
+                    width="890.4"
+        height="683.2"
             {...svgProps}
             >
             <defs>

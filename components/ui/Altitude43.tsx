@@ -11,12 +11,14 @@ const Altitude43: React.FC<ObstaclesProps & SVGProps<SVGSVGElement>> = ({
   ...svgProps
 }) => {
   return (
-    <div style={{ position: "relative", width: "100%", height: "400px" }}>
+    <div style={{ position: "relative", width: "100%", height: "800px" }}>
       <svg
         id="Calque_1"
         data-name="Calque 1"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 738 479"
+        width="890.4"
+        height="683.2"
         {...svgProps}
       >
         <defs>
@@ -583,9 +585,9 @@ const Altitude43: React.FC<ObstaclesProps & SVGProps<SVGSVGElement>> = ({
         style={{
           position: "absolute",
           top: 0,
-          left: 0,
+          left: -10,
           width: "100%",
-          height: "400px",
+          height: "200px",
         }}
       >
         {/* Render the bar chart here, could be another SVG or using a chart library */}
