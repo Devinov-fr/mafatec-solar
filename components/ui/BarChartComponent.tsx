@@ -70,10 +70,10 @@ const BarChartComponent: React.FC<BarChartProps> = ({ data }) => {
         <YAxis domain={[0, 90]} ticks={yTicks} tick={false} />
 
         {/* Custom Tooltip */}
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
 
         {/* Bar representing height */}
-        <Bar dataKey="height" fill="#808080" barSize={15} name="Hauteur" isAnimationActive={false}/>
+        <Bar dataKey="height" fill="#808080" barSize={15} name="Hauteur" isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );
