@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 //import MapComponent from "@/components/ui/Map";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ import SunPathDiagram from "@/components/ui/SunPathDiagram";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
-import { Plus } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 
@@ -304,7 +304,10 @@ const Home = () => {
     obstacles: [{ azimuth: false, height: false }],
     inclinaison: false,
   });
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordinates, setCoordinates] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const [selectedChart, setSelectedChart] = useState<
     "production" | "irradiation" | "variability"
@@ -345,6 +348,10 @@ const Home = () => {
     setObstacles([...obstacles, { azimuth: 0, height: 0 }]);
   };
 
+  const removeObstacle = (indexToRemove: number) => {
+    setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
+  };
+
   const onObstacleChange = (newObstacles: Obstacle[]) => {
     setObstacles(newObstacles);
   };
@@ -370,8 +377,8 @@ const Home = () => {
     const obstacleErrors =
       useTerrainShadows === "non"
         ? obstacles.map((obstacle) => ({
-            azimuth: obstacle.azimuth === 0,
-            height: obstacle.height === 0,
+            azimuth: obstacle.azimuth < 0,
+            height: obstacle.height < 0,
           }))
         : [];
 
@@ -440,8 +447,6 @@ const Home = () => {
           );
       }
 
-
-      
       setData(result);
       //setError(""); // Clear error if submission is successful
     } catch (error) {
@@ -488,15 +493,20 @@ const Home = () => {
     console.log(`Latitudesss: ${lat}, Longitude: ${lng}`);
   };
 
+  console.log("error", error);
 
-  console.log("error", error)
+  useEffect(() => {
+    if (data && !error) {
+      // Trigger the regeneration or any effect you need when data changes
+      console.log("Data changed, regenerating component...");
+    }
+  }, [data, error]);
 
   return (
     <div>
       <Header />
       <Hero />
       <div className="max-w-[1200px] mx-auto flex flex-col mb-2 ">
-
         <main className="flex lg:flex-row flex-col gap-[10px] lg:px-10 pb-4 lg:pt-10 p-2 mt-[40px]">
           {/* Right Side (Map) */}
           <div className="lg:w-[30%] w-full rounded-[20px] ">
@@ -541,10 +551,10 @@ const Home = () => {
             </div>
 
             {error &&
-            error ===
-              "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
-              <p className="text-red-500 mt-2">{error}</p>
-            )}
+              error ===
+                "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
+                <p className="text-red-500 mt-2">{error}</p>
+              )}
 
             <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="flex justify-between">
@@ -591,10 +601,13 @@ const Home = () => {
               <div>
                 {obstacles.map((obstacle, index) => (
                   <div key={index} className="flex flex-col gap-4 mb-0">
-                    <h3 className="text-green-600 italic mt-[10px] mb-[-15px]">
-                      Obstacle {index + 1}
-                    </h3>
-                    <div className="flex justify-between gap-2 mt-[-10px]">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-green-600 italic mt-[10px] mb-[-15px]">
+                        Obstacle {index + 1}
+                      </h3>
+                      {/* Trash Icon Button */}
+                    </div>
+                    <div className="flex justify-between items-center gap-2 mt-[-10px]">
                       <div>
                         <Label className="text-[13px]">
                           Azimut [°] <span className="text-red-500">*</span>
@@ -606,7 +619,7 @@ const Home = () => {
                               ? "border-red-500"
                               : ""
                           }`}
-                          placeholder={`Azimut °`}
+                          placeholder="Azimut °"
                           value={obstacle.azimuth}
                           onChange={(e) =>
                             handleObstacleChange(
@@ -628,7 +641,7 @@ const Home = () => {
                               ? "border-red-500"
                               : ""
                           }`}
-                          placeholder={`Hauteur ° `}
+                          placeholder="Hauteur °"
                           value={obstacle.height}
                           onChange={(e) =>
                             handleObstacleChange(
@@ -639,6 +652,12 @@ const Home = () => {
                           }
                         />
                       </div>
+                      <button
+                        onClick={() => removeObstacle(index)}
+                        className="text-red-500"
+                      >
+                        <Trash className="h-5 w-5 mt-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -646,9 +665,7 @@ const Home = () => {
             )}
           </div>
 
-
           <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[39%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto  p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
-
             <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline ">
               PERFORMANCE DU SYSTÈME PV
             </h2>
@@ -712,7 +729,6 @@ const Home = () => {
                   placeholder="Azimut"
                 />
               </div>
-
             </div>
             {error && error === "Veuillez remplir les champs manquants." && (
               <p className="text-red-500 mt-2">{error}</p>

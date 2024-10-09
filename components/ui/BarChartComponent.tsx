@@ -73,7 +73,7 @@ const BarChartComponent: React.FC<BarChartProps> = ({ data }) => {
         <Tooltip content={<CustomTooltip />} />
 
         {/* Bar representing height */}
-        <Bar dataKey="height" fill="#808080" barSize={15} name="Hauteur" />
+        <Bar dataKey="height" fill="#808080" barSize={15} name="Hauteur" isAnimationActive={false}/>
       </BarChart>
     </ResponsiveContainer>
   );

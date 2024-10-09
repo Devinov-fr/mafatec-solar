@@ -585,7 +585,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#ff8b01ff" />
+                            <Bar dataKey="value" fill="#ff8b01ff" name="kWh"/>
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -605,7 +605,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#ffc700ff" />
+                            <Bar dataKey="value" fill="#ffc700ff" name="kWh/m²"/>
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -628,7 +628,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                             <Bar
                               dataKey="value"
                               fill="#0faa58ff"
-                              name="valeur"
+                              name="kWh"
                             />
                           </BarChart>
                         </ResponsiveContainer>
