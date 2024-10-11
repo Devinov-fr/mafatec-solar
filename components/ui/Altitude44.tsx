@@ -1,9 +1,20 @@
 import * as React from "react";
 import { SVGProps } from "react";
 import BarChartComponent from "./BarChartComponent";
+import SolarDiagramNew from "./SolarDiagramNew";
+
+/*interface ObstaclesProps {
+    obstacles: Array<{ azimuth: string; height: number }>; // azimuth is a string
+  }*/
+
+interface Obstacle {
+  azimuth: number; // Assuming azimuth is a number
+  height: number; // Assuming height is a number
+  points: { azimuth: number; height: number }[];
+}
 
 interface ObstaclesProps {
-  obstacles: Array<{ azimuth: string; height: number }>; // azimuth is a string
+  obstacles?: Obstacle[];
 }
 
 const Altitude44: React.FC<ObstaclesProps & SVGProps<SVGSVGElement>> = ({
@@ -587,7 +598,8 @@ const Altitude44: React.FC<ObstaclesProps & SVGProps<SVGSVGElement>> = ({
         }}
       >
         {/* Render the bar chart here, could be another SVG or using a chart library */}
-        <BarChartComponent data={obstacles} />
+        <SolarDiagramNew obstacles={obstacles || []} />
+        {/*<BarChartComponent data={obstacles} />*/}
       </div>
     </div>
   );

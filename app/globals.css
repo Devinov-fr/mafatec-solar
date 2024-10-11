@@ -95,3 +95,11 @@
     display: block; /* Or any other display property */
   }
 }
+
+g.x-axis {
+  display: none;
+}
+
+g.y-axis {
+  display: none;
+}

@@ -22,7 +22,7 @@ import SunPathDiagram from "@/components/ui/SunPathDiagram";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, TrashIcon } from "lucide-react";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 
@@ -274,6 +274,7 @@ interface Data {
 interface Obstacle {
   azimuth: number; // Assuming azimuth is a number
   height: number; // Assuming height is a number
+  points: { azimuth: number; height: number }[];
 }
 
 interface AddressAutocompleteProps {
@@ -288,7 +289,7 @@ const Home = () => {
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
   const [useTerrainShadows, setUseTerrainShadows] = useState("oui");
   const [obstacles, setObstacles] = useState<Obstacle[]>([
-    { azimuth: 0, height: 0 },
+    { azimuth: 0, height: 0, points: [{azimuth: 0, height: 0}] },
   ]);
   const componentRef = useRef<HTMLDivElement | null>(null);
   const [puissancePv, setPuissancePv] = useState("");
@@ -344,12 +345,41 @@ const Home = () => {
     setShowObstacleInputs(value === "non");
   };
 
-  const addObstacle = () => {
+  /*const addObstacle = () => {
     setObstacles([...obstacles, { azimuth: 0, height: 0 }]);
+  };*/
+
+  const addObstacle = () => {
+    setObstacles([
+      ...obstacles,
+      {
+        azimuth: 0,
+        height: 0,
+        points: [
+          {
+            azimuth: 0, // Set to a default number
+            height: 0, // Set to a default number
+          },
+        ],
+      },
+    ]);
   };
 
   const removeObstacle = (indexToRemove: number) => {
     setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Function to add points to a specific obstacle
+  const addPointToObstacle = (obstacleIndex: number) => {
+    const updatedObstacles = obstacles.map((obstacle, index) =>
+      index === obstacleIndex
+        ? {
+            ...obstacle,
+            points: [...obstacle.points, { azimuth: 0, height: 0 }], // Add new point with default values
+          }
+        : obstacle
+    );
+    setObstacles(updatedObstacles);
   };
 
   const onObstacleChange = (newObstacles: Obstacle[]) => {
@@ -357,7 +387,7 @@ const Home = () => {
   };
 
   // This function now only takes one argument (the array of obstacles).
-  const handleObstacleChange = (
+  /*const handleObstacleChange = (
     index: number,
     field: "azimuth" | "height",
     value: string
@@ -369,6 +399,39 @@ const Home = () => {
 
     // Update obstacles through the onObstacleChange callback.
     onObstacleChange(updatedObstacles);
+  };*/
+
+  // Function to handle changes in obstacle or point properties
+  const handleObstacleChange = (
+    index: number,
+    field: "azimuth" | "height",
+    value: string
+  ) => {
+    const updatedObstacles = obstacles.map((obstacle, i) =>
+      i === index ? { ...obstacle, [field]: parseFloat(value) } : obstacle
+    );
+    setObstacles(updatedObstacles);
+  };
+
+  const handlePointChange = (
+    obstacleIndex: number,
+    pointIndex: number,
+    field: "azimuth" | "height",
+    value: string
+  ) => {
+    const updatedObstacles = obstacles.map((obstacle, oIndex) =>
+      oIndex === obstacleIndex
+        ? {
+            ...obstacle,
+            points: obstacle.points.map((point, pIndex) =>
+              pIndex === pointIndex
+                ? { ...point, [field]: parseFloat(value) }
+                : point
+            ),
+          }
+        : obstacle
+    );
+    setObstacles(updatedObstacles);
   };
 
   const azimuthList = obstacles.map((obstacle) => obstacle.height).join(",");
@@ -502,6 +565,26 @@ const Home = () => {
     }
   }, [data, error]);
 
+  // Function to remove a point from an obstacle
+  const removePointFromObstacle = (
+    obstacleIndex: number,
+    pointIndex: number
+  ) => {
+    const updatedObstacles = obstacles.map((obstacle, oIndex) =>
+      oIndex === obstacleIndex
+        ? {
+            ...obstacle,
+            points: obstacle.points.filter(
+              (_, pIndex) => pIndex !== pointIndex
+            ),
+          }
+        : obstacle
+    );
+    setObstacles(updatedObstacles);
+  };
+
+  console.log("obstacles", obstacles)
+
   return (
     <div>
       <Header />
@@ -582,7 +665,7 @@ const Home = () => {
                 </div>
               </RadioGroup>
             </div>
-            <div className="flex justify-between items-center font-semibold mt-[30px]">
+            {/*<div className="flex justify-between items-center font-semibold mt-[30px]">
               {showObstacleInputs && (
                 <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline uppercase">
                   Obstacles
@@ -605,7 +688,7 @@ const Home = () => {
                       <h3 className="text-green-600 italic mt-[10px] mb-[-15px]">
                         Obstacle {index + 1}
                       </h3>
-                      {/* Trash Icon Button */}
+
                     </div>
                     <div className="flex justify-between items-center gap-2 mt-[-10px]">
                       <div>
@@ -658,6 +741,103 @@ const Home = () => {
                       >
                         <Trash className="h-5 w-5 mt-4" />
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}*/}
+
+            {showObstacleInputs && (
+              <div>
+                <div className="flex justify-between mt-2 items-center">
+                  {/* Section Header */}
+                  <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline uppercase">
+                    Obstacles
+                  </h2>
+
+                  {/* Button to Add Obstacle */}
+                  <Button
+                    onClick={addObstacle}
+                    className="bg-transparent text-white text-[40px] p-2 hover:text-[#0f427c] hover:bg-gray-200"
+                  >
+                    <Plus className="h-6 w-6 text-[#0f427c]" />
+                  </Button>
+                </div>
+
+                {obstacles.map((obstacle, obstacleIndex) => (
+                  <div
+                    key={obstacleIndex}
+                    className="mb-4 border-b border-gray-300 pb-4"
+                  >
+                    {/* Obstacle Title and Remove Button */}
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold text-[1.1rem] text-[#0f427c]">
+                        Obstacle {obstacleIndex + 1}
+                      </h3>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => removeObstacle(obstacleIndex)}
+                          className="bg-transparent text-white p-2 hover:bg-gray-200 hover:text-red-500"
+                        >
+                          <TrashIcon className="h-5 w-5 text-red-500" />
+                        </Button>
+                        <Button
+                          onClick={() => addPointToObstacle(obstacleIndex)}
+                          className="bg-transparent text-white text-[40px] p-2 hover:text-[#0f427c] hover:bg-gray-200"
+                        >
+                          <Plus className="h-6 w-6 text-[#0f427c]" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Points for this obstacle */}
+                    <div className="">
+                      {obstacle.points.map((point, pointIndex) => (
+                        <div
+                          key={pointIndex}
+                          className="flex gap-4  mb-2 items-center"
+                        >
+                          <div>
+                            <Label>Azimuth</Label>
+                            <Input
+                              name="point-azimuth"
+                              value={point.azimuth}
+                              onChange={(e) =>
+                                handlePointChange(
+                                  obstacleIndex,
+                                  pointIndex,
+                                  "azimuth",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Height</Label>
+                            <Input
+                              name="point-height"
+                              value={point.height}
+                              onChange={(e) =>
+                                handlePointChange(
+                                  obstacleIndex,
+                                  pointIndex,
+                                  "height",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+
+                          <Button
+                            onClick={() =>
+                              removePointFromObstacle(obstacleIndex, pointIndex)
+                            }
+                            className="bg-transparent text-white p-2 hover:bg-gray-200 hover:text-red-500 mt-4"
+                          >
+                            <TrashIcon className="h-5 w-5 text-red-500" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}

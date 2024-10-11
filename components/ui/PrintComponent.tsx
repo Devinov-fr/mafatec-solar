@@ -23,6 +23,7 @@ import Altitude48 from "./Altitude48";
 import Altitude49 from "./Altitude49";
 import Altitude50 from "./Altitude50";
 import Altitude51 from "./Altitude51";
+import SolarDiagramNew from "./SolarDiagramNew";
 
 // Define types for monthly data and inputs
 interface MonthlyData {
@@ -275,6 +276,7 @@ interface Data {
 interface Obstacle {
   azimuth: number; // Assuming azimuth is a number
   height: number; // Assuming height is a number
+  points: { azimuth: number; height: number }[];
 }
 
 interface PrintComponentProps {
@@ -287,17 +289,11 @@ interface PrintComponentProps {
 }
 
 const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
-  ({ data, monthNames, azimut, inclinaison, error, obstacles }, ref) => {
+  ({ data, monthNames, azimut, inclinaison, error, obstacles = [] }, ref) => {
     const [selectedChart, setSelectedChart] = useState<
       "production" | "irradiation" | "variability"
     >("production");
 
-    console.log(
-      "tobstable:",
-      obstacles?.map(
-        (obstacle) => `Azimuth: ${obstacle.azimuth}, Height: ${obstacle.height}`
-      )
-    );
 
     /*const obstacles2 = obstacles?.map(obstacle => {
       
@@ -639,7 +635,7 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
               </div>
               {/*<SolarDiagram
                 latitude={data.inputs.location.latitude}
-                obstacles={obstacles2 || []}  // Adjust based on your implementation
+                obstacles={obstacles || []}  // Adjust based on your implementation
                 onObstacleChange={() => {}} // Adjust based on your implementation
               />*/}
               <div>
@@ -650,38 +646,40 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
                   <div className="flex flex-nowrap">
                     {(String(data.inputs.location.latitude).startsWith("42.") ||
                       data.inputs.location.latitude < 42) && (
-                      <Altitude42 obstacles={obstacles2 || []} />
+                      <Altitude42 obstacles={obstacles || []} />
                     )}
                     {String(data.inputs.location.latitude).startsWith(
                       "43."
-                    ) && <Altitude43 obstacles={obstacles2 || []} />}
+                    ) && <Altitude43 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "44."
-                    ) && <Altitude44 obstacles={obstacles2 || []} />}
+                    ) && <Altitude44 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "45."
-                    ) && <Altitude45 obstacles={obstacles2 || []} />}
+                    ) && <Altitude45 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "46."
-                    ) && <Altitude46 obstacles={obstacles2 || []} />}
+                    ) && <Altitude46 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "47."
-                    ) && <Altitude47 obstacles={obstacles2 || []} />}
+                    ) && <Altitude47 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "48."
-                    ) && <Altitude48 obstacles={obstacles2 || []} />}
+                    ) && <Altitude48 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "49."
-                    ) && <Altitude49 obstacles={obstacles2 || []} />}
+                    ) && <Altitude49 obstacles={obstacles || []} />}
                     {String(data.inputs.location.latitude).startsWith(
                       "50."
-                    ) && <Altitude50 obstacles={obstacles2 || []} />}
+                    ) && <Altitude50 obstacles={obstacles || []} />}
                     {(String(data.inputs.location.latitude).startsWith("51.") ||
                       data.inputs.location.latitude > 51) && (
-                      <Altitude51 obstacles={obstacles2 || []} />
+                      <Altitude51 obstacles={obstacles || []} />
                     )}
                   </div>
                 </div>
+
+                {/*<SolarDiagramNew obstacles={obstacles}/>*/}
               </div>
             </div>
           )}
