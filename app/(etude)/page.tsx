@@ -271,10 +271,16 @@ interface Data {
   };
 }
 
+interface ObstacleError {
+  azimuth: boolean;
+  height: boolean;
+}
+
+
 interface Obstacle {
-  azimuth: number; // Assuming azimuth is a number
-  height: number; // Assuming height is a number
-  points: { azimuth: number; height: number }[];
+  azimuth: number | null;
+  height: number | null;
+  points: { azimuth: number | null; height: number | null }[];
 }
 
 interface AddressAutocompleteProps {
@@ -416,52 +422,46 @@ const Home = () => {
   const handlePointChange = (
     obstacleIndex: number,
     pointIndex: number,
-    field: "azimuth" | "height",
+    field: 'azimuth' | 'height',
     value: string
   ) => {
-    const updatedObstacles = obstacles.map((obstacle, oIndex) =>
-      oIndex === obstacleIndex
-        ? {
-            ...obstacle,
-            points: obstacle.points.map((point, pIndex) =>
-              pIndex === pointIndex
-                ? { ...point, [field]: parseFloat(value) }
-                : point
-            ),
-          }
-        : obstacle
-    );
+    const updatedObstacles = [...obstacles];
+  
+    // Convert the input to a number or set it to null if the value is empty
+    const numericValue = value === '' ? null : parseFloat(value);
+  
+    if (updatedObstacles[obstacleIndex].points[pointIndex]) {
+      updatedObstacles[obstacleIndex].points[pointIndex][field] = numericValue;
+    }
+  
     setObstacles(updatedObstacles);
   };
+  
+  
 
   const azimuthList = obstacles.map((obstacle) => obstacle.height).join(",");
 
   const validateForm = () => {
-    const obstacleErrors =
-      useTerrainShadows === "non"
-        ? obstacles.map((obstacle) => ({
-            azimuth: obstacle.azimuth < 0,
-            height: obstacle.height < 0,
-          }))
-        : [];
-
+    // Specify the type for obstacleErrors
+    const obstacleErrors: ObstacleError[] = []; // Set to an empty array since we want to ignore obstacles
+  
     const newFormErrors = {
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
       azimut: azimut.trim() === "",
-      obstacles: obstacleErrors,
+      obstacles: obstacleErrors, // Set empty errors for obstacles
       inclinaison: inclinaison.trim() === "",
     };
-
+  
     setFormErrors(newFormErrors);
+  
+    // Check for any errors
     return !Object.values(newFormErrors).some((error) =>
-      typeof error === "boolean"
-        ? error
-        : error.some((obstacleError) =>
-            Object.values(obstacleError).some(Boolean)
-          )
+      typeof error === "boolean" ? error : error.some(Boolean)
     );
   };
+  
+  
 
   const handleVisualiserResultats = async () => {
     // Validate form before submission
@@ -801,7 +801,7 @@ const Home = () => {
                             <Label>Azimuth</Label>
                             <Input
                               name="point-azimuth"
-                              value={point.azimuth}
+                              value={point.azimuth ?? ''} 
                               onChange={(e) =>
                                 handlePointChange(
                                   obstacleIndex,
@@ -816,7 +816,7 @@ const Home = () => {
                             <Label>Height</Label>
                             <Input
                               name="point-height"
-                              value={point.height}
+                              value={point.height ?? ''} 
                               onChange={(e) =>
                                 handlePointChange(
                                   obstacleIndex,

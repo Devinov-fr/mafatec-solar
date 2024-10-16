@@ -7,11 +7,12 @@ import SolarDiagramNew from "./SolarDiagramNew";
     obstacles: Array<{ azimuth: string; height: number }>; // azimuth is a string
   }*/
 
-interface Obstacle {
-  azimuth: number; // Assuming azimuth is a number
-  height: number; // Assuming height is a number
-  points: { azimuth: number; height: number }[];
-}
+    interface Obstacle {
+      azimuth: number | null;
+      height: number | null;
+      points: { azimuth: number | null; height: number | null }[];
+    }
+    
 
 interface ObstaclesProps {
   obstacles?: Obstacle[];

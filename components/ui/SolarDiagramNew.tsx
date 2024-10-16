@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 
 interface Point {
-  azimuth: number;
-  height: number;
+  azimuth: number | null;
+  height: number | null;
 }
 
 interface Obstacle {
@@ -14,52 +14,75 @@ interface SolarDiagramNewProps {
   obstacles: Obstacle[]; // Add props type definition
 }
 
-// Sorting function that orders points by height
-const sortPoints = (points: Point[]) => {
-  // Ensure the first point starts with height 0
-  if (points[0].height !== 0) {
-    points.unshift({ azimuth: points[0].azimuth, height: 0 });
-  }
 
-  // Ensure the last point ends with height 0
-  if (points[points.length - 1].height !== 0) {
-    points.push({ azimuth: points[points.length - 1].azimuth, height: 0 });
-  }
+// Sorting function that orders points by height for all obstacles
+const sortPoints = (obstacles: Obstacle[]) => {
+  console.log("all of the obstacles", obstacles);
+  return obstacles.map((obstacle, index) => {
+    const points = [...obstacle.points]; // Make a copy of the points
+    console.log(`These are the points for Obstacle ${index + 1}:`, points);
 
-  // Check if the number of points is odd
-  if (points.length % 2 !== 0) {
-    // Add a new point with the last azimuth and height of 0
-    const lastAzimuth = points[points.length - 1].azimuth;
-    points.push({ azimuth: lastAzimuth, height: 0 });
-  }
+    // Si c'est le premier obstacle et qu'il ne commence pas par une hauteur de 0
+    if (index === 0 && points.length > 0 && points[0].height !== 0) {
+      points.unshift({ azimuth: points[0].azimuth, height: 0 }); // Add a point with height 0 and same azimuth
+    }
 
-  // Split points into two groups if the number of points is even
-  let sortedPoints: Point[] = [];
-  if (points.length % 2 === 0) {
-    const midpoint = points.length / 2;
-    const firstHalf = points.slice(0, midpoint);
-    const secondHalf = points.slice(midpoint);
+    // Ensure the first point starts with height 0 (general rule)
+    if (points[0].height !== 0) {
+      points.unshift({ azimuth: 0, height: 0 });
+    }
 
-    // Sort the first half in ascending order by height
-    const sortedFirstHalf = firstHalf.sort((a, b) => a.height - b.height);
-    // Sort the second half in descending order by height
-    const sortedSecondHalf = secondHalf.sort((a, b) => b.height - a.height);
+    // Ensure the last point ends with height 0 (only if index !== 0)
+    if (index !== 0 && points[points.length - 1].height !== 0) {
+      points.push({ azimuth: points[points.length - 1].azimuth ?? 0, height: 0 });
+    }
 
-    // Concatenate the two sorted halves
-    sortedPoints = [...sortedFirstHalf, ...sortedSecondHalf];
+    // Si le dernier obstacle n'a pas un point de hauteur 0, l'ajouter
+    if (index === obstacles.length - 1 && points[points.length - 1].height !== 0) {
+      points.push({ azimuth: points[points.length - 1].azimuth, height: 0 });
+    }
 
-    // Log the sorted points for debugging
-    console.log("First Half (Ascending by Height):", sortedFirstHalf);
-    console.log("Second Half (Descending by Height):", sortedSecondHalf);
-  } else {
-    // If the number of points is odd, return the points sorted by height in ascending order
-    sortedPoints = points.sort((a, b) => a.height - b.height);
-  }
+    // Add extra point if the number of points is odd
+    if (points.length % 2 !== 0) {
+      const lastAzimuth = points[points.length - 1].azimuth ?? 0;
+      points.push({ azimuth: lastAzimuth, height: 0 });
+    }
 
-  return sortedPoints;
+    // Clamp azimuth values to a minimum of 30
+    points.forEach((point) => {
+      if (point.azimuth !== null && point.azimuth < 30) {
+        point.azimuth = 30;
+      }
+    });
+
+    let sortedPoints: Point[] = [];
+
+    if (points.length % 2 === 0) {
+      const midpoint = points.length / 2;
+      const firstHalf = points.slice(0, midpoint);
+      const secondHalf = points.slice(midpoint);
+
+      // Sort halves by height
+      const sortedFirstHalf = firstHalf.sort((a, b) => (a.height ?? 0) - (b.height ?? 0));
+      const sortedSecondHalf = secondHalf.sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
+
+      sortedPoints = [...sortedFirstHalf, ...sortedSecondHalf];
+    } else {
+      sortedPoints = points.sort((a, b) => (a.height ?? 0) - (b.height ?? 0));
+    }
+
+    return {
+      obstacleIndex: index + 1,
+      sortedPoints,
+    };
+  });
 };
 
-const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({ obstacles: initialObstacles }) => {
+
+
+const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({
+  obstacles: initialObstacles,
+}) => {
   const [obstacles, setObstacles] = useState<Obstacle[]>([]); // Initialize obstacles from props
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -67,93 +90,82 @@ const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({ obstacles: initialObs
   const height = 640;
   const padding = 55;
 
-  const xScale = d3.scaleLinear().domain([30, 330]).range([padding, width - padding]);
-  const yScale = d3.scaleLinear().domain([0, 90]).range([height - 70, 70]);
+  const xScale = d3
+    .scaleLinear()
+    .domain([30, 330])
+    .range([padding, width - padding]);
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, 90])
+    .range([height - 70, 70]);
 
-  useEffect(() => {
-    // Set obstacles from props when component mounts
-    setObstacles(initialObstacles);
-  }, [initialObstacles]);
+    useEffect(() => {
+      // Set obstacles from props when component mounts
+      setObstacles(initialObstacles);
+    }, [initialObstacles]);
 
-  const drawObstacles = (
-    svg: d3.Selection<SVGSVGElement, unknown, null, undefined>
-  ) => {
-    svg.selectAll("*").remove(); // Clear previous drawing
-
-    // Draw the grid
-    const xAxisGrid = d3.axisBottom(xScale).ticks(5);
-    const yAxisGrid = d3.axisLeft(yScale).ticks(10);
-
-// Append x-axis and hide gridlines
-svg.append("g")
-  .attr("class", "x-axis")
-  .attr("transform", `translate(0,${height - padding})`)
-  .call(xAxisGrid)
-  .selectAll("line")   // Apply to gridlines if present
-  .style("display", "none");  // Completely hide gridlines
-
-// Append y-axis and hide gridlines
-svg.append("g")
-  .attr("class", "y-axis")
-  .attr("transform", `translate(${padding},0)`)
-  .call(yAxisGrid)
-  .selectAll("line")   // Apply to gridlines if present
-  .style("display", "none");  // Completely hide gridlines
-
-
-
-    // Draw grid lines
-    svg.selectAll(".x-grid").data(xScale.ticks(10)).enter().append("line")
-      .attr("class", "x-grid")
-      .attr("x1", (d) => xScale(d))
-      .attr("x2", (d) => xScale(d))
-      .attr("y1", padding)
-      .attr("y2", height - padding)
-      .attr("stroke", "transparent")
-      .attr("stroke-width", 1);
-
-    svg.selectAll(".y-grid").data(yScale.ticks(10)).enter().append("line")
-      .attr("class", "y-grid")
-      .attr("y1", (d) => yScale(d))
-      .attr("y2", (d) => yScale(d))
-      .attr("x1", padding)
-      .attr("x2", width - padding)
-      .attr("stroke", "transparent")
-      .attr("stroke-width", 1);
-
-    // Draw obstacles
-    obstacles.forEach((obstacle) => {
-      const points = sortPoints(obstacle.points); // Sort the points for each obstacle
-      console.log("test test 1")
-      console.log("sortedPoints", points)
-      // Draw lines between points
-      for (let i = 0; i < points.length - 1; i++) {
-        svg.append("line")
-          .attr("x1", xScale(points[i].azimuth))
-          .attr("y1", yScale(points[i].height))
-          .attr("x2", xScale(points[i + 1].azimuth))
-          .attr("y2", yScale(points[i + 1].height))
-          .attr("stroke", "transparent")
-          .attr("stroke-width", 2);
-      }
-
-      // Draw points
-      points.forEach((point) => {
-        svg.append("circle")
-          .attr("cx", xScale(point.azimuth))
-          .attr("cy", yScale(point.height))
-          .attr("r", 5)
-          .attr("fill", "transparent");
+    const drawObstacles = (
+      svg: d3.Selection<SVGSVGElement, unknown, null, undefined>
+    ) => {
+      svg.selectAll("*").remove(); // Clear previous drawing
+    
+      const sortedObstacles = sortPoints(obstacles); // Get all sorted points for each obstacle
+    
+      sortedObstacles.forEach(({ obstacleIndex, sortedPoints }, index) => {
+        console.log(`Drawing obstacle ${obstacleIndex} with points`, sortedPoints);
+    
+        // Draw lines between points of the current obstacle
+        for (let i = 0; i < sortedPoints.length - 1; i++) {
+          svg
+            .append("line")
+            .attr("x1", xScale(sortedPoints[i].azimuth ?? 0))
+            .attr("y1", yScale(sortedPoints[i].height ?? 0))
+            .attr("x2", xScale(sortedPoints[i + 1].azimuth ?? 0))
+            .attr("y2", yScale(sortedPoints[i + 1].height ?? 0))
+            .attr("stroke", "lightgray")
+            .attr("stroke-width", 2);
+        }
+    
+        // Draw points of the current obstacle
+        sortedPoints.forEach((point) => {
+          svg
+            .append("circle")
+            .attr("cx", xScale(point.azimuth ?? 0))
+            .attr("cy", yScale(point.height ?? 0))
+            .attr("r", 5)
+            .attr("fill", "transparent");
+        });
+    
+        // Fill area for the current obstacle
+        const areaPoints = sortedPoints.map(
+          (p) => [xScale(p.azimuth ?? 0), yScale(p.height ?? 0)] as [number, number]
+        );
+        svg
+          .append("polygon")
+          .attr("points", areaPoints.map((p) => p.join(",")).join(" "))
+          .attr("fill", "lightgray")
+          .attr("opacity", 0.5);
+    
+        // Connect the last point of the previous obstacle to the first point of the current one
+        if (index > 0) {
+          const previousObstacle = sortedObstacles[index - 1].sortedPoints;
+          const lastPointOfPrevious = previousObstacle[previousObstacle.length - 1];
+          const firstPointOfCurrent = sortedPoints[0];
+    
+          svg
+            .append("line")
+            .attr("x1", xScale(lastPointOfPrevious.azimuth ?? 0))
+            .attr("y1", yScale(lastPointOfPrevious.height ?? 0))
+            .attr("x2", xScale(firstPointOfCurrent.azimuth ?? 0))
+            .attr("y2", yScale(firstPointOfCurrent.height ?? 0))
+            .attr("stroke", "lightgray")
+            .attr("stroke-width", 2);
+        }
       });
-
-      // Fill area
-      const areaPoints = points.map(p => [xScale(p.azimuth), yScale(p.height)] as [number, number]);
-      svg.append("polygon")
-        .attr("points", areaPoints.map(p => p.join(",")).join(" "))
-        .attr("fill", "lightgray")
-        .attr("opacity", 0.5);
-    });
-  };
+    };
+    
+    
+  
 
   // Redraw obstacles when they change
   useEffect(() => {
@@ -163,9 +175,13 @@ svg.append("g")
   }, [obstacles]);
 
   return (
-    <div className="mt-[-0px] ml-[5px]">
-
-      <svg ref={svgRef} width={width} height={height} style={{ display: "block" }} />
+    <div className="mt-[4px] ml-[0px]">
+      <svg
+        ref={svgRef}
+        width={width}
+        height={height}
+        style={{ display: "block" }}
+      />
     </div>
   );
 };

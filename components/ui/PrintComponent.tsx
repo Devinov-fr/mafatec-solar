@@ -339,53 +339,72 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
       })
     );
 
-    // Function to generate PDF
-    const generatePDF = async () => {
-      const element = ref as React.RefObject<HTMLDivElement>;
-      const currentElement = element.current;
 
-      if (!currentElement) return;
+// Function to generate PDF
 
-      // Set a larger width to simulate desktop view
-      currentElement.style.width = "1200px"; // Set a fixed width for desktop layout
+const generatePDF = async () => {
+  const element = ref as React.RefObject<HTMLDivElement>;
+  const currentElement = element.current;
 
-      // Generate the canvas
-      const canvas = await html2canvas(currentElement, {
-        width: 1200, // Simulate larger screen width
-      });
+  if (!currentElement) return;
 
-      // Revert to the original width after the screenshot is taken
-      currentElement.style.width = "";
+  // Store the initial visibility state of the elements
+  const hiddenElements = Array.from(
+    currentElement.querySelectorAll<HTMLElement>('.hidden-pdf')
+  );
+  
+  // Temporarily make hidden elements visible
+  hiddenElements.forEach((el) => {
+    el.style.display = 'block';
+  });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+  // Set a larger width to simulate desktop view
+  currentElement.style.width = "1200px"; // Set a fixed width for desktop layout
 
-      const imgWidth = 190;
-      const pageHeight = pdf.internal.pageSize.height;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+  // Generate the canvas
+  const canvas = await html2canvas(currentElement, {
+    width: 1200, // Simulate larger screen width
+    useCORS: true, // Allow cross-origin resource sharing for images
+    logging: true, // Enable logging to debug issues
+  });
 
-      let position = 0;
+  // Revert to the original width and visibility after the screenshot is taken
+  currentElement.style.width = "";
+  hiddenElements.forEach((el) => {
+    el.style.display = 'none';
+  });
 
-      // Add the image to the PDF
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 
-      // Add extra pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+  const imgWidth = 190;
+  const pageHeight = pdf.internal.pageSize.height;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  let heightLeft = imgHeight;
 
-      // Save the generated PDF
-      pdf.save("report.pdf");
-    };
+  let position = 0;
+
+  // Add the image to the PDF
+  pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+
+  // Add extra pages if needed
+  while (heightLeft >= 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  // Save the generated PDF
+  pdf.save("report.pdf");
+};
+
+
 
     return (
       <div className="">
@@ -406,6 +425,9 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
               className="w-[20%] h-auto mt-4 "
             />
           </div>
+          <div className="hidden-pdf" style={{ display: "none" }}>
+  <p>This content is hidden on the web but will appear in the PDF.</p>
+</div>
           {data && (
             <div>
               <div className="h-full z-10 border-t-gray-500 lg:px-0 px-10">
