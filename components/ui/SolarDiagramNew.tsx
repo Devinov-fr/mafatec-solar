@@ -28,9 +28,9 @@ const sortPoints = (obstacles: Obstacle[]) => {
     }
 
     // Ensure the first point starts with height 0 (general rule)
-    if (points[0].height !== 0) {
+    /*if (points[0].height !== 0) {
       points.unshift({ azimuth: 0, height: 0 });
-    }
+    }*/
 
     // Ensure the last point ends with height 0 (only if index !== 0)
     if (index !== 0 && points[points.length - 1].height !== 0) {
