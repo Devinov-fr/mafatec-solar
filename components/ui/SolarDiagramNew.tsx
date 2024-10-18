@@ -33,9 +33,11 @@ const sortPoints = (obstacles: Obstacle[]) => {
     }*/
 
     // Ensure the last point ends with height 0 (only if index !== 0)
-    if (index !== 0 && points[points.length - 1].height !== 0) {
+    /*if (index !== 0 && points[points.length - 1].height !== 0) {
       points.push({ azimuth: points[points.length - 1].azimuth ?? 0, height: 0 });
-    }
+    }*/
+
+      
 
     // Si le dernier obstacle n'a pas un point de hauteur 0, l'ajouter
     if (index === obstacles.length - 1 && points[points.length - 1].height !== 0) {
@@ -45,7 +47,8 @@ const sortPoints = (obstacles: Obstacle[]) => {
     // Add extra point if the number of points is odd
     if (points.length % 2 !== 0) {
       const lastAzimuth = points[points.length - 1].azimuth ?? 0;
-      points.push({ azimuth: lastAzimuth, height: 0 });
+      const lastAzimuthHeight = points[points.length - 1].height ?? 0;
+      points.push({ azimuth: lastAzimuth, height: lastAzimuthHeight });
     }
 
     // Clamp azimuth values to a minimum of 30
@@ -110,6 +113,7 @@ const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({
       svg.selectAll("*").remove(); // Clear previous drawing
     
       const sortedObstacles = sortPoints(obstacles); // Get all sorted points for each obstacle
+      const heightOffset = 1; // Adding an offset to the height
     
       sortedObstacles.forEach(({ obstacleIndex, sortedPoints }, index) => {
         console.log(`Drawing obstacle ${obstacleIndex} with points`, sortedPoints);
@@ -136,10 +140,14 @@ const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({
             .attr("fill", "transparent");
         });
     
-        // Fill area for the current obstacle
-        const areaPoints = sortedPoints.map(
-          (p) => [xScale(p.azimuth ?? 0), yScale(p.height ?? 0)] as [number, number]
-        );
+        // Fill area for the current obstacle by adding base points at height 0
+        const areaPoints = [
+          ...sortedPoints.map((p) => [xScale(p.azimuth ?? 0), yScale(p.height ?? 0)] as [number, number]),
+          // Add bottom points to close the shape (height 0)
+          [xScale(sortedPoints[sortedPoints.length - 1].azimuth ?? 0), yScale(0)], // Bottom right
+          [xScale(sortedPoints[0].azimuth ?? 0), yScale(0)] // Bottom left
+        ];
+    
         svg
           .append("polygon")
           .attr("points", areaPoints.map((p) => p.join(",")).join(" "))
@@ -160,9 +168,26 @@ const SolarDiagramNew: React.FC<SolarDiagramNewProps> = ({
             .attr("y2", yScale(firstPointOfCurrent.height ?? 0))
             .attr("stroke", "lightgray")
             .attr("stroke-width", 2);
+    
+          // Fill the area between two obstacles by adding bottom points at height 0
+          const connectingPolygonPoints = [
+            [xScale(lastPointOfPrevious.azimuth ?? 0), yScale(lastPointOfPrevious.height ?? 0)], // Top left (previous)
+            [xScale(firstPointOfCurrent.azimuth ?? 0), yScale(firstPointOfCurrent.height ?? 0)], // Top right (current)
+            [xScale(firstPointOfCurrent.azimuth ?? 0), yScale(0)], // Bottom right (current)
+            [xScale(lastPointOfPrevious.azimuth ?? 0), yScale(0)] // Bottom left (previous)
+          ];
+    
+          svg
+            .append("polygon")
+            .attr("points", connectingPolygonPoints.map((p) => p.join(",")).join(" "))
+            .attr("fill", "lightgray")
+            .attr("opacity", 0.5); // Lighter opacity for connecting area
         }
       });
     };
+    
+    
+    
     
     
   

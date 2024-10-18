@@ -274,9 +274,9 @@ interface Data {
 }
 
 interface Obstacle {
-  azimuth: number; // Assuming azimuth is a number
-  height: number; // Assuming height is a number
-  points: { azimuth: number; height: number }[];
+  azimuth: number | null;
+  height: number | null;
+  points: { azimuth: number | null; height: number | null }[];
 }
 
 interface PrintComponentProps {
@@ -293,7 +293,6 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
     const [selectedChart, setSelectedChart] = useState<
       "production" | "irradiation" | "variability"
     >("production");
-
 
     /*const obstacles2 = obstacles?.map(obstacle => {
       
@@ -339,72 +338,69 @@ const PrintComponent = forwardRef<HTMLDivElement, PrintComponentProps>(
       })
     );
 
+    // Function to generate PDF
 
-// Function to generate PDF
+    const generatePDF = async () => {
+      const element = ref as React.RefObject<HTMLDivElement>;
+      const currentElement = element.current;
 
-const generatePDF = async () => {
-  const element = ref as React.RefObject<HTMLDivElement>;
-  const currentElement = element.current;
+      if (!currentElement) return;
 
-  if (!currentElement) return;
+      // Store the initial visibility state of the elements
+      const hiddenElements = Array.from(
+        currentElement.querySelectorAll<HTMLElement>(".hidden-pdf")
+      );
 
-  // Store the initial visibility state of the elements
-  const hiddenElements = Array.from(
-    currentElement.querySelectorAll<HTMLElement>('.hidden-pdf')
-  );
-  
-  // Temporarily make hidden elements visible
-  hiddenElements.forEach((el) => {
-    el.style.display = 'block';
-  });
+      // Temporarily make hidden elements visible
+      hiddenElements.forEach((el) => {
+        el.style.display = "block";
+      });
 
-  // Set a larger width to simulate desktop view
-  currentElement.style.width = "1200px"; // Set a fixed width for desktop layout
+      // Set a larger width to simulate desktop view
+      currentElement.style.width = "1200px"; // Set a fixed width for desktop layout
 
-  // Generate the canvas
-  const canvas = await html2canvas(currentElement, {
-    width: 1200, // Simulate larger screen width
-    useCORS: true, // Allow cross-origin resource sharing for images
-    logging: true, // Enable logging to debug issues
-  });
+      // Generate the canvas
+      const canvas = await html2canvas(currentElement, {
+        width: 1200, // Simulate larger screen width
+        useCORS: true, // Allow cross-origin resource sharing for images
+        logging: true, // Enable logging to debug issues
+      });
 
-  // Revert to the original width and visibility after the screenshot is taken
-  currentElement.style.width = "";
-  hiddenElements.forEach((el) => {
-    el.style.display = 'none';
-  });
+      // Revert to the original width and visibility after the screenshot is taken
+      currentElement.style.width = "";
+      hiddenElements.forEach((el) => {
+        el.style.display = "none";
+      });
 
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
-  const imgWidth = 190;
-  const pageHeight = pdf.internal.pageSize.height;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  let heightLeft = imgHeight;
+      const imgWidth = 190;
+      const pageHeight = pdf.internal.pageSize.height;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
 
-  let position = 0;
+      let position = 0;
 
-  // Add the image to the PDF
-  pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
+      // Add the image to the PDF
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
 
-  // Add extra pages if needed
-  while (heightLeft >= 0) {
-    position = heightLeft - imgHeight;
-    pdf.addPage();
-    pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-  }
+      // Add extra pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
 
-  // Save the generated PDF
-  pdf.save("report.pdf");
-};
-
-
+      // Save the generated PDF
+      pdf.save("report.pdf");
+    };
 
     return (
       <div className="">
@@ -425,9 +421,9 @@ const generatePDF = async () => {
               className="w-[20%] h-auto mt-4 "
             />
           </div>
-          <div className="hidden-pdf" style={{ display: "none" }}>
-  <p>This content is hidden on the web but will appear in the PDF.</p>
-</div>
+          {/*<div className="hidden-pdf" style={{ display: "none" }}>
+            <p>This content is hidden on the web but will appear in the PDF.</p>
+          </div>*/}
           {data && (
             <div>
               <div className="h-full z-10 border-t-gray-500 lg:px-0 px-10">
@@ -603,7 +599,7 @@ const generatePDF = async () => {
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#ff8b01ff" name="kWh"/>
+                            <Bar dataKey="value" fill="#ff8b01ff" name="kWh" />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -623,7 +619,11 @@ const generatePDF = async () => {
                                 },
                               ]}
                             />
-                            <Bar dataKey="value" fill="#ffc700ff" name="kWh/m²"/>
+                            <Bar
+                              dataKey="value"
+                              fill="#ffc700ff"
+                              name="kWh/m²"
+                            />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -643,11 +643,7 @@ const generatePDF = async () => {
                                 },
                               ]}
                             />
-                            <Bar
-                              dataKey="value"
-                              fill="#0faa58ff"
-                              name="kWh"
-                            />
+                            <Bar dataKey="value" fill="#0faa58ff" name="kWh" />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -664,7 +660,8 @@ const generatePDF = async () => {
                 <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
                   Diagramme solaire avec masques d'ombrage
                 </h2>
-                <div className="flex justify-center mx-auto w-full lg:w-[75%] overflow-x-auto">
+                <div className="flex justify-center mx-auto w-full lg:w-[75%] overflow-x-auto lg:overflow-x-visible">
+
                   <div className="flex flex-nowrap">
                     {(String(data.inputs.location.latitude).startsWith("42.") ||
                       data.inputs.location.latitude < 42) && (
