@@ -582,31 +582,30 @@ const Home = () => {
 
   console.log("obstacles", obstacles);
 
-  const handleAzimutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAzimutChange = (e: any) => {
     const rawValue = e.target.value; // Get the raw string input
     setError(""); // Clear the error initially
-  
+
     if (rawValue === "-" || rawValue === "") {
       // Allow user to type just '-' or clear input
       setAzimut(rawValue);
       return;
     }
-  
+
     let value = Number(rawValue); // Convert to number for validation
     if (isNaN(value)) value = 0; // Handle invalid input
-  
+
     if (value > 180 || value < -180) {
       // Set error if the value is out of range
-      setError("L'azimut doit être compris entre -180° et 180°.");
+      setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
     }
-  
+
     // Clamp values to the range [-180, 180]
     if (value > 180) value = 180;
     if (value < -180) value = -180;
-  
+
     setAzimut(value.toString()); // Convert back to string before updating state
   };
-  
 
   return (
     <div>
