@@ -25,6 +25,7 @@ import PrintComponent from "@/components/ui/PrintComponent";
 import { Plus, Trash, TrashIcon } from "lucide-react";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import PrintComponentTwo from "@/components/ui/PrintComponentTwo";
 
 // Dynamically import the Map component without SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), { ssr: false });
@@ -276,7 +277,6 @@ interface ObstacleError {
   height: boolean;
 }
 
-
 interface Obstacle {
   azimuth: number | null;
   height: number | null;
@@ -295,7 +295,7 @@ const Home = () => {
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
   const [useTerrainShadows, setUseTerrainShadows] = useState("oui");
   const [obstacles, setObstacles] = useState<Obstacle[]>([
-    { azimuth: 0, height: 0, points: [{azimuth: 0, height: 0}] },
+    { azimuth: 0, height: 0, points: [{ azimuth: 0, height: 0 }] },
   ]);
   const componentRef = useRef<HTMLDivElement | null>(null);
   const [puissancePv, setPuissancePv] = useState("");
@@ -304,6 +304,7 @@ const Home = () => {
   const [azimut, setAzimut] = useState("0");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
+  const [errorAzimuth, setErrorAzimuth] = useState("");
   const [formErrors, setFormErrors] = useState({
     puissancePv: false,
     systemLosses: false,
@@ -422,29 +423,27 @@ const Home = () => {
   const handlePointChange = (
     obstacleIndex: number,
     pointIndex: number,
-    field: 'azimuth' | 'height',
+    field: "azimuth" | "height",
     value: string
   ) => {
     const updatedObstacles = [...obstacles];
-  
+
     // Convert the input to a number or set it to null if the value is empty
-    const numericValue = value === '' ? null : parseFloat(value);
-  
+    const numericValue = value === "" ? null : parseFloat(value);
+
     if (updatedObstacles[obstacleIndex].points[pointIndex]) {
       updatedObstacles[obstacleIndex].points[pointIndex][field] = numericValue;
     }
-  
+
     setObstacles(updatedObstacles);
   };
-  
-  
 
   const azimuthList = obstacles.map((obstacle) => obstacle.height).join(",");
 
   const validateForm = () => {
     // Specify the type for obstacleErrors
     const obstacleErrors: ObstacleError[] = []; // Set to an empty array since we want to ignore obstacles
-  
+
     const newFormErrors = {
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
@@ -452,16 +451,14 @@ const Home = () => {
       obstacles: obstacleErrors, // Set empty errors for obstacles
       inclinaison: inclinaison.trim() === "",
     };
-  
+
     setFormErrors(newFormErrors);
-  
+
     // Check for any errors
     return !Object.values(newFormErrors).some((error) =>
       typeof error === "boolean" ? error : error.some(Boolean)
     );
   };
-  
-  
 
   const handleVisualiserResultats = async () => {
     // Validate form before submission
@@ -583,7 +580,33 @@ const Home = () => {
     setObstacles(updatedObstacles);
   };
 
-  console.log("obstacles", obstacles)
+  console.log("obstacles", obstacles);
+
+  const handleAzimutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value; // Get the raw string input
+    setError(""); // Clear the error initially
+  
+    if (rawValue === "-" || rawValue === "") {
+      // Allow user to type just '-' or clear input
+      setAzimut(rawValue);
+      return;
+    }
+  
+    let value = Number(rawValue); // Convert to number for validation
+    if (isNaN(value)) value = 0; // Handle invalid input
+  
+    if (value > 180 || value < -180) {
+      // Set error if the value is out of range
+      setError("L'azimut doit être compris entre -180° et 180°.");
+    }
+  
+    // Clamp values to the range [-180, 180]
+    if (value > 180) value = 180;
+    if (value < -180) value = -180;
+  
+    setAzimut(value.toString()); // Convert back to string before updating state
+  };
+  
 
   return (
     <div>
@@ -699,7 +722,7 @@ const Home = () => {
                           type="number"
                           className={`mt-0 ${
                             formErrors.obstacles?.[index]?.azimuth
-                              ? "border-red-500"
+                              ? "border-red-500 border-2"
                               : ""
                           }`}
                           placeholder="Azimut °"
@@ -721,7 +744,7 @@ const Home = () => {
                           type="number"
                           className={`mt-0 ${
                             formErrors.obstacles?.[index]?.height
-                              ? "border-red-500"
+                              ? "border-red-500 border-2"
                               : ""
                           }`}
                           placeholder="Hauteur °"
@@ -801,7 +824,7 @@ const Home = () => {
                             <Label>Azimuth</Label>
                             <Input
                               name="point-azimuth"
-                              value={point.azimuth ?? ''} 
+                              value={point.azimuth ?? ""}
                               onChange={(e) =>
                                 handlePointChange(
                                   obstacleIndex,
@@ -816,7 +839,7 @@ const Home = () => {
                             <Label>Height</Label>
                             <Input
                               name="point-height"
-                              value={point.height ?? ''} 
+                              value={point.height ?? ""}
                               onChange={(e) =>
                                 handlePointChange(
                                   obstacleIndex,
@@ -859,7 +882,7 @@ const Home = () => {
               </Label>
               <Input
                 className={`mt-2 ${
-                  formErrors.puissancePv ? "border-red-500" : ""
+                  formErrors.puissancePv ? "border-red-500 border-2" : ""
                 }`}
                 value={puissancePv}
                 onChange={(e) => setPuissancePv(e.target.value)}
@@ -872,7 +895,7 @@ const Home = () => {
               </Label>
               <Input
                 className={`mt-2 ${
-                  formErrors.systemLosses ? "border-red-500" : ""
+                  formErrors.systemLosses ? "border-red-500 border-2" : ""
                 }`}
                 value={systemLosses}
                 onChange={(e) => setSystemLosses(e.target.value)}
@@ -889,7 +912,7 @@ const Home = () => {
                 </Label>
                 <Input
                   className={`mt-2 ${
-                    formErrors.inclinaison ? "border-red-500 " : ""
+                    formErrors.inclinaison ? "border-red-500 border-2 " : ""
                   }`}
                   value={inclinaison}
                   onChange={(e) => setInclinaison(e.target.value)}
@@ -901,17 +924,18 @@ const Home = () => {
                   Azimut [°] <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  className={`mt-2 ${
-                    formErrors.azimut ? "border-red-500" : ""
-                  }`}
-                  value={azimut}
-                  onChange={(e) => setAzimut(e.target.value)}
+                  className={`mt-2 ${error || errorAzimuth ? "border-red-500 border-2" : ""}`}
+                  value={azimut} // Keep as string for the input
+                  onChange={handleAzimutChange}
                   placeholder="Azimut"
                 />
               </div>
             </div>
             {error && error === "Veuillez remplir les champs manquants." && (
               <p className="text-red-500 mt-2">{error}</p>
+            )}
+            {errorAzimuth && (
+              <p className="text-red-500 mt-2">{errorAzimuth}</p>
             )}
           </div>
         </main>
@@ -925,7 +949,7 @@ const Home = () => {
         </div>
 
         {data && !error && (
-          <PrintComponent
+          <PrintComponentTwo
             data={data}
             monthNames={monthNames}
             azimut={azimut}
