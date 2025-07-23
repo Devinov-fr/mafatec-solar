@@ -484,7 +484,7 @@ const Home = () => {
 
     try {
       const response = await fetch(
-        "https://solaire.mafatec.com:8080/calculate",
+        "http://192.162.69.187:8080/pvgis/calculate",
         {
           method: "POST",
           headers: {
