@@ -22,7 +22,8 @@ import Altitude50 from "./Altitude50";
 import Altitude51 from "./Altitude51";
 import ReactToPrint from "react-to-print";
 
-// Define types for monthly data and inputs
+// ---------------- Types ----------------
+
 interface MonthlyData {
   E_m: number;
   "H(i)_m": number;
@@ -276,6 +277,15 @@ interface Obstacle {
   points: { azimuth: number | null; height: number | null }[];
 }
 
+// ✅ même structure que dans RoofPlanner
+export interface Panel {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 // ✅ Interface pour les résultats de chute de tension
 interface VoltageDropResult {
   vdrop: string | null;
@@ -290,11 +300,16 @@ interface PrintComponentProps {
   inclinaison: string;
   error?: string;
   obstacles?: Obstacle[];
+
   // ✅ Résultats de la chute de tension (optionnel)
   voltageDropResult?: VoltageDropResult | null;
+
+  // ✅ Nouveau : panneaux calpinage
+  panels?: Panel[];
 }
 
-// Forward ref component
+// ---------------- Composant ----------------
+
 const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
   (
     {
@@ -305,6 +320,7 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
       error,
       obstacles = [],
       voltageDropResult,
+      panels = [],
     },
     ref
   ) => {
@@ -350,6 +366,7 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
             content={() => componentRef.current}
           />
         </div>
+
         <div ref={ref} style={{ position: "relative" }}>
           <div className="flex justify-center mb-6">
             <img
@@ -489,32 +506,89 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                         <ul className="text-xs text-slate-700 space-y-1.5">
                           <li>
                             <span className="font-semibold text-slate-900">
-                              Chute de tension (ΔU) :
+                              Chute de tension :
                             </span>{" "}
                             {voltageDropResult.vdrop ?? "–"} V
                           </li>
                           <li>
                             <span className="font-semibold text-slate-900">
-                              ΔU / U :
+                              Pourcentage de chute de tension :
                             </span>{" "}
                             {voltageDropResult.vdropPct ?? "–"} %
                           </li>
                           <li>
                             <span className="font-semibold text-slate-900">
-                              Résistance équivalente :
+                              Résistance de fil :
                             </span>{" "}
                             {voltageDropResult.rwire ?? "–"} Ω
                           </li>
                         </ul>
                       ) : (
                         <p className="text-xs text-slate-500">
-                          Aucun calcul de chute de tension n&apos;a été
-                          renseigné pour cette étude.
+                          Aucun calcul de chute de tension n&apos;a été renseigné
+                          pour cette étude.
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
+
+                {/* ================== VUE MAISON + PANNEAUX ================== */}
+                <div className="lg:px-16 lg:pt-4 lg:pb-2 px-0 pt-4 pb-2">
+                  <h2 className="text-lg font-bold text-[#0f459e] mb-3">
+                    Calepinage – Vue toiture
+                  </h2>
+
+                  {panels.length > 0 ? (
+                    <div className="flex justify-center">
+                      <div
+                        className="relative w-full max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-md bg-slate-100"
+                        style={{ aspectRatio: "14 / 10" }}
+                      >
+                        {/* image de la maison */}
+                        <img
+                          src="/toit-maison.jpg"
+                          alt="Toit de la maison"
+                          className="w-full h-full object-cover pointer-events-none select-none"
+                        />
+
+                        {/* panneaux positionnés au même endroit que dans RoofPlanner */}
+                        {panels.map((panel) => (
+                          <div
+                            key={panel.id}
+                            className="absolute"
+                            style={{
+                              width: panel.width,
+                              height: panel.height,
+                              left: panel.x,
+                              top: panel.y,
+                            }}
+                          >
+                            {/* style panneau full black */}
+                            <div className="w-full h-full rounded-[4px] bg-gradient-to-br from-[#020617] via-black to-[#020617] border border-black/70 shadow-[0_4px_10px_rgba(0,0,0,0.6)] relative overflow-hidden">
+                              {/* reflet */}
+                              <div className="absolute inset-x-[-15%] -top-1/3 h-1/2 bg-gradient-to-b from-white/22 via-white/6 to-transparent rotate-[-14deg] pointer-events-none" />
+                              {/* grille légère */}
+                              <div className="absolute inset-[3px] opacity-35 grid grid-cols-3 grid-rows-4 gap-[1px]">
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="border border-slate-800/70 bg-black"
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Aucun calpinage n&apos;a été défini pour cette étude.
+                    </p>
+                  )}
+                </div>
+                {/* ================== FIN VUE MAISON ================== */}
 
                 {/* Monthly data section */}
                 <div className="lg:px-16 lg:py-6 px-0 py-4 flex lg:flex-col flex-col justify-between">

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
+
 import {
   BarChart,
   Bar,
@@ -16,19 +17,21 @@ import {
 } from "recharts";
 import SolarDiagram from "@/components/ui/SolarDiagram";
 import ReactToPrint from "react-to-print";
-// app/(etude)/page.tsx
 import dynamic from "next/dynamic";
 import SunPathDiagram from "@/components/ui/SunPathDiagram";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
-import { Plus, Trash, TrashIcon } from "lucide-react";
+import { Plus, TrashIcon } from "lucide-react";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import PrintComponentTwo from "@/components/ui/PrintComponentTwo";
+import PrintComponentTwo, { Panel } from "@/components/ui/PrintComponentTwo";
+import RoofPlanner from "@/components/ui/RoofPlanner";
 
 // Dynamically import the Map component without SSR
-const DynamicMap = dynamic(() => import("@/components/ui/Map"), { ssr: false });
+const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
+  ssr: false,
+});
 
 // ---------------------------
 // Types et interfaces existants
@@ -280,13 +283,10 @@ interface ObstacleError {
 }
 
 interface Obstacle {
+  name: string;
   azimuth: number | null;
   height: number | null;
   points: { azimuth: number | null; height: number | null }[];
-}
-
-interface AddressAutocompleteProps {
-  onAddressSelect: (lat: number, lng: number) => void;
 }
 
 // ---------------------------
@@ -340,7 +340,6 @@ const VoltageDropCalculator = ({
   const [rwire, setRwire] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Pour gérer le timer de fermeture automatique
   const closeTimeoutRef = useRef<number | null>(null);
 
   const handleMaterialChange = (value: string) => {
@@ -350,8 +349,6 @@ const VoltageDropCalculator = ({
     }
   };
 
-
-  
   const compute = () => {
     setError(null);
 
@@ -380,13 +377,11 @@ const VoltageDropCalculator = ({
       return;
     }
 
-    // Longueur en mètres (aller simple)
     let Lm = lenVal;
     if (lengthUnit === "ft") {
       Lm = lenVal * 0.3048;
     }
 
-    // Diamètre en mètres
     let d_m: number;
     if (diameterUnit === "mm") {
       d_m = dVal / 1000.0;
@@ -438,253 +433,249 @@ const VoltageDropCalculator = ({
     setVdropPct(pctStr);
     setRwire(rwireStr);
 
-    // 🔹 On remonte le résultat au parent
     onResult({
       vdrop: vdropStr,
       vdropPct: pctStr,
       rwire: rwireStr,
     });
 
-    // 🔹 Fermer automatiquement après 20 secondes
-    // (on annule un éventuel ancien timer si l'utilisateur recalcule)
     if (closeTimeoutRef.current !== null) {
       window.clearTimeout(closeTimeoutRef.current);
     }
     closeTimeoutRef.current = window.setTimeout(() => {
       onClose();
-    }, 1000);
+    }, 20000);
   };
 
-
   return (
-  <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-slate-100">
-    {/* Header du popup */}
-    <div className="flex items-start justify-between mb-6">
-      <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-full bg-[#0f427c]/10 flex items-center justify-center shadow-inner">
-          <span className="text-[#0f427c] text-lg">⚡</span>
+    <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      {/* Header du popup */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-full bg-[#0f427c]/10 flex items-center justify-center shadow-inner">
+            <span className="text-[#0f427c] text-lg">⚡</span>
+          </div>
+          <div>
+            <h2 className="font-semibold text-[#0f427c] text-[1.25rem] tracking-tight">
+              Calculateur de chute de tension
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-md">
+              Renseignez les caractéristiques du câble pour estimer la chute de
+              tension sur votre ligne électrique.
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-semibold text-[#0f427c] text-[1.25rem] tracking-tight">
-            Calculateur de chute de tension
-          </h2>
-          <p className="text-xs text-slate-500 mt-1 max-w-md">
-            Renseignez les caractéristiques du câble pour estimer la chute de tension
-            sur votre ligne électrique.
-          </p>
-        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200/80 bg-white hover:bg-slate-50 shadow-sm transition"
+        >
+          <span className="text-slate-500 text-lg">&times;</span>
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={onClose}
-        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200/80 bg-white hover:bg-slate-50 shadow-sm transition"
-      >
-        <span className="text-slate-500 text-lg">&times;</span>
-      </button>
-    </div>
-
-    {/* Contenu du formulaire */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      {/* Matériau */}
-      <div className="space-y-3">
-        <div>
-          <Label className="text-[13px] text-slate-700">Type de fil</Label>
-          <select
-            className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60 focus:border-[#0f427c]/70 bg-white"
-            value={material}
-            onChange={(e) => handleMaterialChange(e.target.value)}
-          >
-            <option value="">– sélectionnez –</option>
-            <option value="copper">Cuivre</option>
-            <option value="aluminium">Aluminium</option>
-            <option value="carbon_steel">Acier au carbone</option>
-            <option value="electrical_steel">Acier électrique</option>
-            <option value="gold">Or</option>
-            <option value="nichrome">Nichrome</option>
-            <option value="nickel_silver">Nickel argent</option>
-          </select>
-        </div>
-        <div>
-          <Label className="text-[13px] text-slate-700">
-            Résistivité (Ω·m)
-          </Label>
-          <Input
-            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
-            value={rho}
-            onChange={(e) => setRho(e.target.value)}
-            placeholder="1.72e-8 pour le cuivre"
-          />
-          <p className="text-[11px] text-gray-500 mt-1">
-            Pré-remplie selon le matériau, modifiable si besoin.
-          </p>
-        </div>
-      </div>
-
-      {/* Géométrie du fil */}
-      <div className="space-y-3">
-        <div>
-          <Label className="text-[13px] text-slate-700">
-            Diamètre / taille du fil
-          </Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              type="number"
-              className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
-              value={diameterValue}
-              onChange={(e) => setDiameterValue(e.target.value)}
-            />
+      {/* Contenu du formulaire */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Matériau */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-[13px] text-slate-700">Type de fil</Label>
             <select
-              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
-              value={diameterUnit}
+              className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60 focus:border-[#0f427c]/70 bg-white"
+              value={material}
+              onChange={(e) => handleMaterialChange(e.target.value)}
+            >
+              <option value="">– sélectionnez –</option>
+              <option value="copper">Cuivre</option>
+              <option value="aluminium">Aluminium</option>
+              <option value="carbon_steel">Acier au carbone</option>
+              <option value="electrical_steel">Acier électrique</option>
+              <option value="gold">Or</option>
+              <option value="nichrome">Nichrome</option>
+              <option value="nickel_silver">Nickel argent</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-[13px] text-slate-700">
+              Résistivité (Ω·m)
+            </Label>
+            <Input
+              className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+              value={rho}
+              onChange={(e) => setRho(e.target.value)}
+              placeholder="1.72e-8 pour le cuivre"
+            />
+            <p className="text-[11px] text-gray-500 mt-1">
+              Pré-remplie selon le matériau, modifiable si besoin.
+            </p>
+          </div>
+        </div>
+
+        {/* Géométrie du fil */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-[13px] text-slate-700">
+              Diamètre / taille du fil
+            </Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                type="number"
+                className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+                value={diameterValue}
+                onChange={(e) => setDiameterValue(e.target.value)}
+              />
+              <select
+                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+                value={diameterUnit}
+                onChange={(e) =>
+                  setDiameterUnit(e.target.value as "mm" | "inch" | "awg")
+                }
+              >
+                <option value="mm">Diamètre (mm)</option>
+                <option value="inch">Diamètre (pouce)</option>
+                <option value="awg">AWG</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-[13px] text-slate-700">
+              Longueur de câble (aller simple)
+            </Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                type="number"
+                className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+                value={lengthValue}
+                onChange={(e) => setLengthValue(e.target.value)}
+              />
+              <select
+                className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+                value={lengthUnit}
+                onChange={(e) => setLengthUnit(e.target.value as "m" | "ft")}
+              >
+                <option value="m">mètres</option>
+                <option value="ft">pieds</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Paramètres électriques */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-[13px] text-slate-700">Type de courant</Label>
+            <select
+              className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+              value={currentType}
               onChange={(e) =>
-                setDiameterUnit(e.target.value as "mm" | "inch" | "awg")
+                setCurrentType(e.target.value as "dc" | "ac1" | "ac3")
               }
             >
-              <option value="mm">Diamètre (mm)</option>
-              <option value="inch">Diamètre (pouce)</option>
-              <option value="awg">AWG</option>
+              <option value="dc">DC</option>
+              <option value="ac1">AC – Monophasé</option>
+              <option value="ac3">AC – Triphasé</option>
             </select>
           </div>
-        </div>
-
-        <div>
-          <Label className="text-[13px] text-slate-700">
-            Longueur de câble (aller simple)
-          </Label>
-          <div className="flex gap-2 mt-1">
+          <div>
+            <Label className="text-[13px] text-slate-700">Tension (V)</Label>
             <Input
+              className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
               type="number"
-              className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
-              value={lengthValue}
-              onChange={(e) => setLengthValue(e.target.value)}
+              value={voltage}
+              onChange={(e) => setVoltage(e.target.value)}
             />
-            <select
-              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
-              value={lengthUnit}
-              onChange={(e) => setLengthUnit(e.target.value as "m" | "ft")}
-            >
-              <option value="m">mètres</option>
-              <option value="ft">pieds</option>
-            </select>
+          </div>
+          <div>
+            <Label className="text-[13px] text-slate-700">Courant (A)</Label>
+            <Input
+              className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+              type="number"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap justify-end gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-slate-300 text-slate-600 hover:bg-slate-50"
+          onClick={onClose}
+        >
+          Fermer
+        </Button>
+        <Button
+          type="button"
+          onClick={compute}
+          className="bg-[#008f31] hover:bg-[#007326] text-white shadow-md px-5"
+        >
+          Calculer
+        </Button>
+      </div>
+
+      <div className="mt-5 border-t border-slate-200 pt-3 text-sm">
+        {error && <p className="text-red-500 mb-2">{error}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Chute de tension
+            </p>
+            <p className="text-sm font-semibold text-slate-800 mt-1">
+              {vdrop !== null ? `${vdrop} V` : "–"}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Pourcentage de chute de tension
+            </p>
+            <p className="text-sm font-semibold text-slate-800 mt-1">
+              {vdropPct !== null ? `${vdropPct} %` : "–"}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Résistance de fil
+            </p>
+            <p className="text-sm font-semibold text-slate-800 mt-1">
+              {rwire !== null ? `${rwire} Ω` : "–"}
+            </p>
           </div>
         </div>
 
-        
-
-       
-      </div>
-
-      {/* Paramètres électriques */}
-      <div className="space-y-3">
-         <div>
-          <Label className="text-[13px] text-slate-700">
-            Type de courant
-          </Label>
-          <select
-            className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
-            value={currentType}
-            onChange={(e) =>
-              setCurrentType(e.target.value as "dc" | "ac1" | "ac3")
-            }
-          >
-            <option value="dc">DC</option>
-            <option value="ac1">AC – Monophasé</option>
-            <option value="ac3">AC – Triphasé</option>
-          </select>
-        </div>
-        <div>
-          <Label className="text-[13px] text-slate-700">Tension (V)</Label>
-          <Input
-            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
-            type="number"
-            value={voltage}
-            onChange={(e) => setVoltage(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label className="text-[13px] text-slate-700">Courant (A)</Label>
-          <Input
-            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
-            type="number"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-          />
-        </div>
+        <p className="text-[11px] text-gray-500 mt-3">
+          Pour DC et AC monophasé, la résistance est donnée pour l&apos;aller-retour.
+          Pour le triphasé, elle est indiquée par conducteur.
+        </p>
       </div>
     </div>
-
-    <div className="mt-6 flex flex-wrap justify-end gap-3">
-      <Button
-        type="button"
-        variant="outline"
-        className="border-slate-300 text-slate-600 hover:bg-slate-50"
-        onClick={onClose}
-      >
-        Fermer
-      </Button>
-      <Button
-        type="button"
-        onClick={compute}
-        className="bg-[#008f31] hover:bg-[#007326] text-white shadow-md px-5"
-      >
-        Calculer
-      </Button>
-    </div>
-
-    <div className="mt-5 border-t border-slate-200 pt-3 text-sm">
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Chute de tension
-          </p>
-          <p className="text-sm font-semibold text-slate-800 mt-1">
-            {vdrop !== null ? `${vdrop} V` : "–"}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Pourcentage de chute de tension
-          </p>
-          <p className="text-sm font-semibold text-slate-800 mt-1">
-            {vdropPct !== null ? `${vdropPct} %` : "–"}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Résistance de fil
-          </p>
-          <p className="text-sm font-semibold text-slate-800 mt-1">
-            {rwire !== null ? `${rwire} Ω` : "–"}
-          </p>
-        </div>
-      </div>
-
-      <p className="text-[11px] text-gray-500 mt-3">
-        Pour DC et AC monophasé, la résistance est donnée pour l&apos;aller-retour.
-        Pour le triphasé, elle est indiquée par conducteur.
-      </p>
-    </div>
-  </div>
-);
-
+  );
 };
 
 // ---------------------------
 // Composant principal Home
 // ---------------------------
 const Home = () => {
-  const [clickedPosition, setClickedPosition] = useState<{
-    lat: number;
-    lng: number;
-  }>({ lat: 0, lng: 0 });
+  const [clickedPosition, setClickedPosition] = useState<{ lat: number; lng: number }>({
+    lat: 0,
+    lng: 0,
+  });
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
   const [useTerrainShadows, setUseTerrainShadows] = useState("non");
+
   const [obstacles, setObstacles] = useState<Obstacle[]>([
-    { azimuth: 0, height: 0, points: [{ azimuth: 0, height: 0 }] },
+    {
+      name: "Obstacle 1",
+      azimuth: 0,
+      height: 0,
+      points: [{ azimuth: 0, height: 0 }],
+    },
   ]);
+
   const componentRef = useRef<HTMLDivElement | null>(null);
   const [puissancePv, setPuissancePv] = useState("");
   const [systemLosses, setSystemLosses] = useState("14");
@@ -700,29 +691,26 @@ const Home = () => {
     obstacles: [{ azimuth: false, height: false }],
     inclinaison: false,
   });
-  const [coordinates, setCoordinates] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
 
   const [selectedChart, setSelectedChart] = useState<
     "production" | "irradiation" | "variability"
   >("production");
 
-  // Affichage du choix de calcul de chute de tension
-  const [calculateVoltageDrop, setCalculateVoltageDrop] = useState<"oui" | "non">("non");
+  const [calculateVoltageDrop, setCalculateVoltageDrop] =
+    useState<"oui" | "non">("non");
 
-  // 🔹 Popup ouvert/fermé
+  const [addCalpinage, setAddCalpinage] = useState<"oui" | "non">("non");
+
   const [isVoltageModalOpen, setIsVoltageModalOpen] = useState(false);
 
-  // 🔹 Résultat à afficher sous le champ dans le formulaire principal
   const [voltageDropResult, setVoltageDropResult] = useState<{
     vdrop: string | null;
     vdropPct: string | null;
     rwire: string | null;
   } | null>(null);
 
-  console.log("tobstable first", obstacles);
+  // ✅ ICI : état des panneaux (doit être dans le composant, pas au top-level)
+  const [panels, setPanels] = useState<Panel[]>([]);
 
   const handlePositionChange = (position: { lat: number; lng: number }) => {
     setClickedPosition(position);
@@ -753,9 +741,10 @@ const Home = () => {
   };
 
   const addObstacle = () => {
-    setObstacles([
-      ...obstacles,
+    setObstacles((prev) => [
+      ...prev,
       {
+        name: `Obstacle ${prev.length + 1}`,
         azimuth: 0,
         height: 0,
         points: [
@@ -772,16 +761,12 @@ const Home = () => {
     setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
   };
 
-  const addPointToObstacle = (obstacleIndex: number) => {
-    const updatedObstacles = obstacles.map((obstacle, index) =>
-      index === obstacleIndex
-        ? {
-            ...obstacle,
-            points: [...obstacle.points, { azimuth: 0, height: 0 }],
-          }
-        : obstacle
+  const handleObstacleNameChange = (index: number, value: string) => {
+    setObstacles((prev) =>
+      prev.map((obstacle, i) =>
+        i === index ? { ...obstacle, name: value } : obstacle
+      )
     );
-    setObstacles(updatedObstacles);
   };
 
   const handlePointChange = (
@@ -856,14 +841,11 @@ const Home = () => {
       }
 
       const result = await response.json();
-      console.log("result", result);
-      {
-        result.error &&
-          setError(
-            "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte."
-          );
+      if (result.error) {
+        setError(
+          "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte."
+        );
       }
-
       setData(result);
     } catch (error) {
       console.error("Error while fetching results:", error);
@@ -885,29 +867,9 @@ const Home = () => {
     "décembre",
   ];
 
-  const prepareChartData = (
-    type: "production" | "irradiation" | "variability"
-  ) => {
-    if (!data || !data.outputs?.monthly.fixed) return [];
-    return data.outputs.monthly.fixed.map((monthData) => ({
-      month: monthNames[monthData.month - 1],
-      value:
-        type === "production"
-          ? monthData.E_m
-          : type === "irradiation"
-          ? monthData["H(i)_m"]
-          : monthData.SD_m,
-    }));
-  };
-
-  const chartData = prepareChartData(selectedChart);
-
   const handleAddressSelect = (lat: number, lng: number) => {
     setClickedPosition({ lat, lng });
-    console.log(`Latitudesss: ${lat}, Longitude: ${lng}`);
   };
-
-  console.log("error", error);
 
   useEffect(() => {
     if (data && !error) {
@@ -915,24 +877,17 @@ const Home = () => {
     }
   }, [data, error]);
 
-  const removePointFromObstacle = (
-    obstacleIndex: number,
-    pointIndex: number
-  ) => {
+  const removePointFromObstacle = (obstacleIndex: number, pointIndex: number) => {
     const updatedObstacles = obstacles.map((obstacle, oIndex) =>
       oIndex === obstacleIndex
         ? {
             ...obstacle,
-            points: obstacle.points.filter(
-              (_, pIndex) => pIndex !== pointIndex
-            ),
+            points: obstacle.points.filter((_, pIndex) => pIndex !== pointIndex),
           }
         : obstacle
     );
     setObstacles(updatedObstacles);
   };
-
-  console.log("obstacles", obstacles);
 
   const handleAzimutChange = (e: any) => {
     const rawValue = e.target.value;
@@ -974,8 +929,8 @@ const Home = () => {
               ADRESSE
             </h2>
             <p className="italic font-medium text-[#008f31] text-[13px] mb-[20px]">
-              Veuillez sélectionner votre adresse sur la carte ou entrer sa
-              latitude et longitude exacte.
+              Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et
+              longitude exacte.
             </p>
             <AddressAutocomplete onAddressSelect={handleAddressSelect} />
             <div className="flex justify-between gap-2">
@@ -1005,11 +960,10 @@ const Home = () => {
               </div>
             </div>
 
-            {error &&
-              error ===
-                "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
-                <p className="text-red-500 mt-2">{error}</p>
-              )}
+            {error ===
+              "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
+              <p className="text-red-500 mt-2">{error}</p>
+            )}
 
             <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="flex justify-between">
@@ -1060,7 +1014,7 @@ const Home = () => {
                   >
                     <div className="flex justify-between items-center">
                       <h3 className="font-semibold text-[1.1rem] text-[#0f427c]">
-                        Obstacle {obstacleIndex + 1}
+                        {obstacle.name || `Obstacle ${obstacleIndex + 1}`}
                       </h3>
                       <div className="flex gap-2">
                         <Button
@@ -1070,7 +1024,7 @@ const Home = () => {
                           <TrashIcon className="h-5 w-5 text-red-500" />
                         </Button>
                         <Button
-                          onClick={() => addPointToObstacle(obstacleIndex)}
+                          onClick={addObstacle}
                           className="bg-transparent text-white text-[40px] p-2 hover:text-[#0f427c] hover:bg-gray-200"
                         >
                           <Plus className="h-6 w-6 text-[#0f427c]" />
@@ -1078,7 +1032,19 @@ const Home = () => {
                       </div>
                     </div>
 
-                    <div className="">
+                    <div className="mt-2 mb-3">
+                      <Label className="text-[13px]">Nom de l'obstacle</Label>
+                      <Input
+                        className="mt-1 text-sm"
+                        value={obstacle.name}
+                        onChange={(e) =>
+                          handleObstacleNameChange(obstacleIndex, e.target.value)
+                        }
+                        placeholder={`Obstacle ${obstacleIndex + 1}`}
+                      />
+                    </div>
+
+                    <div>
                       {obstacle.points.map((point, pointIndex) => (
                         <div
                           key={pointIndex}
@@ -1198,14 +1164,14 @@ const Home = () => {
                 />
               </div>
             </div>
-            {error && error === "Veuillez remplir les champs manquants." && (
+            {error === "Veuillez remplir les champs manquants." && (
               <p className="text-red-500 mt-2">{error}</p>
             )}
             {errorAzimuth && (
               <p className="text-red-500 mt-2">{errorAzimuth}</p>
             )}
 
-            {/* 🔹 Nouveau champ : calcul de chute de tension */}
+            {/* calcul de chute de tension */}
             <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="mt-2">
               <Label className="text-[13px]">
@@ -1232,7 +1198,6 @@ const Home = () => {
                 </div>
               </RadioGroup>
 
-              {/* Résultat affiché dans le formulaire principal */}
               {voltageDropResult && calculateVoltageDrop === "oui" && (
                 <div className="mt-3 bg-white/70 border border-dashed border-[#0f427c]/40 rounded-md px-3 py-2 text-[12px]">
                   <p className="font-semibold text-[#0f427c] text-[13px] mb-1">
@@ -1251,8 +1216,7 @@ const Home = () => {
                     </span>
                   </p>
                   <p className="text-[11px] text-gray-500 mt-1">
-                    Résistance de fil :{" "}
-                    {voltageDropResult.rwire ?? "–"} Ω
+                    Résistance de fil : {voltageDropResult.rwire ?? "–"} Ω
                   </p>
 
                   <button
@@ -1265,6 +1229,33 @@ const Home = () => {
                 </div>
               )}
             </div>
+
+            {/* Ajouter un calpinage */}
+            <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
+            <div className="mt-2">
+              <Label className="text-[13px]">Ajouter un calepinage ?</Label>
+              <RadioGroup
+                className="flex gap-4 mt-2"
+                value={addCalpinage}
+                onValueChange={(val) => setAddCalpinage(val as "oui" | "non")}
+              >
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem id="calp-oui" value="oui" />
+                  <Label htmlFor="calp-oui">Oui</Label>
+                </div>
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem id="calp-non" value="non" />
+                  <Label htmlFor="calp-non">Non</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {addCalpinage === "oui" && (
+              <div className="mt-6">
+                {/* ⚠️ Assure-toi que RoofPlanner accepte bien ces props */}
+                <RoofPlanner panels={panels} onPanelsChange={setPanels} />
+              </div>
+            )}
           </div>
         </main>
 
@@ -1286,36 +1277,32 @@ const Home = () => {
             inclinaison={inclinaison}
             error={error}
             obstacles={obstacles}
-            voltageDropResult={voltageDropResult} 
+            voltageDropResult={voltageDropResult}
+            panels={panels}
           />
         )}
       </div>
 
-      {/* 🔹 Popup stylé pour le calcul de chute de tension */}
+      {/* Popup chute de tension */}
       {isVoltageModalOpen && (
-  <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/65 backdrop-blur-sm">
-    <div className="relative w-full max-w-4xl mx-4">
-      {/* Halo lumineux derrière la carte */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0f427c]/30 via-[#008f31]/20 to-transparent blur-3xl opacity-80 pointer-events-none" />
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/65 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl mx-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0f427c]/30 via-[#008f31]/20 to-transparent blur-3xl opacity-80 pointer-events-none" />
 
-      {/* Carte principale */}
-      <div className="relative bg-white rounded-3xl shadow-[0_18px_60px_rgba(15,66,124,0.45)] border border-slate-100/80 overflow-hidden">
-        {/* Bandeau décoratif en haut */}
-        <div className="]" />
+            <div className="relative bg-white rounded-3xl shadow-[0_18px_60px_rgba(15,66,124,0.45)] border border-slate-100/80 overflow-hidden">
+              {/* bandeau décoratif */}
+              <div className="h-1 w-full bg-gradient-to-r from-[#0f427c]/30 via-[#008f31]/30 to-transparent" />
 
-        <VoltageDropCalculator
-          onClose={() => setIsVoltageModalOpen(false)}
-          onResult={(result) => {
-            setVoltageDropResult(result);
-            // Si tu veux fermer automatiquement après calcul, décommente :
-            // setIsVoltageModalOpen(false);
-          }}
-        />
-      </div>
-    </div>
-  </div>
-)}
-
+              <VoltageDropCalculator
+                onClose={() => setIsVoltageModalOpen(false)}
+                onResult={(result) => {
+                  setVoltageDropResult(result);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
