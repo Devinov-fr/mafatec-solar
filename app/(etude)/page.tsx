@@ -19,7 +19,7 @@ import ReactToPrint from "react-to-print";
 // app/(etude)/page.tsx
 import dynamic from "next/dynamic";
 import SunPathDiagram from "@/components/ui/SunPathDiagram";
-import Footer from "@/components/ui/Footer";
+import Footer from "@/components/ui/footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
 import { Plus, Trash, TrashIcon } from "lucide-react";
@@ -30,7 +30,9 @@ import PrintComponentTwo from "@/components/ui/PrintComponentTwo";
 // Dynamically import the Map component without SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), { ssr: false });
 
-// Define interfaces for the data structure
+// ---------------------------
+// Types et interfaces existants
+// ---------------------------
 interface Data {
   inputs: {
     economic_data: {
@@ -284,16 +286,402 @@ interface Obstacle {
 }
 
 interface AddressAutocompleteProps {
-  onAddressSelect: (lat: number, lng: number) => void; // Ensure this prop is defined
+  onAddressSelect: (lat: number, lng: number) => void;
 }
 
+// ---------------------------
+// Constantes pour le calcul de chute de tension
+// ---------------------------
+const MATERIAL_RHO: Record<string, number> = {
+  copper: 1.724e-8,
+  aluminium: 2.82e-8,
+  carbon_steel: 1.43e-7,
+  electrical_steel: 4.5e-7,
+  gold: 2.44e-8,
+  nichrome: 1.1e-6,
+  nickel_silver: 3.0e-7,
+};
+
+function awgToDiameterMm(awg: number): number {
+  const n = awg;
+  if (!isFinite(n)) return NaN;
+  const dInch = 0.005 * Math.pow(92, (36 - n) / 39);
+  return dInch * 25.4;
+}
+
+// ---------------------------
+// Composant React : Calculateur de chute de tension (dans un popup)
+// ---------------------------
+interface VoltageDropCalculatorProps {
+  onClose: () => void;
+  onResult: (result: {
+    vdrop: string | null;
+    vdropPct: string | null;
+    rwire: string | null;
+  }) => void;
+}
+
+const VoltageDropCalculator = ({
+  onClose,
+  onResult,
+}: VoltageDropCalculatorProps) => {
+  const [material, setMaterial] = useState("");
+  const [rho, setRho] = useState("");
+  const [diameterValue, setDiameterValue] = useState("");
+  const [diameterUnit, setDiameterUnit] = useState<"mm" | "inch" | "awg">("mm");
+  const [lengthValue, setLengthValue] = useState("");
+  const [lengthUnit, setLengthUnit] = useState<"m" | "ft">("m");
+  const [currentType, setCurrentType] = useState<"dc" | "ac1" | "ac3">("dc");
+  const [voltage, setVoltage] = useState("");
+  const [current, setCurrent] = useState("");
+
+  const [vdrop, setVdrop] = useState<string | null>(null);
+  const [vdropPct, setVdropPct] = useState<string | null>(null);
+  const [rwire, setRwire] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ Pour gérer le timer de fermeture automatique
+  const closeTimeoutRef = useRef<number | null>(null);
+
+  const handleMaterialChange = (value: string) => {
+    setMaterial(value);
+    if (MATERIAL_RHO[value] !== undefined) {
+      setRho(String(MATERIAL_RHO[value]));
+    }
+  };
+
+
+  
+  const compute = () => {
+    setError(null);
+
+    const rhoNum = parseFloat(rho);
+    const dVal = parseFloat(diameterValue);
+    const lenVal = parseFloat(lengthValue);
+    const U = parseFloat(voltage);
+    const I = parseFloat(current);
+
+    if (
+      !isFinite(rhoNum) ||
+      rhoNum <= 0 ||
+      !isFinite(dVal) ||
+      dVal <= 0 ||
+      !isFinite(lenVal) ||
+      lenVal <= 0 ||
+      !isFinite(U) ||
+      U <= 0 ||
+      !isFinite(I) ||
+      I <= 0
+    ) {
+      setError("Merci de remplir tous les champs avec des valeurs valides.");
+      setVdrop(null);
+      setVdropPct(null);
+      setRwire(null);
+      return;
+    }
+
+    // Longueur en mètres (aller simple)
+    let Lm = lenVal;
+    if (lengthUnit === "ft") {
+      Lm = lenVal * 0.3048;
+    }
+
+    // Diamètre en mètres
+    let d_m: number;
+    if (diameterUnit === "mm") {
+      d_m = dVal / 1000.0;
+    } else if (diameterUnit === "inch") {
+      d_m = dVal * 0.0254;
+    } else {
+      const d_mm = awgToDiameterMm(dVal);
+      if (!isFinite(d_mm) || d_mm <= 0) {
+        setError("Valeur AWG invalide.");
+        setVdrop(null);
+        setVdropPct(null);
+        setRwire(null);
+        return;
+      }
+      d_m = d_mm / 1000.0;
+    }
+
+    const A = Math.PI * Math.pow(d_m / 2, 2);
+    if (!isFinite(A) || A <= 0) {
+      setError("Erreur dans le calcul de la section du fil.");
+      setVdrop(null);
+      setVdropPct(null);
+      setRwire(null);
+      return;
+    }
+
+    let R_path: number;
+    let R_wire: number;
+    let Vdrop: number;
+
+    if (currentType === "dc" || currentType === "ac1") {
+      R_path = (2 * rhoNum * Lm) / A;
+      R_wire = R_path;
+      Vdrop = I * R_path;
+    } else {
+      const R_phase = (rhoNum * Lm) / A;
+      R_path = R_phase;
+      R_wire = R_phase;
+      Vdrop = Math.sqrt(3) * I * R_phase;
+    }
+
+    const pct = (Vdrop / U) * 100;
+
+    const vdropStr = isFinite(Vdrop) ? Vdrop.toFixed(3) : null;
+    const pctStr = isFinite(pct) ? pct.toFixed(3) : null;
+    const rwireStr = isFinite(R_wire) ? R_wire.toFixed(6) : null;
+
+    setVdrop(vdropStr);
+    setVdropPct(pctStr);
+    setRwire(rwireStr);
+
+    // 🔹 On remonte le résultat au parent
+    onResult({
+      vdrop: vdropStr,
+      vdropPct: pctStr,
+      rwire: rwireStr,
+    });
+
+    // 🔹 Fermer automatiquement après 20 secondes
+    // (on annule un éventuel ancien timer si l'utilisateur recalcule)
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = window.setTimeout(() => {
+      onClose();
+    }, 1000);
+  };
+
+
+  return (
+  <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    {/* Header du popup */}
+    <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start gap-3">
+        <div className="h-10 w-10 rounded-full bg-[#0f427c]/10 flex items-center justify-center shadow-inner">
+          <span className="text-[#0f427c] text-lg">⚡</span>
+        </div>
+        <div>
+          <h2 className="font-semibold text-[#0f427c] text-[1.25rem] tracking-tight">
+            Calculateur de chute de tension
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 max-w-md">
+            Renseignez les caractéristiques du câble pour estimer la chute de tension
+            sur votre ligne électrique.
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200/80 bg-white hover:bg-slate-50 shadow-sm transition"
+      >
+        <span className="text-slate-500 text-lg">&times;</span>
+      </button>
+    </div>
+
+    {/* Contenu du formulaire */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Matériau */}
+      <div className="space-y-3">
+        <div>
+          <Label className="text-[13px] text-slate-700">Type de fil</Label>
+          <select
+            className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60 focus:border-[#0f427c]/70 bg-white"
+            value={material}
+            onChange={(e) => handleMaterialChange(e.target.value)}
+          >
+            <option value="">– sélectionnez –</option>
+            <option value="copper">Cuivre</option>
+            <option value="aluminium">Aluminium</option>
+            <option value="carbon_steel">Acier au carbone</option>
+            <option value="electrical_steel">Acier électrique</option>
+            <option value="gold">Or</option>
+            <option value="nichrome">Nichrome</option>
+            <option value="nickel_silver">Nickel argent</option>
+          </select>
+        </div>
+        <div>
+          <Label className="text-[13px] text-slate-700">
+            Résistivité (Ω·m)
+          </Label>
+          <Input
+            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+            value={rho}
+            onChange={(e) => setRho(e.target.value)}
+            placeholder="1.72e-8 pour le cuivre"
+          />
+          <p className="text-[11px] text-gray-500 mt-1">
+            Pré-remplie selon le matériau, modifiable si besoin.
+          </p>
+        </div>
+      </div>
+
+      {/* Géométrie du fil */}
+      <div className="space-y-3">
+        <div>
+          <Label className="text-[13px] text-slate-700">
+            Diamètre / taille du fil
+          </Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="number"
+              className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+              value={diameterValue}
+              onChange={(e) => setDiameterValue(e.target.value)}
+            />
+            <select
+              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+              value={diameterUnit}
+              onChange={(e) =>
+                setDiameterUnit(e.target.value as "mm" | "inch" | "awg")
+              }
+            >
+              <option value="mm">Diamètre (mm)</option>
+              <option value="inch">Diamètre (pouce)</option>
+              <option value="awg">AWG</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-[13px] text-slate-700">
+            Longueur de câble (aller simple)
+          </Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="number"
+              className="flex-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+              value={lengthValue}
+              onChange={(e) => setLengthValue(e.target.value)}
+            />
+            <select
+              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+              value={lengthUnit}
+              onChange={(e) => setLengthUnit(e.target.value as "m" | "ft")}
+            >
+              <option value="m">mètres</option>
+              <option value="ft">pieds</option>
+            </select>
+          </div>
+        </div>
+
+        
+
+       
+      </div>
+
+      {/* Paramètres électriques */}
+      <div className="space-y-3">
+         <div>
+          <Label className="text-[13px] text-slate-700">
+            Type de courant
+          </Label>
+          <select
+            className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f427c]/60"
+            value={currentType}
+            onChange={(e) =>
+              setCurrentType(e.target.value as "dc" | "ac1" | "ac3")
+            }
+          >
+            <option value="dc">DC</option>
+            <option value="ac1">AC – Monophasé</option>
+            <option value="ac3">AC – Triphasé</option>
+          </select>
+        </div>
+        <div>
+          <Label className="text-[13px] text-slate-700">Tension (V)</Label>
+          <Input
+            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+            type="number"
+            value={voltage}
+            onChange={(e) => setVoltage(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label className="text-[13px] text-slate-700">Courant (A)</Label>
+          <Input
+            className="mt-1 text-sm border-slate-200 focus-visible:ring-[#0f427c]/60"
+            type="number"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-6 flex flex-wrap justify-end gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        className="border-slate-300 text-slate-600 hover:bg-slate-50"
+        onClick={onClose}
+      >
+        Fermer
+      </Button>
+      <Button
+        type="button"
+        onClick={compute}
+        className="bg-[#008f31] hover:bg-[#007326] text-white shadow-md px-5"
+      >
+        Calculer
+      </Button>
+    </div>
+
+    <div className="mt-5 border-t border-slate-200 pt-3 text-sm">
+      {error && <p className="text-red-500 mb-2">{error}</p>}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Chute de tension
+          </p>
+          <p className="text-sm font-semibold text-slate-800 mt-1">
+            {vdrop !== null ? `${vdrop} V` : "–"}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Pourcentage de chute de tension
+          </p>
+          <p className="text-sm font-semibold text-slate-800 mt-1">
+            {vdropPct !== null ? `${vdropPct} %` : "–"}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-100 px-3 py-2 shadow-sm">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Résistance de fil
+          </p>
+          <p className="text-sm font-semibold text-slate-800 mt-1">
+            {rwire !== null ? `${rwire} Ω` : "–"}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-gray-500 mt-3">
+        Pour DC et AC monophasé, la résistance est donnée pour l&apos;aller-retour.
+        Pour le triphasé, elle est indiquée par conducteur.
+      </p>
+    </div>
+  </div>
+);
+
+};
+
+// ---------------------------
+// Composant principal Home
+// ---------------------------
 const Home = () => {
   const [clickedPosition, setClickedPosition] = useState<{
     lat: number;
     lng: number;
   }>({ lat: 0, lng: 0 });
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
-  const [useTerrainShadows, setUseTerrainShadows] = useState("oui");
+  const [useTerrainShadows, setUseTerrainShadows] = useState("non");
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     { azimuth: 0, height: 0, points: [{ azimuth: 0, height: 0 }] },
   ]);
@@ -321,6 +709,19 @@ const Home = () => {
     "production" | "irradiation" | "variability"
   >("production");
 
+  // Affichage du choix de calcul de chute de tension
+  const [calculateVoltageDrop, setCalculateVoltageDrop] = useState<"oui" | "non">("non");
+
+  // 🔹 Popup ouvert/fermé
+  const [isVoltageModalOpen, setIsVoltageModalOpen] = useState(false);
+
+  // 🔹 Résultat à afficher sous le champ dans le formulaire principal
+  const [voltageDropResult, setVoltageDropResult] = useState<{
+    vdrop: string | null;
+    vdropPct: string | null;
+    rwire: string | null;
+  } | null>(null);
+
   console.log("tobstable first", obstacles);
 
   const handlePositionChange = (position: { lat: number; lng: number }) => {
@@ -329,9 +730,8 @@ const Home = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numValue = parseFloat(value); // Parse the input as a floating-point number
+    const numValue = parseFloat(value);
 
-    // Only update if the parsed value is a valid number
     if (!isNaN(numValue)) {
       if (name === "latitude") {
         setClickedPosition((prev) => ({
@@ -349,12 +749,8 @@ const Home = () => {
 
   const handleTerrainShadowsChange = (value: string) => {
     setUseTerrainShadows(value);
-    setShowObstacleInputs(value === "non");
+    setShowObstacleInputs(value === "oui");
   };
-
-  /*const addObstacle = () => {
-    setObstacles([...obstacles, { azimuth: 0, height: 0 }]);
-  };*/
 
   const addObstacle = () => {
     setObstacles([
@@ -364,8 +760,8 @@ const Home = () => {
         height: 0,
         points: [
           {
-            azimuth: 0, // Set to a default number
-            height: 0, // Set to a default number
+            azimuth: 0,
+            height: 0,
           },
         ],
       },
@@ -376,46 +772,14 @@ const Home = () => {
     setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
   };
 
-  // Function to add points to a specific obstacle
   const addPointToObstacle = (obstacleIndex: number) => {
     const updatedObstacles = obstacles.map((obstacle, index) =>
       index === obstacleIndex
         ? {
             ...obstacle,
-            points: [...obstacle.points, { azimuth: 0, height: 0 }], // Add new point with default values
+            points: [...obstacle.points, { azimuth: 0, height: 0 }],
           }
         : obstacle
-    );
-    setObstacles(updatedObstacles);
-  };
-
-  const onObstacleChange = (newObstacles: Obstacle[]) => {
-    setObstacles(newObstacles);
-  };
-
-  // This function now only takes one argument (the array of obstacles).
-  /*const handleObstacleChange = (
-    index: number,
-    field: "azimuth" | "height",
-    value: string
-  ) => {
-    const updatedObstacles = obstacles.map(
-      (obstacle, i) =>
-        i === index ? { ...obstacle, [field]: parseFloat(value) } : obstacle // Ensure value is a number if needed
-    );
-
-    // Update obstacles through the onObstacleChange callback.
-    onObstacleChange(updatedObstacles);
-  };*/
-
-  // Function to handle changes in obstacle or point properties
-  const handleObstacleChange = (
-    index: number,
-    field: "azimuth" | "height",
-    value: string
-  ) => {
-    const updatedObstacles = obstacles.map((obstacle, i) =>
-      i === index ? { ...obstacle, [field]: parseFloat(value) } : obstacle
     );
     setObstacles(updatedObstacles);
   };
@@ -427,8 +791,6 @@ const Home = () => {
     value: string
   ) => {
     const updatedObstacles = [...obstacles];
-
-    // Convert the input to a number or set it to null if the value is empty
     const numericValue = value === "" ? null : parseFloat(value);
 
     if (updatedObstacles[obstacleIndex].points[pointIndex]) {
@@ -438,30 +800,25 @@ const Home = () => {
     setObstacles(updatedObstacles);
   };
 
-  const azimuthList = obstacles.map((obstacle) => obstacle.height).join(",");
-
   const validateForm = () => {
-    // Specify the type for obstacleErrors
-    const obstacleErrors: ObstacleError[] = []; // Set to an empty array since we want to ignore obstacles
+    const obstacleErrors: ObstacleError[] = [];
 
     const newFormErrors = {
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
       azimut: azimut.trim() === "",
-      obstacles: obstacleErrors, // Set empty errors for obstacles
+      obstacles: obstacleErrors,
       inclinaison: inclinaison.trim() === "",
     };
 
     setFormErrors(newFormErrors);
 
-    // Check for any errors
     return !Object.values(newFormErrors).some((error) =>
       typeof error === "boolean" ? error : error.some(Boolean)
     );
   };
 
   const handleVisualiserResultats = async () => {
-    // Validate form before submission
     if (!validateForm()) {
       setError("Veuillez remplir les champs manquants.");
       return;
@@ -484,7 +841,7 @@ const Home = () => {
 
     try {
       const response = await fetch(
-        "/pvgis/calculate",
+        "https://solaire.mafatec.com/pvgis/calculate",
         {
           method: "POST",
           headers: {
@@ -508,7 +865,6 @@ const Home = () => {
       }
 
       setData(result);
-      //setError(""); // Clear error if submission is successful
     } catch (error) {
       console.error("Error while fetching results:", error);
     }
@@ -529,12 +885,11 @@ const Home = () => {
     "décembre",
   ];
 
-  // Function to prepare chart data
   const prepareChartData = (
     type: "production" | "irradiation" | "variability"
   ) => {
     if (!data || !data.outputs?.monthly.fixed) return [];
-    return data.outputs.monthly.fixed.map((monthData, index) => ({
+    return data.outputs.monthly.fixed.map((monthData) => ({
       month: monthNames[monthData.month - 1],
       value:
         type === "production"
@@ -548,8 +903,7 @@ const Home = () => {
   const chartData = prepareChartData(selectedChart);
 
   const handleAddressSelect = (lat: number, lng: number) => {
-    setClickedPosition({ lat, lng }); // Set clickedPosition here
-    //onAddressSelect(lat, lng);
+    setClickedPosition({ lat, lng });
     console.log(`Latitudesss: ${lat}, Longitude: ${lng}`);
   };
 
@@ -557,12 +911,10 @@ const Home = () => {
 
   useEffect(() => {
     if (data && !error) {
-      // Trigger the regeneration or any effect you need when data changes
       console.log("Data changed, regenerating component...");
     }
   }, [data, error]);
 
-  // Function to remove a point from an obstacle
   const removePointFromObstacle = (
     obstacleIndex: number,
     pointIndex: number
@@ -583,28 +935,26 @@ const Home = () => {
   console.log("obstacles", obstacles);
 
   const handleAzimutChange = (e: any) => {
-    const rawValue = e.target.value; // Get the raw string input
-    setError(""); // Clear the error initially
+    const rawValue = e.target.value;
+    setError("");
+    setErrorAzimuth("");
 
     if (rawValue === "-" || rawValue === "") {
-      // Allow user to type just '-' or clear input
       setAzimut(rawValue);
       return;
     }
 
-    let value = Number(rawValue); // Convert to number for validation
-    if (isNaN(value)) value = 0; // Handle invalid input
+    let value = Number(rawValue);
+    if (isNaN(value)) value = 0;
 
     if (value > 180 || value < -180) {
-      // Set error if the value is out of range
       setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
     }
 
-    // Clamp values to the range [-180, 180]
     if (value > 180) value = 180;
     if (value < -180) value = -180;
 
-    setAzimut(value.toString()); // Convert back to string before updating state
+    setAzimut(value.toString());
   };
 
   return (
@@ -664,7 +1014,7 @@ const Home = () => {
             <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
             <div className="flex justify-between">
               <h2 className="font-semibold text-black text-[1.2rem]  mb-[10px] ">
-                Utilisier les ombres du terrain
+                Rajouter un ombrage
               </h2>
             </div>
             <div className="flex justify-between">
@@ -687,97 +1037,14 @@ const Home = () => {
                 </div>
               </RadioGroup>
             </div>
-            {/*<div className="flex justify-between items-center font-semibold mt-[30px]">
-              {showObstacleInputs && (
-                <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline uppercase">
-                  Obstacles
-                </h2>
-              )}
-              {showObstacleInputs && (
-                <Button
-                  onClick={addObstacle}
-                  className="bg-[#0F427C] text-white text-[40px] p-2"
-                >
-                  <Plus className="h-6 w-6" />
-                </Button>
-              )}
-            </div>
-            {showObstacleInputs && (
-              <div>
-                {obstacles.map((obstacle, index) => (
-                  <div key={index} className="flex flex-col gap-4 mb-0">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-green-600 italic mt-[10px] mb-[-15px]">
-                        Obstacle {index + 1}
-                      </h3>
-
-                    </div>
-                    <div className="flex justify-between items-center gap-2 mt-[-10px]">
-                      <div>
-                        <Label className="text-[13px]">
-                          Azimut [°] <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          className={`mt-0 ${
-                            formErrors.obstacles?.[index]?.azimuth
-                              ? "border-red-500 border-2"
-                              : ""
-                          }`}
-                          placeholder="Azimut °"
-                          value={obstacle.azimuth}
-                          onChange={(e) =>
-                            handleObstacleChange(
-                              index,
-                              "azimuth",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[13px]">
-                          Hauteur [°] <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          className={`mt-0 ${
-                            formErrors.obstacles?.[index]?.height
-                              ? "border-red-500 border-2"
-                              : ""
-                          }`}
-                          placeholder="Hauteur °"
-                          value={obstacle.height}
-                          onChange={(e) =>
-                            handleObstacleChange(
-                              index,
-                              "height",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                      <button
-                        onClick={() => removeObstacle(index)}
-                        className="text-red-500"
-                      >
-                        <Trash className="h-5 w-5 mt-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}*/}
 
             {showObstacleInputs && (
               <div>
                 <div className="flex justify-between mt-2 items-center">
-                  {/* Section Header */}
                   <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline uppercase">
                     Obstacles
                   </h2>
 
-                  {/* Button to Add Obstacle */}
                   <Button
                     onClick={addObstacle}
                     className="bg-transparent text-white text-[40px] p-2 hover:text-[#0f427c] hover:bg-gray-200"
@@ -791,7 +1058,6 @@ const Home = () => {
                     key={obstacleIndex}
                     className="mb-4 border-b border-gray-300 pb-4"
                   >
-                    {/* Obstacle Title and Remove Button */}
                     <div className="flex justify-between items-center">
                       <h3 className="font-semibold text-[1.1rem] text-[#0f427c]">
                         Obstacle {obstacleIndex + 1}
@@ -812,7 +1078,6 @@ const Home = () => {
                       </div>
                     </div>
 
-                    {/* Points for this obstacle */}
                     <div className="">
                       {obstacle.points.map((point, pointIndex) => (
                         <div
@@ -867,6 +1132,7 @@ const Home = () => {
             )}
           </div>
 
+          {/* Performance PV + Azimut/inclinaison */}
           <div className="bg-[#f8f9fa] rounded-[10px] lg:w-[39%] w-full flex flex-col gap-[ 0.8rem] lg:overflow-y-auto  p-[30px] shadow-[0_4px_10px_rgba(0,0,0,0.2)] no-scrollbar">
             <h2 className="font-semibold text-[#0f427c] text-[1.1rem] underline ">
               PERFORMANCE DU SYSTÈME PV
@@ -923,8 +1189,10 @@ const Home = () => {
                   Azimut [°] <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  className={`mt-2 ${error || errorAzimuth ? "border-red-500 border-2" : ""}`}
-                  value={azimut} // Keep as string for the input
+                  className={`mt-2 ${
+                    error || errorAzimuth ? "border-red-500 border-2" : ""
+                  }`}
+                  value={azimut}
                   onChange={handleAzimutChange}
                   placeholder="Azimut"
                 />
@@ -936,8 +1204,70 @@ const Home = () => {
             {errorAzimuth && (
               <p className="text-red-500 mt-2">{errorAzimuth}</p>
             )}
+
+            {/* 🔹 Nouveau champ : calcul de chute de tension */}
+            <div className="h-[10px] border-b-[3px] border-[#d4d4d4] my-[10px]"></div>
+            <div className="mt-2">
+              <Label className="text-[13px]">
+                Voulez-vous calculer la chute de tension ?
+              </Label>
+              <RadioGroup
+                className="flex gap-4 mt-2"
+                value={calculateVoltageDrop}
+                onValueChange={(val) => {
+                  const v = val as "oui" | "non";
+                  setCalculateVoltageDrop(v);
+                  if (v === "oui") {
+                    setIsVoltageModalOpen(true);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem id="chute-oui" value="oui" />
+                  <Label htmlFor="chute-oui">Oui</Label>
+                </div>
+                <div className="flex items-center gap-1">
+                  <RadioGroupItem id="chute-non" value="non" />
+                  <Label htmlFor="chute-non">Non</Label>
+                </div>
+              </RadioGroup>
+
+              {/* Résultat affiché dans le formulaire principal */}
+              {voltageDropResult && calculateVoltageDrop === "oui" && (
+                <div className="mt-3 bg-white/70 border border-dashed border-[#0f427c]/40 rounded-md px-3 py-2 text-[12px]">
+                  <p className="font-semibold text-[#0f427c] text-[13px] mb-1">
+                    Résultats de la chute de tension
+                  </p>
+                  <p>
+                    Chute de tension ≈{" "}
+                    <span className="font-semibold">
+                      {voltageDropResult.vdrop ?? "–"} V
+                    </span>
+                  </p>
+                  <p>
+                    Pourcentage de chute de tension ≈{" "}
+                    <span className="font-semibold">
+                      {voltageDropResult.vdropPct ?? "–"} %
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Résistance de fil :{" "}
+                    {voltageDropResult.rwire ?? "–"} Ω
+                  </p>
+
+                  <button
+                    type="button"
+                    className="mt-2 text-[11px] underline text-[#0f427c]"
+                    onClick={() => setIsVoltageModalOpen(true)}
+                  >
+                    Modifier le calcul
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </main>
+
         <div className="flex justify-end  w-full mx-auto lg:px-10 px-2 z-[1000]">
           <Button
             onClick={handleVisualiserResultats}
@@ -956,9 +1286,37 @@ const Home = () => {
             inclinaison={inclinaison}
             error={error}
             obstacles={obstacles}
+            voltageDropResult={voltageDropResult} 
           />
         )}
       </div>
+
+      {/* 🔹 Popup stylé pour le calcul de chute de tension */}
+      {isVoltageModalOpen && (
+  <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/65 backdrop-blur-sm">
+    <div className="relative w-full max-w-4xl mx-4">
+      {/* Halo lumineux derrière la carte */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0f427c]/30 via-[#008f31]/20 to-transparent blur-3xl opacity-80 pointer-events-none" />
+
+      {/* Carte principale */}
+      <div className="relative bg-white rounded-3xl shadow-[0_18px_60px_rgba(15,66,124,0.45)] border border-slate-100/80 overflow-hidden">
+        {/* Bandeau décoratif en haut */}
+        <div className="]" />
+
+        <VoltageDropCalculator
+          onClose={() => setIsVoltageModalOpen(false)}
+          onResult={(result) => {
+            setVoltageDropResult(result);
+            // Si tu veux fermer automatiquement après calcul, décommente :
+            // setIsVoltageModalOpen(false);
+          }}
+        />
+      </div>
+    </div>
+  </div>
+)}
+
+
       <Footer />
     </div>
   );
