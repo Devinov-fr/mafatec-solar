@@ -19,7 +19,7 @@ import ReactToPrint from "react-to-print";
 // app/(etude)/page.tsx
 import dynamic from "next/dynamic";
 import SunPathDiagram from "@/components/ui/SunPathDiagram";
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
 import PrintComponent from "@/components/ui/PrintComponent";
 import { Plus, Trash, TrashIcon } from "lucide-react";
