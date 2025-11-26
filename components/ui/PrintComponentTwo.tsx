@@ -284,7 +284,33 @@ export interface Panel {
   y: number;
   width: number;
   height: number;
+  // coins exacts du champ PV (issus du calepinage à 4 points)
+  corners?: { x: number; y: number }[];
 }
+
+// helper pour transformer les coins en string SVG
+const buildPolygonPoints = (panel?: Panel): string | null => {
+  if (!panel) return null;
+
+  if (panel.corners && panel.corners.length >= 3) {
+    const coords = panel.corners.map((p) => ({ x: p.x, y: p.y }));
+    const cx = coords.reduce((s, c) => s + c.x, 0) / coords.length;
+    const cy = coords.reduce((s, c) => s + c.y, 0) / coords.length;
+
+    (coords as any[]).forEach((c: any) => {
+      c.angle = Math.atan2(c.y - cy, c.x - cx);
+    });
+    (coords as any[]).sort((a: any, b: any) => a.angle - b.angle);
+
+    return coords.map((c) => `${c.x},${c.y}`).join(" ");
+  }
+
+  // fallback rectangle si jamais corners n'est pas fourni
+  const { x, y, width, height } = panel;
+  return `${x},${y} ${x + width},${y} ${x + width},${y + height} ${x},${
+    y + height
+  }`;
+};
 
 // ✅ Interface pour les résultats de chute de tension
 interface VoltageDropResult {
@@ -351,6 +377,10 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
 
     const componentRef = ref as React.MutableRefObject<HTMLDivElement>;
     console.log("componentRef", componentRef);
+
+    // 🧩 On prend le premier champ PV (celui défini avec les 4 points)
+    const mainPanel = panels[0];
+    const polygonPoints = buildPolygonPoints(mainPanel);
 
     return (
       <div className="">
@@ -561,109 +591,123 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                 {/* ================== VUE MAISON + PANNEAUX ================== */}
                 <div className="lg:px-16 lg:pt-4 lg:pb-2 px-0 pt-4 pb-2">
                   <h2 className="text-lg font-bold text-[#0f459e] mb-3">
-                    Calepinage – Vue toiture
+                    Calepinage – Emplacement des panneaux
                   </h2>
 
-                  {panels.length > 0 ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col gap-4">
-                      {/* Petit résumé en haut */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900">
-                            Nombre de panneaux :
-                          </span>
-                          <span>{panels.length}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900">
-                            Disposition :
-                          </span>
-                          <span>Schéma vue de dessus (indicatif)</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 max-w-[260px]">
-                          Le plan ci-dessous représente la répartition des
-                          panneaux sur la surface du toit, à l’échelle de la
-                          zone saisie dans l’outil.
-                        </div>
+                  {mainPanel && polygonPoints ? (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
+                      {/* Image + forme des panneaux, rien d'autre */}
+                      <div className="w-full max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-md bg-slate-100">
+                        <svg
+                          viewBox="0 0 1024 730"
+                          preserveAspectRatio="xMidYMid slice"
+                          className="w-full h-full"
+                        >
+                          {/* Image de la maison qui remplit tout le cadre */}
+                          <image
+                            href="/toit-maison.jpg"
+                            x="0"
+                            y="0"
+                            width="1024"
+                            height="730"
+                            preserveAspectRatio="xMidYMid slice"
+                          />
+
+                          {/* Motif panneau PV noir (même style que dans le calepinage) */}
+                          <defs>
+                            <pattern
+                              id="pvPatternBlack"
+                              patternUnits="userSpaceOnUse"
+                              width="90"
+                              height="60"
+                            >
+                              <rect width="90" height="60" fill="#020307" />
+                              <linearGradient
+                                id="pvGradBlack"
+                                x1="0%"
+                                y1="0%"
+                                x2="0%"
+                                y2="100%"
+                              >
+                                <stop
+                                  offset="0%"
+                                  stopColor="#18191f"
+                                  stopOpacity={1}
+                                />
+                                <stop
+                                  offset="40%"
+                                  stopColor="#07080c"
+                                  stopOpacity={1}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="#000000"
+                                  stopOpacity={1}
+                                />
+                              </linearGradient>
+                              <rect
+                                width="90"
+                                height="60"
+                                fill="url(#pvGradBlack)"
+                              />
+                              <path
+                                d="
+                                  M0 0 H90
+                                  M0 20 H90
+                                  M0 40 H90
+                                  M0 60 H90
+
+                                  M0 0 V60
+                                  M22.5 0 V60
+                                  M45 0 V60
+                                  M67.5 0 V60
+                                  M90 0 V60
+                                "
+                                stroke="#33373f"
+                                strokeWidth={0.8}
+                                opacity={0.75}
+                              />
+                              <rect
+                                x={1.5}
+                                y={1.5}
+                                width={87}
+                                height={57}
+                                fill="none"
+                                stroke="#14161b"
+                                strokeWidth={2}
+                                opacity={0.9}
+                              />
+                              <polygon
+                                points="-10,0 40,0 95,60 45,60"
+                                fill="rgba(255,255,255,0.04)"
+                              />
+                            </pattern>
+                          </defs>
+
+                          {/* contour du champ PV */}
+                          <polygon
+                            points={polygonPoints}
+                            fill="none"
+                            stroke="#050608"
+                            strokeWidth={5}
+                            strokeLinejoin="round"
+                          />
+
+                          {/* surface PV : juste la forme exacte du champ */}
+                          <polygon
+                            points={polygonPoints}
+                            fill="url(#pvPatternBlack)"
+                            stroke="#181a1f"
+                            strokeWidth={2.2}
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                          />
+                        </svg>
                       </div>
 
-                      {/* Zone "plan technique" */}
-                      <div
-                        className="relative w-full max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-[0_10px_25px_rgba(15,23,42,0.7)]"
-                        style={{ aspectRatio: "18 / 10" }}
-                      >
-                        {/* Grille de fond */}
-                        <div
-                          className="absolute inset-0 opacity-60"
-                          style={{
-                            backgroundImage:
-                              "linear-gradient(to right, rgba(148,163,184,0.25) 1px, transparent 1px)," +
-                              "linear-gradient(to bottom, rgba(148,163,184,0.25) 1px, transparent 1px)",
-                            backgroundSize: "16px 16px",
-                          }}
-                        />
-                        {/* Légère zone toit / pente */}
-                        <div
-                          className="absolute inset-6 rounded-xl border border-slate-600/70"
-                          style={{
-                            background:
-                              "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.7))",
-                            boxShadow:
-                              "inset 0 0 40px rgba(15,23,42,0.9), 0 18px 40px rgba(15,23,42,0.9)",
-                          }}
-                        />
-
-                        {/* Panneaux positionnés selon le calepinage */}
-                        {panels.map((panel, index) => (
-                          <div
-                            key={panel.id}
-                            className="absolute flex items-center justify-center group"
-                            style={{
-                              width: panel.width,
-                              height: panel.height,
-                              left: panel.x,
-                              top: panel.y,
-                            }}
-                          >
-                            {/* Bloc panneau style "plan" */}
-                            <div className="w-full h-full rounded-[6px] border border-[#10b3a3] bg-[#022c32] shadow-[0_6px_16px_rgba(0,0,0,0.7)] relative overflow-hidden">
-                              {/* Reflet doux */}
-                              <div
-                                className="absolute inset-x-[-20%] -top-1/3 h-1/2 pointer-events-none"
-                                style={{
-                                  background:
-                                    "linear-gradient(140deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)",
-                                  mixBlendMode: "screen",
-                                }}
-                              />
-                              {/* Fine grille interne */}
-                              <div
-                                className="absolute inset-[3px] opacity-60"
-                                style={{
-                                  backgroundImage:
-                                    "linear-gradient(to right, rgba(148,163,184,0.35) 1px, transparent 1px)," +
-                                    "linear-gradient(to bottom, rgba(148,163,184,0.35) 1px, transparent 1px)",
-                                  backgroundSize: "8px 8px",
-                                }}
-                              />
-                              {/* Petit repère en bas */}
-                              <div className="absolute bottom-1 right-1 text-[8px] text-slate-200/80 bg-slate-900/60 px-1 py-[1px] rounded">
-                                #{index + 1}
-                              </div>
-                            </div>
-
-                            {/* Numéro centré */}
-                            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                              P{index + 1}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <p className="text-[11px] text-slate-500 text-center mt-2">
-                        Schéma indicatif de calepinage – les distances exactes
-                        sont déterminées lors de la visite technique et du plan
-                        d’exécution.
+                      <p className="text-[10px] text-slate-500 text-center mt-2">
+                        Emplacement et forme exacts du champ photovoltaïque sur
+                        la toiture.
                       </p>
                     </div>
                   ) : (

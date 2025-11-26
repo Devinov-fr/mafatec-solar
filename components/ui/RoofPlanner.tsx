@@ -1,108 +1,166 @@
 "use client";
 
-import React, { useRef, useState, MouseEvent } from "react";
-import type { Panel } from "@/components/ui/PrintComponentTwo"; // 🔹 on réutilise le même type
-
-const PANEL_WIDTH = 30;  // largeur panneau en px
-const PANEL_HEIGHT = 50; // hauteur panneau en px
+import React, {
+  useRef,
+  useState,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import type { Panel } from "@/components/ui/PrintComponentTwo";
 
 interface RoofPlannerProps {
   panels: Panel[];
   onPanelsChange: (panels: Panel[]) => void;
 }
 
-const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange }) => {
-  const [isPlacing, setIsPlacing] = useState(false);
-  const [draggingId, setDraggingId] = useState<number | null>(null);
+type CornerId = "p1" | "p2" | "p3" | "p4";
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+interface CornerPoint {
+  id: CornerId;
+  cx: number;
+  cy: number;
+}
 
-  // 🔹 Ajouter un panneau : on clique sur le bouton, puis on clique sur le toit
-  const handleContainerClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isPlacing || !containerRef.current) return;
+const INITIAL_POINTS: CornerPoint[] = [
+  { id: "p1", cx: 400, cy: 350 },
+  { id: "p2", cx: 650, cy: 340 },
+  { id: "p3", cx: 660, cy: 520 },
+  { id: "p4", cx: 420, cy: 530 },
+];
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+const clamp = (val: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, val));
 
-    const x = clickX - PANEL_WIDTH / 2;
-    const y = clickY - PANEL_HEIGHT / 2;
+const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
-    onPanelsChange([
-      ...panels,
-      {
-        id: Date.now(),
-        x,
-        y,
-        width: PANEL_WIDTH,
-        height: PANEL_HEIGHT,
-      },
-    ]);
+  const [points, setPoints] = useState<CornerPoint[]>(INITIAL_POINTS);
+  const [draggingId, setDraggingId] = useState<CornerId | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [validated, setValidated] = useState(false);
+  const [locked, setLocked] = useState(false);
 
-    setIsPlacing(false);
+  // clientX/Y -> coords SVG
+  const getSvgCoords = (
+    evt: ReactPointerEvent<SVGSVGElement> | PointerEvent
+  ) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+
+    const svgPoint = pt.matrixTransform(ctm.inverse());
+    return { x: svgPoint.x, y: svgPoint.y };
   };
 
-  // 🔹 Lancement du drag sur un panneau
-  const handlePanelMouseDown = (
-    e: React.MouseEvent<HTMLDivElement>,
-    id: number
+  // ordre des points pour le polygone affiché
+  const polygonPoints = React.useMemo(() => {
+    const coords = points.map((p) => ({ ...p }));
+
+    const cx = coords.reduce((s, c) => s + c.cx, 0) / coords.length;
+    const cy = coords.reduce((s, c) => s + c.cy, 0) / coords.length;
+
+    coords.forEach((c) => {
+      (c as any).angle = Math.atan2(c.cy - cy, c.cx - cx);
+    });
+
+    coords.sort(
+      (a: any, b: any) => (a.angle as number) - (b.angle as number)
+    );
+
+    return coords.map((c) => `${c.cx},${c.cy}`).join(" ");
+  }, [points]);
+
+  // pointer down sur un coin
+  const handleCornerPointerDown = (
+    evt: ReactPointerEvent<SVGCircleElement>,
+    id: CornerId
   ) => {
-    e.stopPropagation();
-    if (!containerRef.current) return;
+    if (locked) return;
+    evt.preventDefault();
+    evt.stopPropagation();
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const svgPos = getSvgCoords(evt.nativeEvent);
+    const current = points.find((p) => p.id === id);
+    if (!current) return;
 
-    const panel = panels.find((p) => p.id === id);
-    if (!panel) return;
-
-    dragOffsetRef.current = {
-      x: mouseX - panel.x,
-      y: mouseY - panel.y,
-    };
-
+    setDragOffset({
+      x: current.cx - svgPos.x,
+      y: current.cy - svgPos.y,
+    });
     setDraggingId(id);
   };
 
-  // 🔹 Déplacement pendant le drag
-  const handleContainerMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (draggingId === null || !containerRef.current) return;
+  // pointer move global
+  const handleSvgPointerMove = (evt: ReactPointerEvent<SVGSVGElement>) => {
+    if (!draggingId || locked) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const svgPos = getSvgCoords(evt.nativeEvent);
 
-    const { x: offsetX, y: offsetY } = dragOffsetRef.current;
+    let nx = svgPos.x + dragOffset.x;
+    let ny = svgPos.y + dragOffset.y;
 
-    let newX = mouseX - offsetX;
-    let newY = mouseY - offsetY;
+    nx = clamp(nx, 0, 1024);
+    ny = clamp(ny, 0, 730);
 
-    // Empêche de sortir complètement du toit
-    const maxX = rect.width - PANEL_WIDTH;
-    const maxY = rect.height - PANEL_HEIGHT;
-
-    if (newX < 0) newX = 0;
-    if (newY < 0) newY = 0;
-    if (newX > maxX) newX = maxX;
-    if (newY > maxY) newY = maxY;
-
-    onPanelsChange(
-      panels.map((p) =>
-        p.id === draggingId ? { ...p, x: newX, y: newY } : p
+    setPoints((prev) =>
+      prev.map((p) =>
+        p.id === draggingId
+          ? {
+              ...p,
+              cx: nx,
+              cy: ny,
+            }
+          : p
       )
     );
   };
 
-  // 🔹 Fin du drag
-  const stopDragging = () => {
+  const handleSvgPointerUp = () => {
     setDraggingId(null);
   };
 
-  // 🔹 Supprimer un panneau
-  const removePanel = (id: number) => {
-    onPanelsChange(panels.filter((p) => p.id !== id));
+  // ✅ Validation : on fixe le panneau + on stocke aussi les 4 coins dans corners
+  const handleValidate = () => {
+    setValidated(true);
+    setLocked(true);
+
+    const xs = points.map((p) => p.cx);
+    const ys = points.map((p) => p.cy);
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    // on re-ordonne les points comme pour polygonPoints
+    const ordered = [...points];
+    const cx = ordered.reduce((s, c) => s + c.cx, 0) / ordered.length;
+    const cy = ordered.reduce((s, c) => s + c.cy, 0) / ordered.length;
+    (ordered as any[]).forEach((c: any) => {
+      c.angle = Math.atan2(c.cy - cy, c.cx - cx);
+    });
+    (ordered as any[]).sort((a: any, b: any) => a.angle - b.angle);
+
+    const corners = ordered.map((p) => ({ x: p.cx, y: p.cy }));
+
+    const newPanel: Panel = {
+      id: Date.now(),
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      corners, // 🔥 les coins exacts, utilisés dans le PDF
+    };
+
+    onPanelsChange([newPanel]);
   };
 
   return (
@@ -110,118 +168,150 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange }) => 
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[#0f427c]">
-            Positionnement des panneaux sur le toit
+            Calepinage – sélection des panneaux
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Cliquez sur <span className="font-semibold">« Ajouter un panneau »</span>,{" "}
-            puis cliquez sur le toit pour le placer. Vous pouvez ensuite le déplacer.
+            Déplacez les <span className="font-semibold">4 points</span> sur les
+            coins du champ photovoltaïque, puis cliquez sur{" "}
+            <span className="font-semibold">« Valider les panneaux »</span>.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setIsPlacing(true)}
-          className="px-3 py-2 text-sm rounded-lg bg-[#008f31] text-white hover:bg-[#007326] shadow-md"
+          onClick={handleValidate}
+          disabled={validated}
+          className={`px-3 py-2 text-sm rounded-lg shadow-md ${
+            validated
+              ? "bg-slate-300 text-slate-600 cursor-default"
+              : "bg-[#008f31] text-white hover:bg-[#007326]"
+          }`}
         >
-          + Ajouter un panneau
+          {validated ? "Panneaux validés ✅" : "Valider les panneaux"}
         </button>
       </div>
 
       <div
-        ref={containerRef}
-        className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg border border-slate-200 bg-slate-100 cursor-crosshair"
+        className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg border border-slate-200 bg-slate-100"
         style={{ aspectRatio: "14 / 10" }}
-        onClick={handleContainerClick}
-        onMouseMove={handleContainerMouseMove}
-        onMouseUp={stopDragging}
-        onMouseLeave={stopDragging}
       >
-        {/* Image du toit */}
-        <img
-          src="/toit-maison.jpg"
-          alt="Toit de la maison"
-          className="w-full h-full object-cover pointer-events-none select-none"
-        />
+        <svg
+          ref={svgRef}
+          viewBox="0 0 1024 730"
+          preserveAspectRatio="xMidYMid slice"
+          className="absolute inset-0 w-full h-full select-none touch-none"
+          onPointerMove={handleSvgPointerMove}
+          onPointerUp={handleSvgPointerUp}
+          onPointerLeave={handleSvgPointerUp}
+        >
+          <image
+            href="/toit-maison.jpg"
+            x="0"
+            y="0"
+            width="1024"
+            height="730"
+            preserveAspectRatio="xMidYMid slice"
+          />
 
-        {/* Info mode placement */}
-        {isPlacing && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 text-xs text-slate-700 px-3 py-1 rounded-full shadow">
-            Cliquez sur le toit pour placer le panneau
-          </div>
-        )}
-
-        {/* Panneaux */}
-        {panels.map((panel) => (
-          <div
-            key={panel.id}
-            className="absolute cursor-grab active:cursor-grabbing group"
-            style={{
-              width: panel.width,
-              height: panel.height,
-              left: panel.x,
-              top: panel.y,
-            }}
-            onMouseDown={(e) => handlePanelMouseDown(e, panel.id)}
-          >
-            {/* Panneau "full black" */}
-            <div
-              className="relative w-full h-full rounded-[3px] border border-black/70 shadow-[0_4px_10px_rgba(0,0,0,0.8)] overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(145deg, #020308 0%, #050910 40%, #020308 100%)",
-              }}
+          <defs>
+            <pattern
+              id="pvPatternBlack"
+              patternUnits="userSpaceOnUse"
+              width="90"
+              height="60"
             >
-              {/* Grille */}
-              <div
-                className="absolute inset-[1px] rounded-[2px]"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px)," +
-                    "linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)",
-                  backgroundSize: "4px 4px",
-                  backgroundColor: "#020308",
-                  opacity: 0.7,
-                }}
-              />
-              {/* Reflet */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.2) 30%, transparent 55%)",
-                  mixBlendMode: "screen",
-                }}
-              />
-              {/* Ombres */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(circle at 10% 0%, rgba(0,0,0,0.7) 0, transparent 40%)," +
-                    "radial-gradient(circle at 90% 100%, rgba(0,0,0,0.9) 0, transparent 60%)",
-                  opacity: 0.9,
-                }}
-              />
-            </div>
+              <rect width="90" height="60" fill="#020307" />
+              <linearGradient
+                id="pvGradBlack"
+                x1="0%"
+                y1="0%"
+                x2="0%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#18191f" stopOpacity={1} />
+                <stop offset="40%" stopColor="#07080c" stopOpacity={1} />
+                <stop offset="100%" stopColor="#000000" stopOpacity={1} />
+              </linearGradient>
+              <rect width="90" height="60" fill="url(#pvGradBlack)" />
+              <path
+                d="
+                  M0 0 H90
+                  M0 20 H90
+                  M0 40 H90
+                  M0 60 H90
 
-            {/* Label flottant */}
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-white text-[10px] px-2 py-0.5 rounded-full shadow opacity-0 group-hover:opacity-100 transition">
-              Panneau #{panel.id}
-            </div>
+                  M0 0 V60
+                  M22.5 0 V60
+                  M45 0 V60
+                  M67.5 0 V60
+                  M90 0 V60
+                "
+                stroke="#33373f"
+                strokeWidth={0.8}
+                opacity={0.75}
+              />
+              <rect
+                x={1.5}
+                y={1.5}
+                width={87}
+                height={57}
+                fill="none"
+                stroke="#14161b"
+                strokeWidth={2}
+                opacity={0.9}
+              />
+              <polygon
+                points="-10,0 40,0 95,60 45,60"
+                fill="rgba(255,255,255,0.04)"
+              />
+            </pattern>
+          </defs>
 
-            {/* Bouton supprimer */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                removePanel(panel.id);
-              }}
-              className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center text-[11px] rounded-full bg-white text-red-500 shadow opacity-0 group-hover:opacity-100 transition"
-            >
-              ×
-            </button>
-          </div>
-        ))}
+          {/* cadre externe (visible après validation) */}
+          <polygon
+            points={polygonPoints}
+            className={
+              validated
+                ? "opacity-100 transition-opacity duration-200"
+                : "opacity-0 transition-opacity duration-200"
+            }
+            fill="none"
+            stroke="#050608"
+            strokeWidth={5}
+            strokeLinejoin="round"
+          />
+
+          {/* surface panneau */}
+          <polygon
+            points={polygonPoints}
+            fill={validated ? "url(#pvPatternBlack)" : "rgba(255,141,30,0.15)"}
+            stroke={validated ? "#181a1f" : "#FF8D1E"}
+            strokeWidth={validated ? 2.2 : 3}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            strokeDasharray={validated ? undefined : "8 6"}
+            opacity={validated ? 1 : 0.9}
+          />
+
+          {/* points de contrôle */}
+          {points.map((p) => (
+            <circle
+              key={p.id}
+              cx={p.cx}
+              cy={p.cy}
+              r={8}
+              onPointerDown={(evt) => handleCornerPointerDown(evt, p.id)}
+              className={
+                locked
+                  ? "cursor-default"
+                  : "cursor-grab active:cursor-grabbing"
+              }
+              fill="#FF8D1E"
+              stroke="#ffffff"
+              strokeWidth={2}
+            />
+          ))}
+        </svg>
       </div>
     </div>
   );
