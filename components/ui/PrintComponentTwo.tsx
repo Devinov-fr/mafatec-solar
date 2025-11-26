@@ -381,14 +381,24 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
               <div className="h-full z-10 border-t-gray-500 lg:px-0 px-4">
                 {/* Bloc cartes */}
                 <div className="lg:px-16 lg:py-4 px-0 py-3">
-                  <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-4">
+                  <div
+                    className="
+                      flex flex-col lg:flex-row lg:flex-nowrap gap-4
+                      print:grid print:grid-cols-2 print:gap-3
+                    "
+                  >
                     {/* Carte 1 – Entrées fournies */}
-                    <div className="lg:w-1/4 w-full p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                      <h2 className="text-sm font-semibold text-[#0f459e] mb-2 uppercase tracking-wide">
+                    <div
+                      className="
+                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
+                        p-5 print:p-3 print:text-[11px]
+                      "
+                    >
+                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
                         Entrées fournies
                       </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3" />
-                      <ul className="text-xs text-slate-700 space-y-1.5">
+                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
+                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
                         <li>
                           <span className="font-semibold text-slate-900">
                             Latitude :
@@ -423,12 +433,17 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </div>
 
                     {/* Carte 2 – Résultats de la simulation */}
-                    <div className="lg:w-1/4 w-full p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                      <h2 className="text-sm font-semibold text-[#0f459e] mb-2 uppercase tracking-wide">
+                    <div
+                      className="
+                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
+                        p-5 print:p-3 print:text-[11px]
+                      "
+                    >
+                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
                         Résultats de la simulation
                       </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3" />
-                      <ul className="text-xs text-slate-700 space-y-1.5">
+                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
+                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
                         <li>
                           <span className="font-semibold text-slate-900">
                             Inclinaison :
@@ -463,12 +478,17 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </div>
 
                     {/* Carte 3 – Changements de la production */}
-                    <div className="lg:w-1/4 w-full p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                      <h2 className="text-sm font-semibold text-[#0f459e] mb-2 uppercase tracking-wide">
+                    <div
+                      className="
+                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
+                        p-5 print:p-3 print:text-[11px]
+                      "
+                    >
+                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
                         Changements de la production
                       </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3" />
-                      <ul className="text-xs text-slate-700 space-y-1.5">
+                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
+                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
                         <li>
                           <span className="font-semibold text-slate-900">
                             Angle d’incidence :
@@ -497,13 +517,18 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                     </div>
 
                     {/* Carte 4 – Chute de tension du câblage */}
-                    <div className="lg:w-1/4 w-full p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                      <h2 className="text-sm font-semibold text-[#0f459e] mb-2 uppercase tracking-wide">
+                    <div
+                      className="
+                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
+                        p-5 print:p-3 print:text-[11px]
+                      "
+                    >
+                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
                         Chute de tension du câblage
                       </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3" />
+                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
                       {voltageDropResult ? (
-                        <ul className="text-xs text-slate-700 space-y-1.5">
+                        <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
                           <li>
                             <span className="font-semibold text-slate-900">
                               Chute de tension :
@@ -524,7 +549,7 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                           </li>
                         </ul>
                       ) : (
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs print:text-[10px] text-slate-500">
                           Aucun calcul de chute de tension n&apos;a été renseigné
                           pour cette étude.
                         </p>
@@ -540,23 +565,59 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                   </h2>
 
                   {panels.length > 0 ? (
-                    <div className="flex justify-center">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col gap-4">
+                      {/* Petit résumé en haut */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-900">
+                            Nombre de panneaux :
+                          </span>
+                          <span>{panels.length}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-900">
+                            Disposition :
+                          </span>
+                          <span>Schéma vue de dessus (indicatif)</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 max-w-[260px]">
+                          Le plan ci-dessous représente la répartition des
+                          panneaux sur la surface du toit, à l’échelle de la
+                          zone saisie dans l’outil.
+                        </div>
+                      </div>
+
+                      {/* Zone "plan technique" */}
                       <div
-                        className="relative w-full max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-md bg-slate-100"
-                        style={{ aspectRatio: "14 / 10" }}
+                        className="relative w-full max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-[0_10px_25px_rgba(15,23,42,0.7)]"
+                        style={{ aspectRatio: "18 / 10" }}
                       >
-                        {/* image de la maison */}
-                        <img
-                          src="/toit-maison.jpg"
-                          alt="Toit de la maison"
-                          className="w-full h-full object-cover pointer-events-none select-none"
+                        {/* Grille de fond */}
+                        <div
+                          className="absolute inset-0 opacity-60"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(to right, rgba(148,163,184,0.25) 1px, transparent 1px)," +
+                              "linear-gradient(to bottom, rgba(148,163,184,0.25) 1px, transparent 1px)",
+                            backgroundSize: "16px 16px",
+                          }}
+                        />
+                        {/* Légère zone toit / pente */}
+                        <div
+                          className="absolute inset-6 rounded-xl border border-slate-600/70"
+                          style={{
+                            background:
+                              "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.7))",
+                            boxShadow:
+                              "inset 0 0 40px rgba(15,23,42,0.9), 0 18px 40px rgba(15,23,42,0.9)",
+                          }}
                         />
 
-                        {/* panneaux positionnés au même endroit que dans RoofPlanner */}
-                        {panels.map((panel) => (
+                        {/* Panneaux positionnés selon le calepinage */}
+                        {panels.map((panel, index) => (
                           <div
                             key={panel.id}
-                            className="absolute"
+                            className="absolute flex items-center justify-center group"
                             style={{
                               width: panel.width,
                               height: panel.height,
@@ -564,27 +625,50 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                               top: panel.y,
                             }}
                           >
-                            {/* style panneau full black */}
-                            <div className="w-full h-full rounded-[4px] bg-gradient-to-br from-[#020617] via-black to-[#020617] border border-black/70 shadow-[0_4px_10px_rgba(0,0,0,0.6)] relative overflow-hidden">
-                              {/* reflet */}
-                              <div className="absolute inset-x-[-15%] -top-1/3 h-1/2 bg-gradient-to-b from-white/22 via-white/6 to-transparent rotate-[-14deg] pointer-events-none" />
-                              {/* grille légère */}
-                              <div className="absolute inset-[3px] opacity-35 grid grid-cols-3 grid-rows-4 gap-[1px]">
-                                {Array.from({ length: 12 }).map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className="border border-slate-800/70 bg-black"
-                                  />
-                                ))}
+                            {/* Bloc panneau style "plan" */}
+                            <div className="w-full h-full rounded-[6px] border border-[#10b3a3] bg-[#022c32] shadow-[0_6px_16px_rgba(0,0,0,0.7)] relative overflow-hidden">
+                              {/* Reflet doux */}
+                              <div
+                                className="absolute inset-x-[-20%] -top-1/3 h-1/2 pointer-events-none"
+                                style={{
+                                  background:
+                                    "linear-gradient(140deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)",
+                                  mixBlendMode: "screen",
+                                }}
+                              />
+                              {/* Fine grille interne */}
+                              <div
+                                className="absolute inset-[3px] opacity-60"
+                                style={{
+                                  backgroundImage:
+                                    "linear-gradient(to right, rgba(148,163,184,0.35) 1px, transparent 1px)," +
+                                    "linear-gradient(to bottom, rgba(148,163,184,0.35) 1px, transparent 1px)",
+                                  backgroundSize: "8px 8px",
+                                }}
+                              />
+                              {/* Petit repère en bas */}
+                              <div className="absolute bottom-1 right-1 text-[8px] text-slate-200/80 bg-slate-900/60 px-1 py-[1px] rounded">
+                                #{index + 1}
                               </div>
                             </div>
+
+                            {/* Numéro centré */}
+                            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                              P{index + 1}
+                            </span>
                           </div>
                         ))}
                       </div>
+
+                      <p className="text-[11px] text-slate-500 text-center mt-2">
+                        Schéma indicatif de calepinage – les distances exactes
+                        sont déterminées lors de la visite technique et du plan
+                        d’exécution.
+                      </p>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-500">
-                      Aucun calpinage n&apos;a été défini pour cette étude.
+                      Aucun calepinage n&apos;a été défini pour cette étude.
                     </p>
                   )}
                 </div>
