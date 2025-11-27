@@ -10,6 +10,7 @@ import type { Panel } from "@/components/ui/PrintComponentTwo";
 interface RoofPlannerProps {
   panels: Panel[];
   onPanelsChange: (panels: Panel[]) => void;
+  onClose?: () => void; // 🔹 pour fermer la popup
 }
 
 type CornerId = "p1" | "p2" | "p3" | "p4";
@@ -30,7 +31,7 @@ const INITIAL_POINTS: CornerPoint[] = [
 const clamp = (val: number, min: number, max: number) =>
   Math.max(min, Math.min(max, val));
 
-const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
+const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange, onClose }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const [points, setPoints] = useState<CornerPoint[]>(INITIAL_POINTS);
@@ -42,7 +43,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
   const [validated, setValidated] = useState(false);
   const [locked, setLocked] = useState(false);
 
-  // clientX/Y -> coords SVG
   const getSvgCoords = (
     evt: ReactPointerEvent<SVGSVGElement> | PointerEvent
   ) => {
@@ -50,8 +50,9 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     if (!svg) return { x: 0, y: 0 };
 
     const pt = svg.createSVGPoint();
-    pt.x = evt.clientX;
-    pt.y = evt.clientY;
+    const e = evt as PointerEvent;
+    pt.x = e.clientX;
+    pt.y = e.clientY;
 
     const ctm = svg.getScreenCTM();
     if (!ctm) return { x: 0, y: 0 };
@@ -60,7 +61,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     return { x: svgPoint.x, y: svgPoint.y };
   };
 
-  // ordre des points pour le polygone affiché
   const polygonPoints = React.useMemo(() => {
     const coords = points.map((p) => ({ ...p }));
 
@@ -78,7 +78,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     return coords.map((c) => `${c.cx},${c.cy}`).join(" ");
   }, [points]);
 
-  // pointer down sur un coin
   const handleCornerPointerDown = (
     evt: ReactPointerEvent<SVGCircleElement>,
     id: CornerId
@@ -98,7 +97,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     setDraggingId(id);
   };
 
-  // pointer move global
   const handleSvgPointerMove = (evt: ReactPointerEvent<SVGSVGElement>) => {
     if (!draggingId || locked) return;
 
@@ -127,7 +125,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     setDraggingId(null);
   };
 
-  // ✅ Validation : on fixe le panneau + on stocke aussi les 4 coins dans corners
   const handleValidate = () => {
     setValidated(true);
     setLocked(true);
@@ -140,7 +137,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
 
-    // on re-ordonne les points comme pour polygonPoints
     const ordered = [...points];
     const cx = ordered.reduce((s, c) => s + c.cx, 0) / ordered.length;
     const cy = ordered.reduce((s, c) => s + c.cy, 0) / ordered.length;
@@ -157,42 +153,54 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
       y: minY,
       width: maxX - minX,
       height: maxY - minY,
-      corners, // 🔥 les coins exacts, utilisés dans le PDF
+      corners,
     };
 
     onPanelsChange([newPanel]);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="max-w-5xl mx-auto px-6 py-5 space-y-4 bg-white">
+      {/* Header popup */}
+      <div className="flex items-center justify-between gap-4 mb-1">
         <div>
           <h2 className="text-lg font-semibold text-[#0f427c]">
             Calepinage – sélection des panneaux
           </h2>
           <p className="text-xs text-slate-500 mt-1">
             Déplacez les <span className="font-semibold">4 points</span> sur les
-            coins du champ photovoltaïque, puis cliquez sur{" "}
-            <span className="font-semibold">« Valider les panneaux »</span>.
+            coins du champ photovoltaïque, puis validez.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleValidate}
-          disabled={validated}
-          className={`px-3 py-2 text-sm rounded-lg shadow-md ${
-            validated
-              ? "bg-slate-300 text-slate-600 cursor-default"
-              : "bg-[#008f31] text-white hover:bg-[#007326]"
-          }`}
-        >
-          {validated ? "Panneaux validés ✅" : "Valider les panneaux"}
-        </button>
+        <div className="flex gap-2 items-center">
+          <button
+            type="button"
+            onClick={handleValidate}
+            disabled={validated}
+            className={`px-3 py-2 text-sm rounded-lg shadow-sm border ${
+              validated
+                ? "bg-slate-100 text-slate-500 border-slate-200 cursor-default"
+                : "bg-[#344d95] text-white hover:bg-[#d32f2f]"
+            }`}
+          >
+            {validated ? "Panneaux validés ✅" : "Valider les panneaux"}
+          </button>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-8 w-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
+            >
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div
-        className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg border border-slate-200 bg-slate-100"
+        className="relative w-full rounded-xl overflow-hidden shadow-lg border border-slate-200 bg-slate-100"
         style={{ aspectRatio: "14 / 10" }}
       >
         <svg
@@ -204,6 +212,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
           onPointerUp={handleSvgPointerUp}
           onPointerLeave={handleSvgPointerUp}
         >
+          {/* Image toit */}
           <image
             href="/toit-maison.jpg"
             x="0"
@@ -213,93 +222,66 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ onPanelsChange }) => {
             preserveAspectRatio="xMidYMid slice"
           />
 
+          {/* Pattern panneaux */}
           <defs>
             <pattern
               id="pvPatternBlack"
-              patternUnits="userSpaceOnUse"
-              width="90"
-              height="60"
+              patternUnits="objectBoundingBox"
+              patternContentUnits="objectBoundingBox"
+              width="1"
+              height="1"
             >
-              <rect width="90" height="60" fill="#020307" />
-              <linearGradient
-                id="pvGradBlack"
-                x1="0%"
-                y1="0%"
-                x2="0%"
-                y2="100%"
-              >
-                <stop offset="0%" stopColor="#18191f" stopOpacity={1} />
-                <stop offset="40%" stopColor="#07080c" stopOpacity={1} />
-                <stop offset="100%" stopColor="#000000" stopOpacity={1} />
+              <rect x="0" y="0" width="1" height="1" fill="#02030a" />
+
+              <linearGradient id="pvGradBB" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#1b2738" stopOpacity="0.95" />
+                <stop offset="0.45" stopColor="#050812" stopOpacity="0.97" />
+                <stop offset="1" stopColor="#000000" stopOpacity="0.99" />
               </linearGradient>
-              <rect width="90" height="60" fill="url(#pvGradBlack)" />
+              <rect x="0" y="0" width="1" height="1" fill="url(#pvGradBB)" />
+
               <path
                 d="
-                  M0 0 H90
-                  M0 20 H90
-                  M0 40 H90
-                  M0 60 H90
+                  M0 0 H1
+                  M0 0.5 H1
+                  M0 1 H1
 
-                  M0 0 V60
-                  M22.5 0 V60
-                  M45 0 V60
-                  M67.5 0 V60
-                  M90 0 V60
+                  M0 0 V1
+                  M0.25 0 V1
+                  M0.5 0 V1
+                  M0.75 0 V1
+                  M1 0 V1
                 "
-                stroke="#33373f"
-                strokeWidth={0.8}
-                opacity={0.75}
+                stroke="#222733"
+                strokeWidth={0.006}
               />
-              <rect
-                x={1.5}
-                y={1.5}
-                width={87}
-                height={57}
-                fill="none"
-                stroke="#14161b"
-                strokeWidth={2}
-                opacity={0.9}
-              />
+
               <polygon
-                points="-10,0 40,0 95,60 45,60"
-                fill="rgba(255,255,255,0.04)"
+                points="-0.2,0 0.35,0 1,1 0.45,1"
+                fill="rgba(255,255,255,0.07)"
               />
             </pattern>
           </defs>
 
-          {/* cadre externe (visible après validation) */}
-          <polygon
-            points={polygonPoints}
-            className={
-              validated
-                ? "opacity-100 transition-opacity duration-200"
-                : "opacity-0 transition-opacity duration-200"
-            }
-            fill="none"
-            stroke="#050608"
-            strokeWidth={5}
-            strokeLinejoin="round"
-          />
-
-          {/* surface panneau */}
+          {/* Surface panneau */}
           <polygon
             points={polygonPoints}
             fill={validated ? "url(#pvPatternBlack)" : "rgba(255,141,30,0.15)"}
-            stroke={validated ? "#181a1f" : "#FF8D1E"}
-            strokeWidth={validated ? 2.2 : 3}
+            stroke={validated ? "none" : "#FF8D1E"}
+            strokeWidth={validated ? 0 : 3}
             strokeLinejoin="round"
             strokeLinecap="round"
             strokeDasharray={validated ? undefined : "8 6"}
             opacity={validated ? 1 : 0.9}
           />
 
-          {/* points de contrôle */}
+          {/* Points de contrôle */}
           {points.map((p) => (
             <circle
               key={p.id}
               cx={p.cx}
               cy={p.cy}
-              r={8}
+              r={7}
               onPointerDown={(evt) => handleCornerPointerDown(evt, p.id)}
               className={
                 locked

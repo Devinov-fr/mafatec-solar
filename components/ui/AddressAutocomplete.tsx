@@ -56,13 +56,13 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   return (
     <div>
-      <Label className="text-[13px] ">
+      <Label className="text-[15px] font-bold">
         Adresse <span className="text-red-500">*</span>
       </Label>
       <Autocomplete onLoad={onLoad} onPlaceChanged={handlePlaceChanged}>
         <input
           type="text"
-          placeholder="Enter your address"
+          placeholder="Entrez l'adresse"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           className="border border-gray-300 p-2 rounded bg-white w-full"

@@ -614,75 +614,51 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                           />
 
                           {/* Motif panneau PV noir (même style que dans le calepinage) */}
-                          <defs>
-                            <pattern
-                              id="pvPatternBlack"
-                              patternUnits="userSpaceOnUse"
-                              width="90"
-                              height="60"
-                            >
-                              <rect width="90" height="60" fill="#020307" />
-                              <linearGradient
-                                id="pvGradBlack"
-                                x1="0%"
-                                y1="0%"
-                                x2="0%"
-                                y2="100%"
-                              >
-                                <stop
-                                  offset="0%"
-                                  stopColor="#18191f"
-                                  stopOpacity={1}
-                                />
-                                <stop
-                                  offset="40%"
-                                  stopColor="#07080c"
-                                  stopOpacity={1}
-                                />
-                                <stop
-                                  offset="100%"
-                                  stopColor="#000000"
-                                  stopOpacity={1}
-                                />
-                              </linearGradient>
-                              <rect
-                                width="90"
-                                height="60"
-                                fill="url(#pvGradBlack)"
-                              />
-                              <path
-                                d="
-                                  M0 0 H90
-                                  M0 20 H90
-                                  M0 40 H90
-                                  M0 60 H90
+                         
+<defs>
+  <pattern
+    id="pvPatternBlack"
+    patternUnits="objectBoundingBox"
+    patternContentUnits="objectBoundingBox"
+    width="1"
+    height="1"
+  >
+    {/* fond très sombre */}
+    <rect x="0" y="0" width="1" height="1" fill="#02030a" />
 
-                                  M0 0 V60
-                                  M22.5 0 V60
-                                  M45 0 V60
-                                  M67.5 0 V60
-                                  M90 0 V60
-                                "
-                                stroke="#33373f"
-                                strokeWidth={0.8}
-                                opacity={0.75}
-                              />
-                              <rect
-                                x={1.5}
-                                y={1.5}
-                                width={87}
-                                height={57}
-                                fill="none"
-                                stroke="#14161b"
-                                strokeWidth={2}
-                                opacity={0.9}
-                              />
-                              <polygon
-                                points="-10,0 40,0 95,60 45,60"
-                                fill="rgba(255,255,255,0.04)"
-                              />
-                            </pattern>
-                          </defs>
+    {/* dégradé vertical léger */}
+    <linearGradient id="pvGradBB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stopColor="#1b2738" stopOpacity="0.95" />
+      <stop offset="0.45" stopColor="#050812" stopOpacity="0.97" />
+      <stop offset="1" stopColor="#000000" stopOpacity="0.99" />
+    </linearGradient>
+    <rect x="0" y="0" width="1" height="1" fill="url(#pvGradBB)" />
+
+    {/* grille des cellules */}
+    <path
+      d="
+        M0 0 H1
+        M0 0.5 H1
+        M0 1 H1
+
+        M0 0 V1
+        M0.25 0 V1
+        M0.5 0 V1
+        M0.75 0 V1
+        M1 0 V1
+      "
+      stroke="#222733"
+      strokeWidth={0.006}
+    />
+
+    {/* léger reflet diagonal */}
+    <polygon
+      points="-0.2,0 0.35,0 1,1 0.45,1"
+      fill="rgba(255,255,255,0.07)"
+    />
+  </pattern>
+</defs>
+
 
                           {/* contour du champ PV */}
                           <polygon
@@ -870,46 +846,49 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
 
               {/* Diagramme solaire */}
               <div className="mt-4">
-                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
-                  Diagramme solaire avec masques d&apos;ombrage
-                </h2>
-                <div className="flex justify-center mx-auto w-full lg:w-[75%] overflow-x-auto lg:overflow-x-visible mt-8">
-                  <div className="flex flex-nowrap">
-                    {(String(data.inputs.location.latitude).startsWith("42.") ||
-                      data.inputs.location.latitude < 42) && (
-                      <Altitude42 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "43."
-                    ) && <Altitude43 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "44."
-                    ) && <Altitude44 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "45."
-                    ) && <Altitude45 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "46."
-                    ) && <Altitude46 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "47."
-                    ) && <Altitude47 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "48."
-                    ) && <Altitude48 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "49."
-                    ) && <Altitude49 obstacles={obstacles || []} />}
-                    {String(data.inputs.location.latitude).startsWith(
-                      "50."
-                    ) && <Altitude50 obstacles={obstacles || []} />}
-                    {(String(data.inputs.location.latitude).startsWith("51.") ||
-                      data.inputs.location.latitude > 51) && (
-                      <Altitude51 obstacles={obstacles || []} />
-                    )}
-                  </div>
-                </div>
-              </div>
+  <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
+    Diagramme solaire avec masques d&apos;ombrage
+  </h2>
+
+  <div className="flex justify-center mx-auto w-full overflow-x-auto lg:overflow-x-visible mt-8">
+    {/* 🔹 on réduit tout le diagramme ici */}
+    <div className="flex flex-nowrap scale-[0.8] origin-top">
+      {(String(data.inputs.location.latitude).startsWith("42.") ||
+        data.inputs.location.latitude < 42) && (
+        <Altitude42 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("43.") && (
+        <Altitude43 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("44.") && (
+        <Altitude44 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("45.") && (
+        <Altitude45 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("46.") && (
+        <Altitude46 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("47.") && (
+        <Altitude47 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("48.") && (
+        <Altitude48 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("49.") && (
+        <Altitude49 obstacles={obstacles || []} />
+      )}
+      {String(data.inputs.location.latitude).startsWith("50.") && (
+        <Altitude50 obstacles={obstacles || []} />
+      )}
+      {(String(data.inputs.location.latitude).startsWith("51.") ||
+        data.inputs.location.latitude > 51) && (
+        <Altitude51 obstacles={obstacles || []} />
+      )}
+    </div>
+  </div>
+</div>
+
             </div>
           )}
         </div>
