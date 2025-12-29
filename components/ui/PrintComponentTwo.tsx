@@ -277,15 +277,22 @@ interface Obstacle {
   points: { azimuth: number | null; height: number | null }[];
 }
 
-// ✅ même structure que dans RoofPlanner
+// ✅ Interface commune pour RoofPlanner & PrintComponentTwo
 export interface Panel {
   id: number;
   x: number;
   y: number;
   width: number;
   height: number;
-  // coins exacts du champ PV (issus du calepinage à 4 points)
+
+  // coins exacts du champ PV (calepinage libre / tracé à la main, etc.)
   corners?: { x: number; y: number }[];
+
+  // URL de la photo utilisée pour le calepinage (optionnel)
+  imageUrl?: string | null;
+
+  // identifiant du bloc (6+6, plusieurs champs, etc.)
+  blockId?: number;
 }
 
 // helper pour transformer les coins en string SVG
@@ -330,7 +337,7 @@ interface PrintComponentProps {
   // ✅ Résultats de la chute de tension (optionnel)
   voltageDropResult?: VoltageDropResult | null;
 
-  // ✅ Nouveau : panneaux calpinage
+  // ✅ Nouveau : panneaux calepinage
   panels?: Panel[];
 }
 
@@ -378,9 +385,24 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
     const componentRef = ref as React.MutableRefObject<HTMLDivElement>;
     console.log("componentRef", componentRef);
 
-    // 🧩 On prend le premier champ PV (celui défini avec les 4 points)
+    // 🧩 On récupère les infos du calepinage
     const mainPanel = panels[0];
-    const polygonPoints = buildPolygonPoints(mainPanel);
+
+    // image de toiture : d'abord l'URL stockée dans les panneaux (image importée dans RoofPlanner), sinon fallback
+    const roofImageHref =
+      panels.find((p) => p.imageUrl)?.imageUrl ||
+      mainPanel?.imageUrl ||
+      "/toit-maison.jpg";
+
+    // tous les polygons des panneaux
+    const panelPolygons = panels
+      .map((panel) => ({
+        panel,
+        points: buildPolygonPoints(panel),
+      }))
+      .filter((p) => p.points !== null);
+
+    const hasPanels = panelPolygons.length > 0;
 
     return (
       <div className="">
@@ -594,18 +616,18 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                     Calepinage – Emplacement des panneaux
                   </h2>
 
-                  {mainPanel && polygonPoints ? (
+                  {hasPanels ? (
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                      {/* Image + forme des panneaux, rien d'autre */}
+                      {/* Image + calepinage exact */}
                       <div className="w-full max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-md bg-slate-100">
                         <svg
                           viewBox="0 0 1024 730"
                           preserveAspectRatio="xMidYMid slice"
                           className="w-full h-full"
                         >
-                          {/* Image de la maison qui remplit tout le cadre */}
+                          {/* 🔹 Image de toiture exacte (celle du calepinage) */}
                           <image
-                            href="/toit-maison.jpg"
+                            href={roofImageHref}
                             x="0"
                             y="0"
                             width="1024"
@@ -613,77 +635,99 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
                             preserveAspectRatio="xMidYMid slice"
                           />
 
-                          {/* Motif panneau PV noir (même style que dans le calepinage) */}
-                         
-<defs>
-  <pattern
-    id="pvPatternBlack"
-    patternUnits="objectBoundingBox"
-    patternContentUnits="objectBoundingBox"
-    width="1"
-    height="1"
-  >
-    {/* fond très sombre */}
-    <rect x="0" y="0" width="1" height="1" fill="#02030a" />
+                          {/* 🔹 Motif panneau PV noir (même style que dans le calepinage) */}
+                          <defs>
+                            <pattern
+                              id="pvPatternBlack"
+                              patternUnits="objectBoundingBox"
+                              patternContentUnits="objectBoundingBox"
+                              width="1"
+                              height="1"
+                            >
+                              {/* fond très sombre */}
+                              <rect
+                                x="0"
+                                y="0"
+                                width="1"
+                                height="1"
+                                fill="#02030a"
+                              />
 
-    {/* dégradé vertical léger */}
-    <linearGradient id="pvGradBB" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stopColor="#1b2738" stopOpacity="0.95" />
-      <stop offset="0.45" stopColor="#050812" stopOpacity="0.97" />
-      <stop offset="1" stopColor="#000000" stopOpacity="0.99" />
-    </linearGradient>
-    <rect x="0" y="0" width="1" height="1" fill="url(#pvGradBB)" />
+                              {/* dégradé vertical léger */}
+                              <linearGradient
+                                id="pvGradBB"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="0"
+                                  stopColor="#1b2738"
+                                  stopOpacity="0.95"
+                                />
+                                <stop
+                                  offset="0.45"
+                                  stopColor="#050812"
+                                  stopOpacity="0.97"
+                                />
+                                <stop
+                                  offset="1"
+                                  stopColor="#000000"
+                                  stopOpacity="0.99"
+                                />
+                              </linearGradient>
+                              <rect
+                                x="0"
+                                y="0"
+                                width="1"
+                                height="1"
+                                fill="url(#pvGradBB)"
+                              />
 
-    {/* grille des cellules */}
-    <path
-      d="
-        M0 0 H1
-        M0 0.5 H1
-        M0 1 H1
+                              {/* grille des cellules */}
+                              <path
+                                d="
+                                  M0 0 H1
+                                  M0 0.5 H1
+                                  M0 1 H1
 
-        M0 0 V1
-        M0.25 0 V1
-        M0.5 0 V1
-        M0.75 0 V1
-        M1 0 V1
-      "
-      stroke="#222733"
-      strokeWidth={0.006}
-    />
+                                  M0 0 V1
+                                  M0.25 0 V1
+                                  M0.5 0 V1
+                                  M0.75 0 V1
+                                  M1 0 V1
+                                "
+                                stroke="#222733"
+                                strokeWidth={0.006}
+                              />
 
-    {/* léger reflet diagonal */}
-    <polygon
-      points="-0.2,0 0.35,0 1,1 0.45,1"
-      fill="rgba(255,255,255,0.07)"
-    />
-  </pattern>
-</defs>
+                              {/* léger reflet diagonal */}
+                              <polygon
+                                points="-0.2,0 0.35,0 1,1 0.45,1"
+                                fill="rgba(255,255,255,0.07)"
+                              />
+                            </pattern>
+                          </defs>
 
-
-                          {/* contour du champ PV */}
-                          <polygon
-                            points={polygonPoints}
-                            fill="none"
-                            stroke="#050608"
-                            strokeWidth={5}
-                            strokeLinejoin="round"
-                          />
-
-                          {/* surface PV : juste la forme exacte du champ */}
-                          <polygon
-                            points={polygonPoints}
-                            fill="url(#pvPatternBlack)"
-                            stroke="#181a1f"
-                            strokeWidth={2.2}
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                          />
+                          {/* 🔹 On dessine TOUS les panneaux du calepinage */}
+                          {panelPolygons.map(({ panel, points }) => (
+                            <polygon
+                              key={panel.id}
+                              points={points!}
+                              fill="url(#pvPatternBlack)"
+                              stroke="#181a1f"
+                              strokeWidth={2.2}
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
+                            />
+                          ))}
                         </svg>
                       </div>
 
                       <p className="text-[10px] text-slate-500 text-center mt-2">
-                        Emplacement et forme exacts du champ photovoltaïque sur
-                        la toiture.
+                        Emplacement et forme du calepinage photovoltaïque sur la
+                        toiture.
                       </p>
                     </div>
                   ) : (
@@ -846,49 +890,48 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
 
               {/* Diagramme solaire */}
               <div className="mt-4">
-  <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
-    Diagramme solaire avec masques d&apos;ombrage
-  </h2>
+                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
+                  Diagramme solaire avec masques d&apos;ombrage
+                </h2>
 
-  <div className="flex justify-center mx-auto w-full overflow-x-auto lg:overflow-x-visible mt-8">
-    {/* 🔹 on réduit tout le diagramme ici */}
-    <div className="flex flex-nowrap scale-[0.8] origin-top">
-      {(String(data.inputs.location.latitude).startsWith("42.") ||
-        data.inputs.location.latitude < 42) && (
-        <Altitude42 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("43.") && (
-        <Altitude43 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("44.") && (
-        <Altitude44 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("45.") && (
-        <Altitude45 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("46.") && (
-        <Altitude46 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("47.") && (
-        <Altitude47 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("48.") && (
-        <Altitude48 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("49.") && (
-        <Altitude49 obstacles={obstacles || []} />
-      )}
-      {String(data.inputs.location.latitude).startsWith("50.") && (
-        <Altitude50 obstacles={obstacles || []} />
-      )}
-      {(String(data.inputs.location.latitude).startsWith("51.") ||
-        data.inputs.location.latitude > 51) && (
-        <Altitude51 obstacles={obstacles || []} />
-      )}
-    </div>
-  </div>
-</div>
-
+                <div className="flex justify-center mx-auto w-full overflow-x-auto lg:overflow-x-visible mt-8">
+                  {/* 🔹 on réduit tout le diagramme ici */}
+                  <div className="flex flex-nowrap scale-[0.8] origin-top">
+                    {(String(data.inputs.location.latitude).startsWith("42.") ||
+                      data.inputs.location.latitude < 42) && (
+                      <Altitude42 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("43.") && (
+                      <Altitude43 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("44.") && (
+                      <Altitude44 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("45.") && (
+                      <Altitude45 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("46.") && (
+                      <Altitude46 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("47.") && (
+                      <Altitude47 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("48.") && (
+                      <Altitude48 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("49.") && (
+                      <Altitude49 obstacles={obstacles || []} />
+                    )}
+                    {String(data.inputs.location.latitude).startsWith("50.") && (
+                      <Altitude50 obstacles={obstacles || []} />
+                    )}
+                    {(String(data.inputs.location.latitude).startsWith("51.") ||
+                      data.inputs.location.latitude > 51) && (
+                      <Altitude51 obstacles={obstacles || []} />
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
