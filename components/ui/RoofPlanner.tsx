@@ -68,13 +68,14 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
   const [validated, setValidated] = useState(false);
 
   const [blockTranslateState, setBlockTranslateState] = useState<BlockTranslateDragState | null>(null);
-
   const [blockRotations, setBlockRotations] = useState<Record<number, number>>({});
   const [blockRotationState, setBlockRotationState] = useState<BlockRotationDragState | null>(null);
-
   const [blockResizeState, setBlockResizeState] = useState<BlockResizeDragState | null>(null);
 
   const [pendingNewBlock, setPendingNewBlock] = useState<boolean>(true);
+
+  // ✅ pour afficher une poubelle au survol (optionnel mais pro)
+  const [hoverPanelId, setHoverPanelId] = useState<number | null>(null);
 
   const getSvgCoords = (
     evt: ReactPointerEvent<SVGSVGElement | SVGRectElement | SVGCircleElement | SVGGElement> | PointerEvent
@@ -132,6 +133,22 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
 
   const updatePanels = (updater: (p: Panel) => Panel) => {
     onPanelsChange(panels.map(updater));
+  };
+
+  // ✅ supprimer un panneau (via poubelle dans le panneau)
+  const deletePanel = (panelId: number) => {
+    const target = panels.find((p) => p.id === panelId);
+    if (!target) return;
+
+    onPanelsChange(panels.filter((p) => p.id !== panelId));
+
+    setSelectedPanelId((cur) => (cur === panelId ? null : cur));
+    setHoverPanelId((cur) => (cur === panelId ? null : cur));
+
+    const bid = getBlockId(target);
+    if (blockTranslateState?.blockId === bid) setBlockTranslateState(null);
+    if (blockRotationState?.blockId === bid) setBlockRotationState(null);
+    if (blockResizeState?.blockId === bid) setBlockResizeState(null);
   };
 
   // ---------- création NOUVEAU BLOC (clic sur fond) ----------
@@ -384,7 +401,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
 
   const selectedPanel = panels.find((p) => p.id === selectedPanelId) || panels[0];
 
-  // ---------- BOUNDS ----------
   function computeBlockBoundsForPanels(blockPanels: Panel[]) {
     if (blockPanels.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0, cx: 0, cy: 0 };
 
@@ -406,18 +422,15 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
     return { minX, minY, maxX, maxY, cx, cy };
   }
 
-  // ✅ tailles de référence pour les ghosts = taille du panneau sélectionné (après resize)
   const GHOST_W = selectedPanel?.width ?? PANEL_WIDTH;
   const GHOST_H = selectedPanel?.height ?? PANEL_HEIGHT;
 
-  // ---------- GHOSTS ----------
   let ghosts: Ghost[] = [];
   if (selectedPanel && canAddMore) {
     const selectedBlockId = getBlockId(selectedPanel);
     const blockPanels = panels.filter((p) => getBlockId(p) === selectedBlockId);
 
     if (blockPanels.length > 0) {
-      // bornes Y réelles après rotation
       const rotationDeg = getBlockRotation(selectedBlockId);
       const rotationRad = (rotationDeg * Math.PI) / 180;
       const { cx, cy } = computeBlockBoundsForPanels(blockPanels);
@@ -446,7 +459,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
       if (minYRot >= 0 && maxYRot <= 730) {
         const existingKeys = new Set(blockPanels.map((p) => `${Math.round(p.x)}-${Math.round(p.y)}`));
 
-        // ✅ positions basées sur la taille actuelle (GHOST_W/H)
         const candidates: Ghost[] = [
           { id: "top", x: selectedPanel.x, y: selectedPanel.y - GHOST_H - GAP, blockId: selectedBlockId },
           { id: "bottom", x: selectedPanel.x, y: selectedPanel.y + GHOST_H + GAP, blockId: selectedBlockId },
@@ -454,7 +466,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
           { id: "right", x: selectedPanel.x + GHOST_W + GAP, y: selectedPanel.y, blockId: selectedBlockId },
         ];
 
-        // ✅ filtrage hors image avec la nouvelle taille
         ghosts = candidates.filter((g) => {
           if (g.x < 0 || g.x + GHOST_W > 1024) return false;
           if (g.y < 0 || g.y + GHOST_H > 730) return false;
@@ -471,7 +482,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
     evt.stopPropagation();
     if (!canAddMore || !selectedPanel) return;
 
-    // ✅ sécurité avec taille courante
     if (x < 0 || x + GHOST_W > 1024) return;
     if (y < 0 || y + GHOST_H > 730) return;
 
@@ -498,7 +508,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
         <div className="pr-4">
           <h2 className="text-lg font-semibold text-[#0f427c]">Calepinage – blocs de panneaux</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Déplacez/rotate/resize chaque bloc. Les ghosts utilisent maintenant la taille redimensionnée.
+            Cliquez un panneau pour le sélectionner. La poubelle est visible sur le panneau (hover ou sélection).
           </p>
         </div>
 
@@ -585,6 +595,11 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
                 strokeWidth={0.006}
               />
               <polygon points="-0.2,0 0.35,0 1,1 0.45,1" fill="rgba(255,255,255,0.07)" />
+
+              {/* ✅ shadow pour la poubelle */}
+              <filter id="trashShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.25" />
+              </filter>
             </pattern>
           </defs>
 
@@ -612,25 +627,70 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
             return (
               <g key={blockId} transform={`rotate(${rotation} ${bounds.cx} ${bounds.cy})`}>
                 {blockPanels.map((panel) => {
-                  const isSelected = selectedPanelId !== null && selectedPanelId === panel.id;
+                  const isSelected = selectedPanelId !== null && selectedPanelId === (panel.id as number);
+                  const isHover = hoverPanelId === (panel.id as number);
+
+                  // ✅ poubelle visible au hover OU sélection
+                  const showTrash = isSelected || isHover;
+
+                  // position poubelle (gros badge)
+                  const badgeSize = 22;
+                  const bx = panel.x + panel.width - badgeSize - 6;
+                  const by = panel.y + 6;
+
                   return (
-                    <rect
+                    <g
                       key={panel.id}
-                      x={panel.x}
-                      y={panel.y}
-                      width={panel.width}
-                      height={panel.height}
-                      fill="url(#pvPatternBlack)"
-                      stroke={isSelected ? "#f97316" : "#181a1f"}
-                      strokeWidth={isSelected ? 3 : 2}
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      onPointerDown={(evt) => handlePanelPointerDown(panel.id as number, evt)}
-                    />
+                      onPointerEnter={() => setHoverPanelId(panel.id as number)}
+                      onPointerLeave={() => setHoverPanelId((cur) => (cur === (panel.id as number) ? null : cur))}
+                    >
+                      <rect
+                        x={panel.x}
+                        y={panel.y}
+                        width={panel.width}
+                        height={panel.height}
+                        fill="url(#pvPatternBlack)"
+                        stroke={isSelected ? "#f97316" : "#181a1f"}
+                        strokeWidth={isSelected ? 3 : 2}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        onPointerDown={(evt) => handlePanelPointerDown(panel.id as number, evt)}
+                      />
+
+                      {/* ✅ badge poubelle TRÈS visible */}
+                      {showTrash ? (
+                        <g
+                          onPointerDown={(evt) => {
+                            evt.stopPropagation();
+                            deletePanel(panel.id as number);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <circle
+                            cx={bx + badgeSize / 2}
+                            cy={by + badgeSize / 2}
+                            r={badgeSize / 2}
+                            fill="#ef4444"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                            filter="url(#trashShadow)"
+                          />
+                          <text
+                            x={bx + badgeSize / 2}
+                            y={by + badgeSize / 2 + 6}
+                            textAnchor="middle"
+                            fontSize="14"
+                            fill="#ffffff"
+                            style={{ userSelect: "none" }}
+                          >
+                            🗑
+                          </text>
+                        </g>
+                      ) : null}
+                    </g>
                   );
                 })}
 
-                {/* ✅ ghosts prennent la taille actuelle (GHOST_W/H) */}
                 {blockGhosts.map((g) => (
                   <rect
                     key={g.id}
@@ -646,7 +706,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
                   />
                 ))}
 
-                {/* resize handles */}
                 {resizeHandles.map((h) => (
                   <rect
                     key={h.corner}
@@ -663,7 +722,6 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
                   />
                 ))}
 
-                {/* rotation handle */}
                 <line x1={bounds.cx} y1={bounds.minY} x2={handleCx} y2={handleCy} stroke="rgba(249,115,22,0.7)" strokeWidth={1.8} />
                 <circle
                   cx={handleCx}
