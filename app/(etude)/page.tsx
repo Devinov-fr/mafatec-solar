@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/ui/Footer";
 
 import Header from "@/components/ui/Header";
 import Hero from "@/components/ui/Hero";
