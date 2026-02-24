@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 
 import Footer from "@/components/ui/Footer";
+
 import Header from "@/components/ui/Header";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
