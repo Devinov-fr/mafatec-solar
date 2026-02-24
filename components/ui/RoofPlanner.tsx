@@ -1,10 +1,6 @@
 "use client";
 
-import React, {
-  useRef,
-  useState,
-  PointerEvent as ReactPointerEvent,
-} from "react";
+import React, { useMemo, useRef, useState, PointerEvent as ReactPointerEvent } from "react";
 import type { Panel } from "@/components/ui/PrintComponentTwo";
 
 interface RoofPlannerProps {
@@ -13,12 +9,14 @@ interface RoofPlannerProps {
   onClose?: () => void;
 }
 
-const clamp = (val: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, val));
+const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
 
 const PANEL_WIDTH = 90;
 const PANEL_HEIGHT = 160;
 const GAP = 4;
+
+const MIN_PANEL_W = 20;
+const MIN_PANEL_H = 20;
 
 type BlockTranslateDragState = {
   blockId: number;
@@ -33,43 +31,53 @@ type BlockRotationDragState = {
   startAngle: number;
 };
 
+type Corner = "nw" | "ne" | "se" | "sw";
+
+type BlockResizeDragState = {
+  blockId: number;
+  corner: Corner;
+  anchorX: number;
+  anchorY: number;
+  startLocalX: number;
+  startLocalY: number;
+  panelsSnapshot: { id: number; x: number; y: number; width: number; height: number }[];
+};
+
 type Ghost = { id: string; x: number; y: number; blockId: number };
 
-const RoofPlanner: React.FC<RoofPlannerProps> = ({
-  panels,
-  onPanelsChange,
-  onClose,
-}) => {
+function rotatePoint(x: number, y: number, cx: number, cy: number, deg: number) {
+  const rad = (deg * Math.PI) / 180;
+  const dx = x - cx;
+  const dy = y - cy;
+  const rx = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+  const ry = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+  return { x: rx, y: ry };
+}
+
+function toBlockLocal(x: number, y: number, cx: number, cy: number, rotationDeg: number) {
+  return rotatePoint(x, y, cx, cy, -rotationDeg);
+}
+
+const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClose }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    () => panels[0]?.imageUrl ?? null
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(() => panels[0]?.imageUrl ?? null);
 
   const [selectedPanelId, setSelectedPanelId] = useState<number | null>(null);
   const [targetCount, setTargetCount] = useState<string>("");
   const [validated, setValidated] = useState(false);
 
-  // drag d'un BLOC (translation)
-  const [blockTranslateState, setBlockTranslateState] =
-    useState<BlockTranslateDragState | null>(null);
+  const [blockTranslateState, setBlockTranslateState] = useState<BlockTranslateDragState | null>(null);
 
-  // rotation par bloc : blockId → angle
-  const [blockRotations, setBlockRotations] = useState<Record<number, number>>(
-    {}
-  );
-  const [blockRotationState, setBlockRotationState] =
-    useState<BlockRotationDragState | null>(null);
+  const [blockRotations, setBlockRotations] = useState<Record<number, number>>({});
+  const [blockRotationState, setBlockRotationState] = useState<BlockRotationDragState | null>(null);
 
-  // mode "nouveau bloc"
+  const [blockResizeState, setBlockResizeState] = useState<BlockResizeDragState | null>(null);
+
   const [pendingNewBlock, setPendingNewBlock] = useState<boolean>(true);
 
   const getSvgCoords = (
-    evt:
-      | ReactPointerEvent<
-          SVGSVGElement | SVGRectElement | SVGCircleElement | SVGGElement
-        >
-      | PointerEvent
+    evt: ReactPointerEvent<SVGSVGElement | SVGRectElement | SVGCircleElement | SVGGElement> | PointerEvent
   ) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -86,21 +94,17 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
     return { x: svgPoint.x, y: svgPoint.y };
   };
 
-  const maxPanels =
-    targetCount.trim() === "" ? undefined : Number.parseInt(targetCount, 10);
+  const maxPanels = targetCount.trim() === "" ? undefined : Number.parseInt(targetCount, 10);
 
   const canAddMore =
-    maxPanels === undefined || !Number.isFinite(maxPanels)
-      ? true
-      : panels.length < maxPanels;
+    maxPanels === undefined || !Number.isFinite(maxPanels) ? true : panels.length < maxPanels;
 
   const getBlockId = (panel: Panel): number => {
     // @ts-ignore
     return typeof panel.blockId === "number" ? panel.blockId : 0;
   };
 
-  const getBlockRotation = (blockId: number): number =>
-    blockRotations[blockId] ?? 0;
+  const getBlockRotation = (blockId: number): number => blockRotations[blockId] ?? 0;
 
   const setBlockRotation = (blockId: number, angle: number) => {
     setBlockRotations((prev) => ({ ...prev, [blockId]: angle }));
@@ -133,24 +137,23 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
   // ---------- création NOUVEAU BLOC (clic sur fond) ----------
   const handleSvgPointerDown = (evt: ReactPointerEvent<SVGSVGElement>) => {
     if (!canAddMore) return;
-    if (!pendingNewBlock) return; // on ne crée un bloc que si demandé
+    if (!pendingNewBlock) return;
 
     const { x, y } = getSvgCoords(evt.nativeEvent);
 
-    const newBlockId = Date.now() + Math.floor(Math.random() * 1000);
+    const topLeftY = y - PANEL_HEIGHT / 2;
+    if (topLeftY < 0 || topLeftY + PANEL_HEIGHT > 730) return;
 
+    const newBlockId = Date.now() + Math.floor(Math.random() * 1000);
     const newPanel = createPanelAt(x, y, newBlockId);
 
     onPanelsChange([...panels, newPanel]);
-    setSelectedPanelId(newPanel.id);
+    setSelectedPanelId(newPanel.id as number);
     setPendingNewBlock(false);
   };
 
   // ---------- drag d'un BLOC (déplacement) ----------
-  const handlePanelPointerDown = (
-    panelId: number,
-    evt: ReactPointerEvent<SVGRectElement>
-  ) => {
+  const handlePanelPointerDown = (panelId: number, evt: ReactPointerEvent<SVGRectElement>) => {
     evt.stopPropagation();
     setSelectedPanelId(panelId);
 
@@ -176,10 +179,11 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
       panelsSnapshot: snapshot,
     });
 
-    setBlockRotationState(null); // pas de rotation en même temps
+    setBlockRotationState(null);
+    setBlockResizeState(null);
   };
 
-  // ---------- rotation d’un BLOC complet : début ----------
+  // ---------- rotation d’un BLOC : début ----------
   const handleBlockRotationHandleDown = (
     evt: ReactPointerEvent<SVGCircleElement>,
     blockId: number,
@@ -191,7 +195,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
     if (!blockPanels.length) return;
 
     const { x, y } = getSvgCoords(evt.nativeEvent);
-    const angle = Math.atan2(y - blockCy, x - blockCx); // radians
+    const angle = Math.atan2(y - blockCy, x - blockCx);
 
     const currentRotation = getBlockRotation(blockId);
 
@@ -201,20 +205,123 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
       startAngle: angle,
     });
 
-    setBlockTranslateState(null); // on ne translate pas pendant la rotation
+    setBlockTranslateState(null);
+    setBlockResizeState(null);
   };
 
-  // ---------- mouvement : rotation bloc OU déplacement bloc ----------
+  // ---------- resize d’un BLOC : début ----------
+  const handleBlockResizeHandleDown = (
+    evt: ReactPointerEvent<SVGRectElement>,
+    blockId: number,
+    corner: Corner,
+    bounds: { minX: number; minY: number; maxX: number; maxY: number; cx: number; cy: number },
+    rotationDeg: number
+  ) => {
+    evt.stopPropagation();
+
+    const blockPanels = panels.filter((p) => getBlockId(p) === blockId);
+    if (!blockPanels.length) return;
+
+    const { x, y } = getSvgCoords(evt.nativeEvent);
+    const local = toBlockLocal(x, y, bounds.cx, bounds.cy, rotationDeg);
+
+    const corners = {
+      nw: { x: bounds.minX, y: bounds.minY },
+      ne: { x: bounds.maxX, y: bounds.minY },
+      se: { x: bounds.maxX, y: bounds.maxY },
+      sw: { x: bounds.minX, y: bounds.maxY },
+    };
+
+    const anchorMap: Record<Corner, Corner> = { nw: "se", ne: "sw", se: "nw", sw: "ne" };
+    const anchorCorner = anchorMap[corner];
+
+    const snap = blockPanels.map((bp) => ({
+      id: bp.id as number,
+      x: bp.x,
+      y: bp.y,
+      width: bp.width,
+      height: bp.height,
+    }));
+
+    setBlockResizeState({
+      blockId,
+      corner,
+      anchorX: corners[anchorCorner].x,
+      anchorY: corners[anchorCorner].y,
+      startLocalX: local.x,
+      startLocalY: local.y,
+      panelsSnapshot: snap,
+    });
+
+    setBlockTranslateState(null);
+    setBlockRotationState(null);
+  };
+
+  // ---------- mouvement : resize OU rotation OU déplacement ----------
   const handleSvgPointerMove = (evt: ReactPointerEvent<SVGSVGElement>) => {
-    // rotation d’un bloc
+    // RESIZE
+    if (blockResizeState) {
+      const { blockId, anchorX, anchorY, startLocalX, startLocalY, panelsSnapshot } = blockResizeState;
+      const blockPanels = panels.filter((p) => getBlockId(p) === blockId);
+      if (!blockPanels.length) return;
+
+      const bounds = computeBlockBoundsForPanels(blockPanels);
+      const rotationDeg = getBlockRotation(blockId);
+
+      const { x, y } = getSvgCoords(evt.nativeEvent);
+      const curLocal = toBlockLocal(x, y, bounds.cx, bounds.cy, rotationDeg);
+
+      const startDx = startLocalX - anchorX;
+      const startDy = startLocalY - anchorY;
+
+      const sxRaw = Math.abs(startDx) < 1e-6 ? 1 : (curLocal.x - anchorX) / startDx;
+      const syRaw = Math.abs(startDy) < 1e-6 ? 1 : (curLocal.y - anchorY) / startDy;
+
+      const sx = clamp(sxRaw, 0.15, 6);
+      const sy = clamp(syRaw, 0.15, 6);
+
+      const snapById = new Map(panelsSnapshot.map((s) => [s.id, s]));
+
+      const scaled = panels.map((p) => {
+        if (getBlockId(p) !== blockId) return p;
+        const sp = snapById.get(p.id as number);
+        if (!sp) return p;
+
+        const nx = anchorX + (sp.x - anchorX) * sx;
+        const ny = anchorY + (sp.y - anchorY) * sy;
+        const nw = Math.max(MIN_PANEL_W, sp.width * sx);
+        const nh = Math.max(MIN_PANEL_H, sp.height * sy);
+
+        return { ...p, x: nx, y: ny, width: nw, height: nh };
+      });
+
+      // Keep block inside image (simple translation)
+      const newBlockPanels = scaled.filter((p) => getBlockId(p) === blockId) as Panel[];
+      const nb = computeBlockBoundsForPanels(newBlockPanels);
+
+      let dx = 0;
+      let dy = 0;
+      if (nb.minX < 0) dx = -nb.minX;
+      if (nb.minY < 0) dy = -nb.minY;
+      if (nb.maxX > 1024) dx = 1024 - nb.maxX;
+      if (nb.maxY > 730) dy = 730 - nb.maxY;
+
+      const finalPanels = scaled.map((p) => {
+        if (getBlockId(p) !== blockId) return p;
+        return { ...p, x: p.x + dx, y: p.y + dy };
+      });
+
+      onPanelsChange(finalPanels);
+      return;
+    }
+
+    // ROTATION
     if (blockRotationState) {
       const { blockId, startRotation, startAngle } = blockRotationState;
       const blockPanels = panels.filter((p) => getBlockId(p) === blockId);
       if (!blockPanels.length) return;
 
-      const { cx: blockCx, cy: blockCy } =
-        computeBlockBoundsForPanels(blockPanels);
-
+      const { cx: blockCx, cy: blockCy } = computeBlockBoundsForPanels(blockPanels);
       const { x, y } = getSvgCoords(evt.nativeEvent);
       const currentAngle = Math.atan2(y - blockCy, x - blockCx);
       const deltaRad = currentAngle - startAngle;
@@ -227,18 +334,15 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
       return;
     }
 
-    // translation d’un bloc
+    // TRANSLATION
     if (blockTranslateState) {
-      const { blockId, startPointerX, startPointerY, panelsSnapshot } =
-        blockTranslateState;
+      const { blockId, startPointerX, startPointerY, panelsSnapshot } = blockTranslateState;
 
       const { x, y } = getSvgCoords(evt.nativeEvent);
       const dx = x - startPointerX;
       const dy = y - startPointerY;
 
-      const snapshotById = new Map(
-        panelsSnapshot.map((s) => [s.id, s])
-      );
+      const snapshotById = new Map(panelsSnapshot.map((s) => [s.id, s]));
 
       updatePanels((p) => {
         const bid = getBlockId(p);
@@ -247,11 +351,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
         const snap = snapshotById.get(p.id as number);
         if (!snap) return p;
 
-        return {
-          ...p,
-          x: snap.x + dx,
-          y: snap.y + dy,
-        };
+        return { ...p, x: snap.x + dx, y: snap.y + dy };
       });
     }
   };
@@ -259,6 +359,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
   const stopInteractions = () => {
     setBlockTranslateState(null);
     setBlockRotationState(null);
+    setBlockResizeState(null);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,90 +380,14 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
     onClose && onClose();
   };
 
-  const mainButtonLabel = validated
-    ? "Calepinage validé"
-    : "Valider le calepinage";
+  const mainButtonLabel = validated ? "Calepinage validé" : "Valider le calepinage";
 
-  const selectedPanel =
-    panels.find((p) => p.id === selectedPanelId) || panels[0];
+  const selectedPanel = panels.find((p) => p.id === selectedPanelId) || panels[0];
 
-  // ---------- GHOSTS (voisins) pour le bloc du panneau sélectionné ----------
-  let ghosts: Ghost[] = [];
-  if (selectedPanel && canAddMore) {
-    const selectedBlockId = getBlockId(selectedPanel);
-
-    const existingKeys = new Set(
-      panels
-        .filter((p) => getBlockId(p) === selectedBlockId)
-        .map((p) => `${Math.round(p.x)}-${Math.round(p.y)}`)
-    );
-
-    const candidates: Ghost[] = [
-      {
-        id: "top",
-        x: selectedPanel.x,
-        y: selectedPanel.y - PANEL_HEIGHT - GAP,
-        blockId: selectedBlockId,
-      },
-      {
-        id: "bottom",
-        x: selectedPanel.x,
-        y: selectedPanel.y + PANEL_HEIGHT + GAP,
-        blockId: selectedBlockId,
-      },
-      {
-        id: "left",
-        x: selectedPanel.x - PANEL_WIDTH - GAP,
-        y: selectedPanel.y,
-        blockId: selectedBlockId,
-      },
-      {
-        id: "right",
-        x: selectedPanel.x + PANEL_WIDTH + GAP,
-        y: selectedPanel.y,
-        blockId: selectedBlockId,
-      },
-    ];
-
-    ghosts = candidates
-      .map((g) => ({
-        ...g,
-        x: clamp(g.x, 0, 1024 - PANEL_WIDTH),
-        y: clamp(g.y, 0, 730 - PANEL_HEIGHT),
-      }))
-      .filter((g) => {
-        const key = `${Math.round(g.x)}-${Math.round(g.y)}`;
-        return !existingKeys.has(key);
-      });
-  }
-
-  const handleGhostClick = (
-    x: number,
-    y: number,
-    evt: ReactPointerEvent<SVGRectElement>,
-    blockId: number
-  ) => {
-    evt.stopPropagation();
-    if (!canAddMore || !selectedPanel) return;
-
-    const newPanel: Panel = {
-      ...selectedPanel,
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      x,
-      y,
-      // @ts-ignore
-      blockId,
-    };
-
-    onPanelsChange([...panels, newPanel]);
-    setSelectedPanelId(newPanel.id);
-  };
-
-  // ---------- BOUNDS pour un set de panneaux ----------
+  // ---------- BOUNDS ----------
   function computeBlockBoundsForPanels(blockPanels: Panel[]) {
-    if (blockPanels.length === 0) {
-      return { minX: 0, minY: 0, maxX: 0, maxY: 0, cx: 0, cy: 0 };
-    }
+    if (blockPanels.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0, cx: 0, cy: 0 };
+
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
@@ -381,26 +406,99 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
     return { minX, minY, maxX, maxY, cx, cy };
   }
 
-  // Liste des IDs de blocs existants
-  const blockIds = Array.from(
-    new Set(panels.map((p) => getBlockId(p)))
-  );
+  // ✅ tailles de référence pour les ghosts = taille du panneau sélectionné (après resize)
+  const GHOST_W = selectedPanel?.width ?? PANEL_WIDTH;
+  const GHOST_H = selectedPanel?.height ?? PANEL_HEIGHT;
+
+  // ---------- GHOSTS ----------
+  let ghosts: Ghost[] = [];
+  if (selectedPanel && canAddMore) {
+    const selectedBlockId = getBlockId(selectedPanel);
+    const blockPanels = panels.filter((p) => getBlockId(p) === selectedBlockId);
+
+    if (blockPanels.length > 0) {
+      // bornes Y réelles après rotation
+      const rotationDeg = getBlockRotation(selectedBlockId);
+      const rotationRad = (rotationDeg * Math.PI) / 180;
+      const { cx, cy } = computeBlockBoundsForPanels(blockPanels);
+
+      let minYRot = Infinity;
+      let maxYRot = -Infinity;
+
+      for (const p of blockPanels) {
+        const corners = [
+          { x: p.x, y: p.y },
+          { x: p.x + p.width, y: p.y },
+          { x: p.x + p.width, y: p.y + p.height },
+          { x: p.x, y: p.y + p.height },
+        ];
+
+        for (const c of corners) {
+          const dx = c.x - cx;
+          const dy = c.y - cy;
+          const rx = cx + dx * Math.cos(rotationRad) - dy * Math.sin(rotationRad);
+          const ry = cy + dx * Math.sin(rotationRad) + dy * Math.cos(rotationRad);
+          if (ry < minYRot) minYRot = ry;
+          if (ry > maxYRot) maxYRot = ry;
+        }
+      }
+
+      if (minYRot >= 0 && maxYRot <= 730) {
+        const existingKeys = new Set(blockPanels.map((p) => `${Math.round(p.x)}-${Math.round(p.y)}`));
+
+        // ✅ positions basées sur la taille actuelle (GHOST_W/H)
+        const candidates: Ghost[] = [
+          { id: "top", x: selectedPanel.x, y: selectedPanel.y - GHOST_H - GAP, blockId: selectedBlockId },
+          { id: "bottom", x: selectedPanel.x, y: selectedPanel.y + GHOST_H + GAP, blockId: selectedBlockId },
+          { id: "left", x: selectedPanel.x - GHOST_W - GAP, y: selectedPanel.y, blockId: selectedBlockId },
+          { id: "right", x: selectedPanel.x + GHOST_W + GAP, y: selectedPanel.y, blockId: selectedBlockId },
+        ];
+
+        // ✅ filtrage hors image avec la nouvelle taille
+        ghosts = candidates.filter((g) => {
+          if (g.x < 0 || g.x + GHOST_W > 1024) return false;
+          if (g.y < 0 || g.y + GHOST_H > 730) return false;
+          const key = `${Math.round(g.x)}-${Math.round(g.y)}`;
+          return !existingKeys.has(key);
+        });
+      } else {
+        ghosts = [];
+      }
+    }
+  }
+
+  const handleGhostClick = (x: number, y: number, evt: ReactPointerEvent<SVGRectElement>, blockId: number) => {
+    evt.stopPropagation();
+    if (!canAddMore || !selectedPanel) return;
+
+    // ✅ sécurité avec taille courante
+    if (x < 0 || x + GHOST_W > 1024) return;
+    if (y < 0 || y + GHOST_H > 730) return;
+
+    const newPanel: Panel = {
+      ...selectedPanel,
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      x,
+      y,
+      width: GHOST_W,
+      height: GHOST_H,
+      // @ts-ignore
+      blockId,
+    };
+
+    onPanelsChange([...panels, newPanel]);
+    setSelectedPanelId(newPanel.id as number);
+  };
+
+  const blockIds = useMemo(() => Array.from(new Set(panels.map((p) => getBlockId(p)))), [panels]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-3 bg-white">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="pr-4">
-          <h2 className="text-lg font-semibold text-[#0f427c]">
-            Calepinage – blocs de panneaux
-          </h2>
+          <h2 className="text-lg font-semibold text-[#0f427c]">Calepinage – blocs de panneaux</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Créez plusieurs blocs (ex :{" "}
-            <span className="font-semibold">6 + 6</span>), puis{" "}
-            <span className="font-semibold">
-              déplacez et faites pivoter chaque bloc
-            </span>{" "}
-            avec le curseur.
+            Déplacez/rotate/resize chaque bloc. Les ghosts utilisent maintenant la taille redimensionnée.
           </p>
         </div>
 
@@ -415,12 +513,9 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
         )}
       </div>
 
-      {/* Top controls */}
       <div className="flex flex-col gap-3 mb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-            Nombre de panneaux
-          </p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Nombre de panneaux</p>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -430,9 +525,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
               className="w-24 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0f427c]"
               placeholder="Ex : 12"
             />
-            <span className="text-[11px] text-slate-500">
-              (optionnel – limite la pose)
-            </span>
+            <span className="text-[11px] text-slate-500">(optionnel)</span>
           </div>
 
           <button
@@ -445,43 +538,26 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
           >
             Nouveau bloc de panneaux
           </button>
+
           {pendingNewBlock && (
-            <p className="text-[11px] text-emerald-600 mt-1">
-              Cliquez sur la toiture pour placer le 1er panneau du bloc.
-            </p>
+            <p className="text-[11px] text-emerald-600 mt-1">Cliquez sur la toiture pour placer le 1er panneau du bloc.</p>
           )}
         </div>
 
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-            Photo de toiture
-          </p>
-          <p className="text-xs text-slate-500">
-            Formats : JPG ou PNG, vue de la toiture.
-          </p>
-          {imageUrl && (
-            <p className="mt-1 text-[11px] text-[#008f31] font-semibold">
-              Photo importée ✔
-            </p>
-          )}
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Photo de toiture</p>
+          <p className="text-xs text-slate-500">Formats : JPG ou PNG</p>
+
+          {imageUrl && <p className="mt-1 text-[11px] text-[#008f31] font-semibold">Photo importée ✔</p>}
 
           <label className="mt-1 inline-flex items-center justify-center px-3 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 cursor-pointer">
             Importer une photo
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
+            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
           </label>
         </div>
       </div>
 
-      {/* Image + calepinage */}
-      <div
-        className="relative w-full rounded-xl overflow-hidden shadow-md border border-slate-200 bg-slate-100"
-        style={{ aspectRatio: "4 / 3" }}
-      >
+      <div className="relative w-full rounded-xl overflow-hidden shadow-md border border-slate-200 bg-slate-100" style={{ aspectRatio: "4 / 3" }}>
         <svg
           ref={svgRef}
           viewBox="0 0 1024 730"
@@ -492,25 +568,10 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
           onPointerUp={stopInteractions}
           onPointerLeave={stopInteractions}
         >
-          {/* image de fond */}
-          <image
-            href={imageUrl || "/toit-maison.jpg"}
-            x="0"
-            y="0"
-            width="1024"
-            height="730"
-            preserveAspectRatio="xMidYMid slice"
-          />
+          <image href={imageUrl || "/toit-maison.jpg"} x="0" y="0" width="1024" height="730" preserveAspectRatio="xMidYMid slice" />
 
-          {/* pattern panneaux */}
           <defs>
-            <pattern
-              id="pvPatternBlack"
-              patternUnits="objectBoundingBox"
-              patternContentUnits="objectBoundingBox"
-              width="1"
-              height="1"
-            >
+            <pattern id="pvPatternBlack" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">
               <rect x="0" y="0" width="1" height="1" fill="#02030a" />
               <linearGradient id="pvGradBB" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stopColor="#1b2738" stopOpacity="0.95" />
@@ -519,133 +580,107 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
               </linearGradient>
               <rect x="0" y="0" width="1" height="1" fill="url(#pvGradBB)" />
               <path
-                d="
-                  M0 0 H1
-                  M0 0.5 H1
-                  M0 1 H1
-
-                  M0 0 V1
-                  M0.25 0 V1
-                  M0.5 0 V1
-                  M0.75 0 V1
-                  M1 0 V1
-                "
+                d="M0 0 H1 M0 0.5 H1 M0 1 H1 M0 0 V1 M0.25 0 V1 M0.5 0 V1 M0.75 0 V1 M1 0 V1"
                 stroke="#222733"
                 strokeWidth={0.006}
               />
-              <polygon
-                points="-0.2,0 0.35,0 1,1 0.45,1"
-                fill="rgba(255,255,255,0.07)"
-              />
+              <polygon points="-0.2,0 0.35,0 1,1 0.45,1" fill="rgba(255,255,255,0.07)" />
             </pattern>
           </defs>
 
-          {/* un <g> par BLOC */}
-          {(() => {
-            const blockIds = Array.from(
-              new Set(panels.map((p) => getBlockId(p)))
-            );
+          {blockIds.map((blockId) => {
+            const blockPanels = panels.filter((p) => getBlockId(p) === blockId);
+            if (!blockPanels.length) return null;
 
-            return blockIds.map((blockId) => {
-              const blockPanels = panels.filter(
-                (p) => getBlockId(p) === blockId
-              );
-              if (!blockPanels.length) return null;
+            const bounds = computeBlockBoundsForPanels(blockPanels);
+            const rotation = getBlockRotation(blockId);
+            const blockGhosts = ghosts.filter((g) => g.blockId === blockId);
 
-              const bounds = computeBlockBoundsForPanels(blockPanels);
-              const rotation = getBlockRotation(blockId);
+            const handleOffset = 24;
+            const handleRadius = 7;
+            const handleCx = bounds.cx;
+            const handleCy = bounds.minY - handleOffset;
 
-              const blockGhosts = ghosts.filter(
-                (g) => g.blockId === blockId
-              );
+            const resizeSize = 12;
+            const resizeHandles: { corner: Corner; x: number; y: number; cursor: string }[] = [
+              { corner: "nw", x: bounds.minX, y: bounds.minY, cursor: "nwse-resize" },
+              { corner: "ne", x: bounds.maxX, y: bounds.minY, cursor: "nesw-resize" },
+              { corner: "se", x: bounds.maxX, y: bounds.maxY, cursor: "nwse-resize" },
+              { corner: "sw", x: bounds.minX, y: bounds.maxY, cursor: "nesw-resize" },
+            ];
 
-              const handleOffset = 24;
-              const handleRadius = 7;
-              const handleCx = bounds.cx;
-              const handleCy = bounds.minY - handleOffset;
-
-              return (
-                <g
-                  key={blockId}
-                  transform={`rotate(${rotation} ${bounds.cx} ${bounds.cy})`}
-                >
-                  {/* panneaux du bloc */}
-                  {blockPanels.map((panel) => {
-                    const isSelected =
-                      selectedPanelId !== null &&
-                      selectedPanelId === panel.id;
-
-                    return (
-                      <rect
-                        key={panel.id}
-                        x={panel.x}
-                        y={panel.y}
-                        width={panel.width}
-                        height={panel.height}
-                        fill="url(#pvPatternBlack)"
-                        stroke={isSelected ? "#f97316" : "#181a1f"}
-                        strokeWidth={isSelected ? 3 : 2}
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        onPointerDown={(evt) =>
-                          handlePanelPointerDown(panel.id, evt)
-                        }
-                      />
-                    );
-                  })}
-
-                  {/* ghosts pour ce bloc */}
-                  {blockGhosts.map((g) => (
+            return (
+              <g key={blockId} transform={`rotate(${rotation} ${bounds.cx} ${bounds.cy})`}>
+                {blockPanels.map((panel) => {
+                  const isSelected = selectedPanelId !== null && selectedPanelId === panel.id;
+                  return (
                     <rect
-                      key={g.id}
-                      x={g.x}
-                      y={g.y}
-                      width={PANEL_WIDTH}
-                      height={PANEL_HEIGHT}
-                      fill="rgba(52,79,149,0.15)"
-                      stroke="#344d95"
-                      strokeWidth={2}
-                      strokeDasharray="5 4"
-                      onPointerDown={(evt) =>
-                        handleGhostClick(g.x, g.y, evt, g.blockId)
-                      }
+                      key={panel.id}
+                      x={panel.x}
+                      y={panel.y}
+                      width={panel.width}
+                      height={panel.height}
+                      fill="url(#pvPatternBlack)"
+                      stroke={isSelected ? "#f97316" : "#181a1f"}
+                      strokeWidth={isSelected ? 3 : 2}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      onPointerDown={(evt) => handlePanelPointerDown(panel.id as number, evt)}
                     />
-                  ))}
+                  );
+                })}
 
-                  {/* poignée de rotation du bloc */}
-                  <line
-                    x1={bounds.cx}
-                    y1={bounds.minY}
-                    x2={handleCx}
-                    y2={handleCy}
-                    stroke="rgba(249,115,22,0.7)"
-                    strokeWidth={1.8}
+                {/* ✅ ghosts prennent la taille actuelle (GHOST_W/H) */}
+                {blockGhosts.map((g) => (
+                  <rect
+                    key={g.id}
+                    x={g.x}
+                    y={g.y}
+                    width={GHOST_W}
+                    height={GHOST_H}
+                    fill="rgba(52,79,149,0.15)"
+                    stroke="#344d95"
+                    strokeWidth={2}
+                    strokeDasharray="5 4"
+                    onPointerDown={(evt) => handleGhostClick(g.x, g.y, evt, g.blockId)}
                   />
-                  <circle
-                    cx={handleCx}
-                    cy={handleCy}
-                    r={handleRadius}
+                ))}
+
+                {/* resize handles */}
+                {resizeHandles.map((h) => (
+                  <rect
+                    key={h.corner}
+                    x={h.x - resizeSize / 2}
+                    y={h.y - resizeSize / 2}
+                    width={resizeSize}
+                    height={resizeSize}
+                    rx={3}
                     fill="#ffffff"
                     stroke="#f97316"
                     strokeWidth={2}
-                    onPointerDown={(evt) =>
-                      handleBlockRotationHandleDown(
-                        evt,
-                        blockId,
-                        bounds.cx,
-                        bounds.cy
-                      )
-                    }
-                    style={{ cursor: "grab" }}
+                    onPointerDown={(evt) => handleBlockResizeHandleDown(evt, blockId, h.corner, bounds, rotation)}
+                    style={{ cursor: h.cursor }}
                   />
-                </g>
-              );
-            });
-          })()}
+                ))}
+
+                {/* rotation handle */}
+                <line x1={bounds.cx} y1={bounds.minY} x2={handleCx} y2={handleCy} stroke="rgba(249,115,22,0.7)" strokeWidth={1.8} />
+                <circle
+                  cx={handleCx}
+                  cy={handleCy}
+                  r={handleRadius}
+                  fill="#ffffff"
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  onPointerDown={(evt) => handleBlockRotationHandleDown(evt, blockId, bounds.cx, bounds.cy)}
+                  style={{ cursor: "grab" }}
+                />
+              </g>
+            );
+          })}
         </svg>
       </div>
 
-      {/* Bottom buttons */}
       <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         {panels.length > 0 && (
           <button
@@ -657,6 +692,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
               setBlockTranslateState(null);
               setBlockRotations({});
               setBlockRotationState(null);
+              setBlockResizeState(null);
               setPendingNewBlock(true);
             }}
             className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-[12px] text-slate-700 hover:border-[#0f427c] hover:text-[#0f427c]"
@@ -670,9 +706,7 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({
             type="button"
             onClick={handleValidateClick}
             className={`px-4 py-2 text-sm rounded-lg shadow-sm border text-white ${
-              validated
-                ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-700"
-                : "bg-[#344d95] hover:bg-[#d32f2f] border-[#344d95]"
+              validated ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-700" : "bg-[#344d95] hover:bg-[#d32f2f] border-[#344d95]"
             }`}
           >
             {mainButtonLabel}

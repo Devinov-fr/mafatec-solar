@@ -1305,16 +1305,20 @@ const Home = () => {
 )}
 
 
+
 {/* Popup calepinage (RoofPlanner) */}
 {isRoofPlannerOpen && (
-  <div className="fixed inset-0 z-[2050] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-    <div className="relative w-full max-w-3xl mx-4">
-      <div className="relative rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-        <RoofPlanner
-          panels={panels}
-          onPanelsChange={setPanels}
-          onClose={() => setIsRoofPlannerOpen(false)}
-        />
+  <div className="fixed inset-0 z-[2050] overflow-y-auto bg-slate-900/40 backdrop-blur-sm">
+    {/* spacer pour centrer + permettre le scroll */}
+    <div className="min-h-screen px-4 py-6 flex items-center justify-center">
+      <div className="relative w-full max-w-3xl">
+        <div className="relative max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
+          <RoofPlanner
+            panels={panels}
+            onPanelsChange={setPanels}
+            onClose={() => setIsRoofPlannerOpen(false)}
+          />
+        </div>
       </div>
     </div>
   </div>
