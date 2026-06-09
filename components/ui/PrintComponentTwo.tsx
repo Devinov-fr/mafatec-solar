@@ -357,583 +357,172 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
     },
     ref
   ) => {
-    const [selectedChart] = useState<
-      "production" | "irradiation" | "variability"
-    >("production");
+const chartDataProduction = data.outputs.monthly.fixed.map(
+  (monthlyData, index) => ({
+    month: monthNames[index],
+    value: monthlyData.E_m,  // Fix #1
+  })
+);
 
-    const chartDataProduction = data.outputs.monthly.fixed.map(
-      (monthlyData, index) => ({
-        month: monthNames[index],
-        value: monthlyData.E_m,
-      })
-    );
+const chartDataIrradiation = data.outputs.monthly.fixed.map(
+  (monthlyData, index) => ({
+    month: monthNames[index],
+    value: monthlyData["H(i)_m"],  // Fix #2
+  })
+);
 
-    const chartDataIrradiation = data.outputs.monthly.fixed.map(
-      (monthlyData, index) => ({
-        month: monthNames[index],
-        value: monthlyData["H(i)_m"],
-      })
-    );
-
-    const chartDataVariability = data.outputs.monthly.fixed.map(
-      (monthlyData, index) => ({
-        month: monthNames[index],
-        value: monthlyData.SD_m,
-      })
-    );
+const chartDataVariability = data.outputs.monthly.fixed.map(
+  (monthlyData, index) => ({
+    month: monthNames[index],
+    value: monthlyData.SD_m,  // Fix #3
+  })
+);
 
     const componentRef = ref as React.MutableRefObject<HTMLDivElement>;
-    console.log("componentRef", componentRef);
 
     // 🧩 On récupère les infos du calepinage
     const mainPanel = panels[0];
-
-    // image de toiture : d'abord l'URL stockée dans les panneaux (image importée dans RoofPlanner), sinon fallback
-    const roofImageHref =
-      panels.find((p) => p.imageUrl)?.imageUrl ||
-      mainPanel?.imageUrl ||
-      "/toit-maison.jpg";
-
-    // tous les polygons des panneaux
-    const panelPolygons = panels
-      .map((panel) => ({
-        panel,
-        points: buildPolygonPoints(panel),
-      }))
-      .filter((p) => p.points !== null);
-
+    const roofImageHref = panels.find((p) => p.imageUrl)?.imageUrl || mainPanel?.imageUrl || "/toit-maison.jpg";
+    const panelPolygons = panels.map((panel) => ({ panel, points: buildPolygonPoints(panel) })).filter((p) => p.points !== null);
     const hasPanels = panelPolygons.length > 0;
 
     return (
-      <div className="">
-        <div className="py-4 lg:px-0 px-4 "></div>
-        <div className="flex justify-end z-1000 max-w-[1200px] mx-auto px-10">
-          <ReactToPrint
-            trigger={() => (
-              <button className="mt-4 bg-[#0F427C] text-white flex items-center gap-2 px-3 py-2 rounded-md shadow-sm hover:bg-[#0c3260] transition">
-                <Download className="h-5 w-5 text-white" />
-                <span className="text-sm font-medium">Télécharger</span>
-              </button>
-            )}
-            content={() => componentRef.current}
-          />
-        </div>
-
-        <div ref={ref} style={{ position: "relative" }}>
-          <div className="flex justify-center mb-6">
-            <img
-              src="/mafatec-logo-rge.png"
-              alt="rge logo"
-              className="w-[20%] h-auto mt-4 "
-            />
+      <div ref={ref} className="space-y-16">
+        {/* Calepinage */}
+        <div className="res-block">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
+                Calepinage — <em className="italic text-[#c93b18]">emplacement des panneaux</em>
+              </h2>
+              <p className="text-[14px] text-[#7a7e95]">Implantation optimisée du champ photovoltaïque sur la toiture.</p>
+            </div>
           </div>
 
-          {data && (
-            <div className="pb-6">
-              <div className="h-full z-10 border-t-gray-500 lg:px-0 px-4">
-                {/* Bloc cartes */}
-                <div className="lg:px-16 lg:py-4 px-0 py-3">
-                  <div
-                    className="
-                      flex flex-col lg:flex-row lg:flex-nowrap gap-4
-                      print:grid print:grid-cols-2 print:gap-3
-                    "
-                  >
-                    {/* Carte 1 – Entrées fournies */}
-                    <div
-                      className="
-                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
-                        p-5 print:p-3 print:text-[11px]
-                      "
-                    >
-                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
-                        Entrées fournies
-                      </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
-                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Latitude :
-                          </span>{" "}
-                          {data.inputs.location.latitude}
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Longitude :
-                          </span>{" "}
-                          {data.inputs.location.longitude}
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Horizon :
-                          </span>{" "}
-                          Calculé
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            PV installée :
-                          </span>{" "}
-                          {data.inputs.pv_module.peak_power} kWc
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Pertes système :
-                          </span>{" "}
-                          {data.inputs.pv_module.system_loss} %
-                        </li>
-                      </ul>
-                    </div>
+          <div className="bg-white border border-line-warm rounded-[24px] p-8 shadow-sm">
+            {hasPanels ? (
+              <div className="w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-xl bg-paper-2">
+                <svg viewBox="0 0 1024 730" preserveAspectRatio="xMidYMid slice" className="w-full h-full">
+                  <image href={roofImageHref} x="0" y="0" width="1024" height="730" preserveAspectRatio="xMidYMid slice" />
+                  <defs>
+                    <pattern id="pvPatternBlack" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">
+                      <rect x="0" y="0" width="1" height="1" fill="#02030a" />
+                      <linearGradient id="pvGradBB" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#1b2738" stopOpacity="0.95" />
+                        <stop offset="0.45" stopColor="#050812" stopOpacity="0.97" />
+                        <stop offset="1" stopColor="#000000" stopOpacity="0.99" />
+                      </linearGradient>
+                      <rect x="0" y="0" width="1" height="1" fill="url(#pvGradBB)" />
+                      <path d="M0 0 H1 M0 0.5 H1 M0 1 H1 M0 0 V1 M0.25 0 V1 M0.5 0 V1 M0.75 0 V1 M1 0 V1" stroke="#222733" strokeWidth={0.006} />
+                      <polygon points="-0.2,0 0.35,0 1,1 0.45,1" fill="rgba(255,255,255,0.07)" />
+                    </pattern>
+                  </defs>
+                  {panelPolygons.map(({ panel, points }) => (
+                    <polygon key={panel.id} points={points!} fill="url(#pvPatternBlack)" stroke="#181a1f" strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
+                  ))}
+                </svg>
+              </div>
+            ) : (
+              <p className="text-center py-12 text-[#7a7e95] italic">Aucun calepinage défini.</p>
+            )}
+          </div>
+        </div>
 
-                    {/* Carte 2 – Résultats de la simulation */}
-                    <div
-                      className="
-                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
-                        p-5 print:p-3 print:text-[11px]
-                      "
-                    >
-                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
-                        Résultats de la simulation
-                      </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
-                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Inclinaison :
-                          </span>{" "}
-                          {inclinaison}°
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Azimut :
-                          </span>{" "}
-                          {azimut}°
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Production annuelle :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.E_y} kWh
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Irradiation annuelle :
-                          </span>{" "}
-                          {data.outputs.totals.fixed["H(i)_y"]} kWh/m²
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Variabilité interannuelle :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.SD_y}
-                        </li>
-                      </ul>
-                    </div>
+        {/* Tableau mensuel */}
+        <div className="res-block">
+          <div className="mb-8">
+            <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
+              Énergie PV & irradiation <em className="italic text-[#c93b18]">mensuelle</em>
+            </h2>
+            <p className="text-[14px] text-[#7a7e95]">Production, irradiation et variabilité, mois par mois.</p>
+          </div>
 
-                    {/* Carte 3 – Changements de la production */}
-                    <div
-                      className="
-                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
-                        p-5 print:p-3 print:text-[11px]
-                      "
-                    >
-                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
-                        Changements de la production
-                      </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
-                      <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Angle d’incidence :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.l_aoi}
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Effets spectraux :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.l_spec}
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Température & faible irradiance :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.l_tg} %
-                        </li>
-                        <li>
-                          <span className="font-semibold text-slate-900">
-                            Pertes totales :
-                          </span>{" "}
-                          {data.outputs.totals.fixed.l_total}
-                        </li>
-                      </ul>
-                    </div>
+          <div className="bg-white border border-line-warm rounded-[24px] overflow-hidden shadow-sm">
+            <table className="w-full text-left text-[14px] border-collapse">
+              <thead className="bg-[#0b0e1d] text-white text-on-dark text-[11px] font-bold uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">Mois</th>
+                  <th className="px-6 py-4 text-right">Production (kWh)</th>
+                  <th className="px-6 py-4 text-right">Irradiation (kWh/m²)</th>
+                  <th className="px-6 py-4 text-right">Variabilité (kWh)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line-warm">
+                {data.outputs.monthly.fixed.map((m, i) => (
+                  <tr key={i} className="hover:bg-paper-2 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-text-luxe capitalize">{monthNames[i]}</td>
+                    <td className="px-6 py-4 text-right text-text-soft">{m.E_m.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right text-text-soft">{m["H(i)_m"].toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right text-text-soft">{m.SD_m.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                    {/* Carte 4 – Chute de tension du câblage */}
-                    <div
-                      className="
-                        lg:w-1/4 w-full bg-white rounded-2xl border border-slate-200 shadow-sm
-                        p-5 print:p-3 print:text-[11px]
-                      "
-                    >
-                      <h2 className="text-sm print:text-[11px] font-semibold text-[#0f459e] mb-2 print:mb-1 uppercase tracking-wide">
-                        Chute de tension du câblage
-                      </h2>
-                      <div className="h-[1px] w-12 bg-[#0f459e] rounded-full mb-3 print:mb-2" />
-                      {voltageDropResult ? (
-                        <ul className="text-xs print:text-[10px] text-slate-700 space-y-1.5 print:space-y-1">
-                          <li>
-                            <span className="font-semibold text-slate-900">
-                              Chute de tension :
-                            </span>{" "}
-                            {voltageDropResult.vdrop ?? "–"} V
-                          </li>
-                          <li>
-                            <span className="font-semibold text-slate-900">
-                              Pourcentage de chute de tension :
-                            </span>{" "}
-                            {voltageDropResult.vdropPct ?? "–"} %
-                          </li>
-                          <li>
-                            <span className="font-semibold text-slate-900">
-                              Résistance de fil :
-                            </span>{" "}
-                            {voltageDropResult.rwire ?? "–"} Ω
-                          </li>
-                        </ul>
-                      ) : (
-                        <p className="text-xs print:text-[10px] text-slate-500">
-                          Aucun calcul de chute de tension n&apos;a été renseigné
-                          pour cette étude.
-                        </p>
-                      )}
-                    </div>
-                  </div>
+        {/* Graphiques */}
+        <div className="res-block">
+          <div className="mb-8">
+            <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
+              Courbes <em className="italic text-[#c93b18]">mensuelles</em>
+            </h2>
+            <p className="text-[14px] text-[#7a7e95]">Évolution de la production, de l&apos;irradiation et de la variabilité.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {[
+              { title: "Production mensuelle (kWh)", data: chartDataProduction, color: "#C93B18" },
+              { title: "Irradiation mensuelle (kWh/m²)", data: chartDataIrradiation, color: "#3A55B0" },
+              { title: "Variabilité mensuelle (kWh)", data: chartDataVariability, color: "#C9A96A" }
+            ].map((chart, idx) => (
+              <div key={idx} className="bg-white border border-line-warm rounded-[24px] p-6 shadow-sm">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest text-text-luxe mb-6">{chart.title}</h4>
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chart.data}>
+                      <XAxis dataKey="month" hide />
+                      <YAxis hide />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: '600' }}
+                      />
+                      <Bar dataKey="value" fill={chart.color} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-
-                {/* ================== VUE MAISON + PANNEAUX ================== */}
-                <div className="lg:px-16 lg:pt-4 lg:pb-2 px-0 pt-4 pb-2">
-                  <h2 className="text-lg font-bold text-[#0f459e] mb-3">
-                    Calepinage – Emplacement des panneaux
-                  </h2>
-
-                  {hasPanels ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                      {/* Image + calepinage exact */}
-                      <div className="w-full max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-md bg-slate-100">
-                        <svg
-                          viewBox="0 0 1024 730"
-                          preserveAspectRatio="xMidYMid slice"
-                          className="w-full h-full"
-                        >
-                          {/* 🔹 Image de toiture exacte (celle du calepinage) */}
-                          <image
-                            href={roofImageHref}
-                            x="0"
-                            y="0"
-                            width="1024"
-                            height="730"
-                            preserveAspectRatio="xMidYMid slice"
-                          />
-
-                          {/* 🔹 Motif panneau PV noir (même style que dans le calepinage) */}
-                          <defs>
-                            <pattern
-                              id="pvPatternBlack"
-                              patternUnits="objectBoundingBox"
-                              patternContentUnits="objectBoundingBox"
-                              width="1"
-                              height="1"
-                            >
-                              {/* fond très sombre */}
-                              <rect
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                                fill="#02030a"
-                              />
-
-                              {/* dégradé vertical léger */}
-                              <linearGradient
-                                id="pvGradBB"
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                              >
-                                <stop
-                                  offset="0"
-                                  stopColor="#1b2738"
-                                  stopOpacity="0.95"
-                                />
-                                <stop
-                                  offset="0.45"
-                                  stopColor="#050812"
-                                  stopOpacity="0.97"
-                                />
-                                <stop
-                                  offset="1"
-                                  stopColor="#000000"
-                                  stopOpacity="0.99"
-                                />
-                              </linearGradient>
-                              <rect
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                                fill="url(#pvGradBB)"
-                              />
-
-                              {/* grille des cellules */}
-                              <path
-                                d="
-                                  M0 0 H1
-                                  M0 0.5 H1
-                                  M0 1 H1
-
-                                  M0 0 V1
-                                  M0.25 0 V1
-                                  M0.5 0 V1
-                                  M0.75 0 V1
-                                  M1 0 V1
-                                "
-                                stroke="#222733"
-                                strokeWidth={0.006}
-                              />
-
-                              {/* léger reflet diagonal */}
-                              <polygon
-                                points="-0.2,0 0.35,0 1,1 0.45,1"
-                                fill="rgba(255,255,255,0.07)"
-                              />
-                            </pattern>
-                          </defs>
-
-                          {/* 🔹 On dessine TOUS les panneaux du calepinage */}
-                          {panelPolygons.map(({ panel, points }) => (
-                            <polygon
-                              key={panel.id}
-                              points={points!}
-                              fill="url(#pvPatternBlack)"
-                              stroke="#181a1f"
-                              strokeWidth={2.2}
-                              strokeLinejoin="round"
-                              strokeLinecap="round"
-                            />
-                          ))}
-                        </svg>
-                      </div>
-
-                      <p className="text-[10px] text-slate-500 text-center mt-2">
-                        Emplacement et forme du calepinage photovoltaïque sur la
-                        toiture.
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">
-                      Aucun calepinage n&apos;a été défini pour cette étude.
-                    </p>
-                  )}
-                </div>
-                {/* ================== FIN VUE MAISON ================== */}
-
-                {/* Monthly data section */}
-                <div className="lg:px-16 lg:py-6 px-0 py-4 flex lg:flex-col flex-col justify-between">
-                  <h2 className="text-xl font-bold text-[#0f459e] mb-[10px]">
-                    Énergie PV et irradiation solaire mensuelle
-                  </h2>
-                  <div className="flex lg:flex-col flex-col justify-center gap-10">
-                    {/* Monthly data table */}
-                    <div className="overflow-x-auto lg:w-full w-full">
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <table className="min-w-full text-xs">
-                          <thead className="bg-[#0f459e] text-white">
-                            <tr>
-                              <th className="p-2 border-b border-slate-300/40 text-left">
-                                Mois
-                              </th>
-                              <th className="p-2 border-b border-slate-300/40 text-right">
-                                Production (kWh)
-                              </th>
-                              <th className="p-2 border-b border-slate-300/40 text-right">
-                                Irradiation (kWh/m²)
-                              </th>
-                              <th className="p-2 border-b border-slate-300/40 text-right">
-                                Variabilité (kWh)
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {data.outputs.monthly.fixed.map(
-                              (monthlyData: MonthlyData, index: number) => (
-                                <tr
-                                  key={index}
-                                  className={
-                                    index % 2 === 0
-                                      ? "bg-slate-50/60"
-                                      : "bg-white"
-                                  }
-                                >
-                                  <td className="capitalize p-2 border-b border-slate-100 text-left">
-                                    {monthNames[index]}
-                                  </td>
-                                  <td className="p-2 border-b border-slate-100 text-right">
-                                    {monthlyData.E_m.toFixed(2)}
-                                  </td>
-                                  <td className="p-2 border-b border-slate-100 text-right">
-                                    {monthlyData["H(i)_m"].toFixed(2)}
-                                  </td>
-                                  <td className="p-2 border-b border-slate-100 text-right">
-                                    {monthlyData.SD_m.toFixed(2)}
-                                  </td>
-                                </tr>
-                              )
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    {/* Charts */}
-                    <div className="lg:w-full w-full flex lg:flex-row flex-col justify-between gap-4 mb-2">
-                      <div className="w-full lg:w-[33%]">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                          <p className="text-xs font-semibold text-slate-700 mb-2">
-                            Production mensuelle (kWh)
-                          </p>
-                          <ResponsiveContainer width="100%" height={200}>
-                            <BarChart data={chartDataProduction}>
-                              <XAxis dataKey="month" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend
-                                payload={[
-                                  {
-                                    value: "Production (kWh)",
-                                    type: "circle",
-                                    color: "#ff8b01ff",
-                                  },
-                                ]}
-                              />
-                              <Bar
-                                dataKey="value"
-                                fill="#ff8b01ff"
-                                name="kWh"
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div className="w-full lg:w-[33%]">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                          <p className="text-xs font-semibold text-slate-700 mb-2">
-                            Irradiation mensuelle (kWh/m²)
-                          </p>
-                          <ResponsiveContainer width="100%" height={200}>
-                            <BarChart data={chartDataIrradiation}>
-                              <XAxis dataKey="month" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend
-                                payload={[
-                                  {
-                                    value: "Irradiation (kWh/m²)",
-                                    type: "circle",
-                                    color: "#ffc700ff",
-                                  },
-                                ]}
-                              />
-                              <Bar
-                                dataKey="value"
-                                fill="#ffc700ff"
-                                name="kWh/m²"
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div className="w-full lg:w-[33%]">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                          <p className="text-xs font-semibold text-slate-700 mb-2">
-                            Variabilité mensuelle (kWh)
-                          </p>
-                          <ResponsiveContainer width="100%" height={200}>
-                            <BarChart data={chartDataVariability}>
-                              <XAxis dataKey="month" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend
-                                payload={[
-                                  {
-                                    value: "Variabilité (kWh)",
-                                    type: "circle",
-                                    color: "#0faa58ff",
-                                  },
-                                ]}
-                              />
-                              <Bar
-                                dataKey="value"
-                                fill="#0faa58ff"
-                                name="kWh"
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: chart.color }} />
+                  <span className="text-[12px] text-[#7a7e95] font-medium">Valeur estimée</span>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* Diagramme solaire */}
-              <div className="mt-4">
-                <h2 className="text-xl font-bold text-black text-center mt-4 !mb-[-40px]">
-                  Diagramme solaire avec masques d&apos;ombrage
-                </h2>
+        {/* Diagramme solaire */}
+        <div className="res-block">
+          <div className="text-center mb-12">
+            <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
+              Diagramme solaire avec <em className="italic text-[#c93b18]">masques d&apos;ombrage</em>
+            </h2>
+            <p className="text-[14px] text-[#7a7e95] mt-2">Trajectoire du soleil et impact des ombrages sur l&apos;année.</p>
+          </div>
 
-                <div className="flex justify-center mx-auto w-full overflow-x-auto lg:overflow-x-visible mt-8">
-                  {/* 🔹 on réduit tout le diagramme ici */}
-                  <div className="flex flex-nowrap scale-[0.8] origin-top">
-                    {(String(data.inputs.location.latitude).startsWith("42.") ||
-                      data.inputs.location.latitude < 42) && (
-                      <Altitude42 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("43.") && (
-                      <Altitude43 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("44.") && (
-                      <Altitude44 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("45.") && (
-                      <Altitude45 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("46.") && (
-                      <Altitude46 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("47.") && (
-                      <Altitude47 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("48.") && (
-                      <Altitude48 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("49.") && (
-                      <Altitude49 obstacles={obstacles || []} />
-                    )}
-                    {String(data.inputs.location.latitude).startsWith("50.") && (
-                      <Altitude50 obstacles={obstacles || []} />
-                    )}
-                    {(String(data.inputs.location.latitude).startsWith("51.") ||
-                      data.inputs.location.latitude > 51) && (
-                      <Altitude51 obstacles={obstacles || []} />
-                    )}
-                  </div>
-                </div>
-              </div>
+          <div className="bg-white border border-line-warm rounded-[32px] p-8 md:p-12 shadow-sm overflow-hidden flex justify-center">
+            <div className="scale-[0.85] md:scale-100 origin-center">
+              {(String(data.inputs.location.latitude).startsWith("42.") || data.inputs.location.latitude < 42) && <Altitude42 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("43.") && <Altitude43 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("44.") && <Altitude44 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("45.") && <Altitude45 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("46.") && <Altitude46 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("47.") && <Altitude47 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("48.") && <Altitude48 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("49.") && <Altitude49 obstacles={obstacles || []} />}
+              {String(data.inputs.location.latitude).startsWith("50.") && <Altitude50 obstacles={obstacles || []} />}
+              {(String(data.inputs.location.latitude).startsWith("51.") || data.inputs.location.latitude > 51) && <Altitude51 obstacles={obstacles || []} />}
             </div>
-          )}
+          </div>
         </div>
       </div>
     );

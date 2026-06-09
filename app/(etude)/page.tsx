@@ -7,13 +7,30 @@ import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 
 import Footer from "@/components/ui/footer";
-
 import Header from "@/components/ui/Header";
 import Hero from "@/components/ui/Hero";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import PrintComponentTwo, { Panel } from "@/components/ui/PrintComponentTwo";
 import RoofPlanner from "@/components/ui/RoofPlanner";
-import { Plus, TrashIcon } from "lucide-react";
+import {
+  Plus,
+  TrashIcon,
+  Download,
+  Zap,
+  BarChart3,
+  ChevronRight,
+  MapPin,
+  X,
+  TrendingUp,
+  Activity,
+  Cable,
+  LineChart,
+  Clock,
+  Trash2,
+  LayoutGrid,
+  Grid3X3,
+  Pencil,
+} from "lucide-react";
 
 // Map sans SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
@@ -21,7 +38,7 @@ const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
 });
 
 // ---------------------------
-// Types et interfaces existants
+// Types et interfaces
 // ---------------------------
 interface Data {
   inputs: {
@@ -30,11 +47,7 @@ interface Data {
       lifetime: number | null;
       system_cost: number | null;
     };
-    location: {
-      elevation: number;
-      latitude: number;
-      longitude: number;
-    };
+    location: { elevation: number; latitude: number; longitude: number };
     meteo_data: {
       horizon_db: string;
       meteo_db: string;
@@ -45,99 +58,12 @@ interface Data {
     };
     mounting_system: {
       fixed: {
-        azimuth: {
-          optimal: boolean;
-          value: number;
-        };
-        slope: {
-          optimal: boolean;
-          value: number;
-        };
+        azimuth: { optimal: boolean; value: number };
+        slope: { optimal: boolean; value: number };
         type: string;
       };
     };
-    pv_module: {
-      peak_power: number;
-      system_loss: number;
-      technology: string;
-    };
-  };
-  meta: {
-    inputs: {
-      economic_data: {
-        description: string;
-        variables: {
-          interest: { description: string; units: string };
-          lifetime: { description: string; units: string };
-          system_cost: { description: string; units: string };
-        };
-      };
-      location: {
-        description: string;
-        variables: {
-          elevation: { description: string; units: string };
-          latitude: { description: string; units: string };
-          longitude: { description: string; units: string };
-        };
-      };
-      meteo_data: {
-        description: string;
-        variables: {
-          horizon_db: { description: string };
-          meteo_db: { description: string };
-          radiation_db: { description: string };
-          use_horizon: { description: string };
-          year_max: { description: string };
-          year_min: { description: string };
-        };
-      };
-      mounting_system: {
-        choices: string;
-        description: string;
-        fields: {
-          azimuth: { description: string; units: string };
-          slope: { description: string; units: string };
-        };
-      };
-      pv_module: {
-        description: string;
-        variables: {
-          peak_power: { description: string; units: string };
-          system_loss: { description: string; units: string };
-          technology: { description: string };
-        };
-      };
-    };
-    outputs: {
-      monthly: {
-        timestamp: string;
-        type: string;
-        variables: {
-          E_d: { description: string; units: string };
-          E_m: { description: string; units: string };
-          H_i_d: { description: string; units: string };
-          H_i_m: { description: string; units: string };
-          SD_m: { description: string; units: string };
-        };
-      };
-      totals: {
-        type: string;
-        variables: {
-          E_d: { description: string; units: string };
-          E_m: { description: string; units: string };
-          E_y: { description: string; units: string };
-          H_i_d: { description: string; units: string };
-          H_i_m: { description: string; units: string };
-          "H(i)_y": { description: string; units: string };
-          SD_m: { description: string; units: string };
-          SD_y: { description: string; units: string };
-          l_aoi: { description: string; units: string };
-          l_spec: { description: string; units: string };
-          l_tg: { description: string; units: string };
-          l_total: { description: string; units: string };
-        };
-      };
-    };
+    pv_module: { peak_power: number; system_loss: number; technology: string };
   };
   outputs: {
     monthly: {
@@ -181,9 +107,6 @@ interface Obstacle {
   points: { azimuth: number | null; height: number | null }[];
 }
 
-// ---------------------------
-// Constantes chute de tension
-// ---------------------------
 const MATERIAL_RHO: Record<string, number> = {
   copper: 1.724e-8,
   aluminium: 2.82e-8,
@@ -201,9 +124,6 @@ function awgToDiameterMm(awg: number): number {
   return dInch * 25.4;
 }
 
-// ---------------------------
-// Calculateur de chute de tension – MODE CLAIR
-// ---------------------------
 interface VoltageDropCalculatorProps {
   onClose: () => void;
   onResult: (result: {
@@ -227,7 +147,6 @@ const VoltageDropCalculator = ({
   const [voltage, setVoltage] = useState("");
   const [current, setCurrent] = useState("");
 
-
   const [vdrop, setVdrop] = useState<string | null>(null);
   const [vdropPct, setVdropPct] = useState<string | null>(null);
   const [rwire, setRwire] = useState<string | null>(null);
@@ -237,14 +156,11 @@ const VoltageDropCalculator = ({
 
   const handleMaterialChange = (value: string) => {
     setMaterial(value);
-    if (MATERIAL_RHO[value] !== undefined) {
-      setRho(String(MATERIAL_RHO[value]));
-    }
+    if (MATERIAL_RHO[value] !== undefined) setRho(String(MATERIAL_RHO[value]));
   };
 
   const compute = () => {
     setError(null);
-
     const rhoNum = parseFloat(rho);
     const dVal = parseFloat(diameterValue);
     const lenVal = parseFloat(lengthValue);
@@ -264,329 +180,174 @@ const VoltageDropCalculator = ({
       I <= 0
     ) {
       setError("Merci de remplir tous les champs avec des valeurs valides.");
-      setVdrop(null);
-      setVdropPct(null);
-      setRwire(null);
       return;
     }
 
     let Lm = lenVal;
-    if (lengthUnit === "ft") {
-      Lm = lenVal * 0.3048;
-    }
+    if (lengthUnit === "ft") Lm = lenVal * 0.3048;
 
     let d_m: number;
-    if (diameterUnit === "mm") {
-      d_m = dVal / 1000.0;
-    } else if (diameterUnit === "inch") {
-      d_m = dVal * 0.0254;
-    } else {
+    if (diameterUnit === "mm") d_m = dVal / 1000.0;
+    else if (diameterUnit === "inch") d_m = dVal * 0.0254;
+    else {
       const d_mm = awgToDiameterMm(dVal);
       if (!isFinite(d_mm) || d_mm <= 0) {
         setError("Valeur AWG invalide.");
-        setVdrop(null);
-        setVdropPct(null);
-        setRwire(null);
         return;
       }
       d_m = d_mm / 1000.0;
     }
 
     const A = Math.PI * Math.pow(d_m / 2, 2);
-    if (!isFinite(A) || A <= 0) {
-      setError("Erreur dans le calcul de la section du fil.");
-      setVdrop(null);
-      setVdropPct(null);
-      setRwire(null);
-      return;
-    }
-
-    let R_path: number;
-    let R_wire: number;
-    let Vdrop: number;
+    let R_path, Vdrop;
 
     if (currentType === "dc" || currentType === "ac1") {
       R_path = (2 * rhoNum * Lm) / A;
-      R_wire = R_path;
       Vdrop = I * R_path;
     } else {
       const R_phase = (rhoNum * Lm) / A;
       R_path = R_phase;
-      R_wire = R_phase;
       Vdrop = Math.sqrt(3) * I * R_phase;
     }
 
     const pct = (Vdrop / U) * 100;
-
     const vdropStr = isFinite(Vdrop) ? Vdrop.toFixed(3) : null;
     const pctStr = isFinite(pct) ? pct.toFixed(3) : null;
-    const rwireStr = isFinite(R_wire) ? R_wire.toFixed(6) : null;
+    const rwireStr = isFinite(R_path) ? R_path.toFixed(6) : null;
 
     setVdrop(vdropStr);
     setVdropPct(pctStr);
     setRwire(rwireStr);
 
-    onResult({
-      vdrop: vdropStr,
-      vdropPct: pctStr,
-      rwire: rwireStr,
-    });
-
-    if (closeTimeoutRef.current !== null) {
-  window.clearTimeout(closeTimeoutRef.current);
-}
-closeTimeoutRef.current = window.setTimeout(() => {
-  onClose();
-}, 2000); // 10 secondes
+    onResult({ vdrop: vdropStr, vdropPct: pctStr, rwire: rwireStr });
+    if (closeTimeoutRef.current) window.clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = window.setTimeout(() => onClose(), 2000);
   };
 
   return (
-    <div className="bg-white text-slate-900 w-full">
-    <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-7 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f427c]/8 ring-1 ring-[#0f427c]/15">
-              <span className="text-xl text-[#0f427c]">⚡</span>
-            </div>
-            <div>
-              
-              <h2 className="mt-2 text-[1.3rem] font-semibold tracking-tight text-slate-900">
-                Calculateur de chute de tension
-              </h2>
-              <p className="mt-1.5 max-w-xl text-xs text-slate-500">
-                Entrez le matériau, la section, la longueur et les paramètres
-                électriques pour vérifier la chute de tension de votre ligne.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100"
-          >
-            <span className="text-lg leading-none">&times;</span>
-          </button>
+<div className="bg-white text-slate-900 w-full">
+  <div className="px-6 py-6 space-y-6">
+    {/* Header */}
+    <div className="flex items-start justify-between">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#c93b18]/10 ring-1 ring-[#d65128]/20">
+          <span className="text-xl"><Zap className="text-[#c93b18]"/></span>
         </div>
-
-        {/* Formulaire → 3 colonnes */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Matériau */}
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Matériau
-            </p>
-
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-slate-700 font-bold">Type de fil</Label>
-              <select
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0f427c] focus:ring-2 focus:ring-[#0f427c]/20"
-                value={material}
-                onChange={(e) => handleMaterialChange(e.target.value)}
-              >
-                <option value="">– Sélectionnez –</option>
-                <option value="copper">Cuivre</option>
-                <option value="aluminium">Aluminium</option>
-                <option value="carbon_steel">Acier au carbone</option>
-                <option value="electrical_steel">Acier électrique</option>
-                <option value="gold">Or</option>
-                <option value="nichrome">Nichrome</option>
-                <option value="nickel_silver">Nickel argent</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-slate-700 font-bold">
-                Résistivité (Ω·m)
-              </Label>
-              <Input
-                className="h-9 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-                value={rho}
-                onChange={(e) => setRho(e.target.value)}
-                placeholder="1.72e-8 pour le cuivre"
-              />
-              <p className="text-[10px] text-slate-500">
-                Auto-rempli selon le matériau, modifiable si besoin.
-              </p>
-            </div>
-          </div>
-
-          {/* Géométrie */}
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Géométrie
-            </p>
-
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-slate-700 font-bold">
-                Diamètre / taille du fil
-              </Label>
-              <div className="mt-1.5 flex gap-2">
-                <Input
-                  type="number"
-                  className="h-9 flex-1 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-                  value={diameterValue}
-                  onChange={(e) => setDiameterValue(e.target.value)}
-                />
-                <select
-                  className="h-9 rounded-xl border border-slate-300 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-[#0f427c] focus:ring-2 focus:ring-[#0f427c]/20"
-                  value={diameterUnit}
-                  onChange={(e) =>
-                    setDiameterUnit(e.target.value as "mm" | "inch" | "awg")
-                  }
-                >
-                  <option value="mm">mm</option>
-                  <option value="inch">Pouce</option>
-                  <option value="awg">AWG</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-slate-700 font-bold">
-                Longueur (aller simple)
-              </Label>
-              <div className="mt-1.5 flex gap-2">
-                <Input
-                  type="number"
-                  className="h-9 flex-1 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-                  value={lengthValue}
-                  onChange={(e) => setLengthValue(e.target.value)}
-                />
-                <select
-                  className="h-9 rounded-xl border border-slate-300 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-[#0f427c] focus:ring-2 focus:ring-[#0f427c]/20"
-                  value={lengthUnit}
-                  onChange={(e) => setLengthUnit(e.target.value as "m" | "ft")}
-                >
-                  <option value="m">mètres</option>
-                  <option value="ft">pieds</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Paramètres électriques */}
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Paramètres électriques
-            </p>
-
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-slate-700 font-bold">
-                Type de courant
-              </Label>
-              <select
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0f427c] focus:ring-2 focus:ring-[#0f427c]/20"
-                value={currentType}
-                onChange={(e) =>
-                  setCurrentType(e.target.value as "dc" | "ac1" | "ac3")
-                }
-              >
-                <option value="dc">DC</option>
-                <option value="ac1">AC – Monophasé</option>
-                <option value="ac3">AC – Triphasé</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-[14px] text-slate-700 font-bold">
-                  Tension (V)
-                </Label>
-                <Input
-                  className="mt-1.5 h-9 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-                  type="number"
-                  value={voltage}
-                  onChange={(e) => setVoltage(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[14px] text-slate-700 font-bold">
-                  Courant (A)
-                </Label>
-                <Input
-                  className="mt-1.5 h-9 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-                  type="number"
-                  value={current}
-                  onChange={(e) => setCurrent(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Boutons */}
-        <div className="flex flex-wrap justify-end gap-3 pt-1">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-            onClick={onClose}
-          >
-            Fermer
-          </Button>
-          <Button
-            type="button"
-            onClick={compute}
-            className="bg-[#344d95] hover:bg-[#344d95] text-white font-semibold px-6"
-          >
-            Calculer
-          </Button>
-        </div>
-
-        {/* Résultats */}
-        <div className="mt-2 border-t border-slate-200 pt-4 text-sm">
-          {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Chute de tension
-              </p>
-              <p className="mt-1 text-base font-semibold text-slate-900">
-                {vdrop !== null ? `${vdrop} V` : "–"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                % de chute
-              </p>
-              <p className="mt-1 text-base font-semibold text-slate-900">
-                {vdropPct !== null ? `${vdropPct} %` : "–"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Résistance du fil
-              </p>
-              <p className="mt-1 text-base font-semibold text-slate-900">
-                {rwire !== null ? `${rwire} Ω` : "–"}
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-3 text-[10px] text-slate-500">
-            Pour DC et AC monophasé, la résistance est donnée pour l&apos;aller-retour.
-            Pour le triphasé, elle est indiquée par conducteur.
+        <div>
+          <h2 className="text-2xl font-serif text-slate-900">
+            Calculateur de <span className="italic text-[#c93b18]">chute de tension</span>
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-slate-500">
+            Entrez le matériau, la section, la longueur et les paramètres électriques pour vérifier la chute de tension de votre ligne.
           </p>
         </div>
       </div>
+      <button onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
     </div>
+
+    {/* Formulaire */}
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {/* Matériau */}
+      <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Matériau</p>
+        <div className="space-y-1">
+          <Label className="text-xs font-bold text-slate-700">Type de fil</Label>
+          <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#d65128]" value={material} onChange={(e) => handleMaterialChange(e.target.value)}>
+<option value="copper">Cuivre</option>
+    <option value="aluminium">Aluminium</option>
+    <option value="carbon_steel">Acier au carbone</option>
+    <option value="electrical_steel">Acier électrique</option>
+    <option value="gold">Or</option>
+    <option value="nichrome">Nichrome</option>
+    <option value="nickel_silver">Nickel argent</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs font-bold text-slate-700">Résistivité (Ω·m)</Label>
+          <Input className="h-10 border-slate-200 text-sm" value={rho} onChange={(e) => setRho(e.target.value)} />
+          <p className="text-[10px] text-slate-400">Auto-rempli selon le matériau, modifiable si besoin.</p>
+        </div>
+      </div>
+
+      {/* Géométrie */}
+      <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Géométrie</p>
+        <div className="space-y-1">
+          <Label className="text-xs font-bold text-slate-700">Diamètre / taille du fil</Label>
+          <div className="flex gap-2">
+            <Input type="number" className="h-10 border-slate-200" value={diameterValue} onChange={(e) => setDiameterValue(e.target.value)} />
+            <select className="rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none" value={diameterUnit} onChange={(e) => setDiameterUnit(e.target.value as any)}>
+              <option value="mm">mm²</option>
+            </select>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs font-bold text-slate-700">Longueur (aller simple)</Label>
+          <div className="flex gap-2">
+            <Input type="number" className="h-10 border-slate-200" value={lengthValue} onChange={(e) => setLengthValue(e.target.value)} />
+            <select className="rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none" value={lengthUnit} onChange={(e) => setLengthUnit(e.target.value as any)}>
+              <option value="m">mètres</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Paramètres électriques */}
+      <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Paramètres électriques</p>
+        <div className="space-y-1">
+          <Label className="text-xs font-bold text-slate-700">Type de courant</Label>
+          <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none" value={currentType} onChange={(e) => setCurrentType(e.target.value as any)}>
+            <option value="dc">DC</option>
+            <option value="ac1">AC – Monophasé</option>
+            <option value="ac3">AC – Triphasé</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs font-bold text-slate-700">Tension (V)</Label>
+            <Input className="h-10 mt-1 border-slate-200" type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-slate-700">Courant (A)</Label>
+            <Input className="h-10 mt-1 border-slate-200" type="number" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Boutons d'action */}
+    <div className="flex justify-end gap-3 pt-2">
+      <Button variant="outline" className="border-slate-300 px-8" onClick={onClose}>Fermer</Button>
+      <Button onClick={compute} className="bg-[#272a6b] hover:bg-[#272a6b]/90 text-white px-8">Calculer</Button>
+    </div>
+
+    {/* Résultats (Dark Navy Style) */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      {[
+        { label: "CHUTE DE TENSION", value: vdrop ? `${vdrop} V` : "—" },
+        { label: "% DE CHUTE", value: vdropPct ? `${vdropPct} %` : "—" },
+        { label: "RÉSISTANCE DU FIL", value: rwire ? `${rwire} Ω` : "—" }
+      ].map((res, i) => (
+        <div key={i} className="rounded-2xl bg-[#0c0f18] p-5">
+          <p className="text-[10px] font-bold tracking-widest text-slate-400">{res.label}</p>
+          <p className="mt-2 text-xl font-semibold text-white">{res.value}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
   );
 };
 
-// ---------------------------
-// Composant principal Home – MODE CLAIR
-// ---------------------------
 const Home = () => {
-  const [clickedPosition, setClickedPosition] = useState<{ lat: number; lng: number }>({
+  const [clickedPosition, setClickedPosition] = useState({
     lat: 0,
     lng: 0,
+    address: "",
   });
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
   const [useTerrainShadows, setUseTerrainShadows] = useState("non");
-
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     {
       name: "Obstacle 1",
@@ -595,12 +356,10 @@ const Home = () => {
       points: [{ azimuth: 0, height: 0 }],
     },
   ]);
-
-  const componentRef = useRef<HTMLDivElement | null>(null);
   const [puissancePv, setPuissancePv] = useState("");
-  const [systemLosses, setSystemLosses] = useState("14");
-  const [inclinaison, setInclinaison] = useState("35");
-  const [azimut, setAzimut] = useState("0");
+  const [systemLosses, setSystemLosses] = useState("");
+  const [inclinaison, setInclinaison] = useState("");
+  const [azimut, setAzimut] = useState("");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [errorAzimuth, setErrorAzimuth] = useState("");
@@ -609,49 +368,36 @@ const Home = () => {
     puissancePv: false,
     systemLosses: false,
     azimut: false,
-    obstacles: [{ azimuth: false, height: false }],
+    obstacles: [] as any[],
     inclinaison: false,
   });
-
-  const [selectedChart, setSelectedChart] = useState<
-    "production" | "irradiation" | "variability"
-  >("production");
-
-  const [calculateVoltageDrop, setCalculateVoltageDrop] =
-    useState<"oui" | "non">("non");
-
+  const [calculateVoltageDrop, setCalculateVoltageDrop] = useState<
+    "oui" | "non"
+  >("non");
   const [addCalpinage, setAddCalpinage] = useState<"oui" | "non">("non");
-
   const [isVoltageModalOpen, setIsVoltageModalOpen] = useState(false);
-
-  const [voltageDropResult, setVoltageDropResult] = useState<{
-    vdrop: string | null;
-    vdropPct: string | null;
-    rwire: string | null;
-  } | null>(null);
-
+  const [voltageDropResult, setVoltageDropResult] = useState<any>(null);
   const [panels, setPanels] = useState<Panel[]>([]);
 
   const handlePositionChange = (position: { lat: number; lng: number }) => {
-    setClickedPosition(position);
+    setClickedPosition((prev) => ({
+      ...prev,
+      lat: position.lat,
+      lng: position.lng,
+    }));
+  };
+  const handleAddressSelect = (lat: number, lng: number, address: string) => {
+    setClickedPosition({ lat, lng, address });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numValue = parseFloat(value);
-
     if (!isNaN(numValue)) {
-      if (name === "latitude") {
-        setClickedPosition((prev) => ({
-          ...prev,
-          lat: numValue,
-        }));
-      } else if (name === "longitude") {
-        setClickedPosition((prev) => ({
-          ...prev,
-          lng: numValue,
-        }));
-      }
+      setClickedPosition((prev) => ({
+        ...prev,
+        [name === "latitude" ? "lat" : "lng"]: numValue,
+      }));
     }
   };
 
@@ -660,7 +406,7 @@ const Home = () => {
     setShowObstacleInputs(value === "oui");
   };
 
-  const addObstacle = () => {
+  const addObstacle = () =>
     setObstacles((prev) => [
       ...prev,
       {
@@ -670,51 +416,36 @@ const Home = () => {
         points: [{ azimuth: 0, height: 0 }],
       },
     ]);
-  };
-
-  const removeObstacle = (indexToRemove: number) => {
+  const removeObstacle = (indexToRemove: number) =>
     setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
-  };
-
-  const handleObstacleNameChange = (index: number, value: string) => {
+  const handleObstacleNameChange = (index: number, value: string) =>
     setObstacles((prev) =>
-      prev.map((obstacle, i) =>
-        i === index ? { ...obstacle, name: value } : obstacle
-      )
+      prev.map((o, i) => (i === index ? { ...o, name: value } : o)),
     );
-  };
 
   const handlePointChange = (
-    obstacleIndex: number,
-    pointIndex: number,
+    obsIdx: number,
+    ptIdx: number,
     field: "azimuth" | "height",
-    value: string
+    value: string,
   ) => {
-    const updatedObstacles = [...obstacles];
-    const numericValue = value === "" ? null : parseFloat(value);
-
-    if (updatedObstacles[obstacleIndex].points[pointIndex]) {
-      updatedObstacles[obstacleIndex].points[pointIndex][field] = numericValue;
-    }
-
-    setObstacles(updatedObstacles);
+    const updated = [...obstacles];
+    updated[obsIdx].points[ptIdx][field] =
+      value === "" ? null : parseFloat(value);
+    setObstacles(updated);
   };
 
   const validateForm = () => {
-    const obstacleErrors: ObstacleError[] = [];
-
-    const newFormErrors = {
+    const newErrors = {
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
       azimut: azimut.trim() === "",
-      obstacles: obstacleErrors,
+      obstacles: [] as any[],
       inclinaison: inclinaison.trim() === "",
     };
-
-    setFormErrors(newFormErrors);
-
-    return !Object.values(newFormErrors).some((error) =>
-      typeof error === "boolean" ? error : error.some(Boolean)
+    setFormErrors(newErrors);
+    return !Object.values(newErrors).some((v) =>
+      Array.isArray(v) ? v.some(Boolean) : v,
     );
   };
 
@@ -723,7 +454,8 @@ const Home = () => {
       setError("Veuillez remplir les champs manquants.");
       return;
     }
-
+    setError("");
+    setData(null); // Reset data before fetching
     const requestData = {
       lat: clickedPosition.lat,
       lon: clickedPosition.lng,
@@ -738,592 +470,701 @@ const Home = () => {
           ? obstacles.map((o) => o.height).join(",")
           : "0",
     };
-
     try {
-      const response = await fetch(
-        "https://solaire.mafatec.com/pvgis/calculate",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      const response = await fetch("http://127.0.0.1:5000/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      });
       const result = await response.json();
       if (result.error) {
         setError(
-          "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte."
+          "Veuillez sélectionner votre adresse ou entrer ses coordonnées.",
         );
+        setData(null);
+      } else {
+        setData(result);
       }
-      setData(result);
-    } catch (error) {
-      console.error("Error while fetching results:", error);
+    } catch (err) {
+      setError("Une erreur est survenue lors du calcul.");
+      setData(null);
     }
-  };
-
-  const monthNames = [
-    "janvier",
-    "février",
-    "mars",
-    "avril",
-    "mai",
-    "juin",
-    "juillet",
-    "août",
-    "septembre",
-    "octobre",
-    "novembre",
-    "décembre",
-  ];
-
-  const handleAddressSelect = (lat: number, lng: number) => {
-    setClickedPosition({ lat, lng });
-  };
-
-  useEffect(() => {
-    if (data && !error) {
-      console.log("Data changed, regenerating component...");
-    }
-  }, [data, error]);
-
-  const removePointFromObstacle = (obstacleIndex: number, pointIndex: number) => {
-    const updatedObstacles = obstacles.map((obstacle, oIndex) =>
-      oIndex === obstacleIndex
-        ? {
-            ...obstacle,
-            points: obstacle.points.filter((_, pIndex) => pIndex !== pointIndex),
-          }
-        : obstacle
-    );
-    setObstacles(updatedObstacles);
   };
 
   const handleAzimutChange = (e: any) => {
     const rawValue = e.target.value;
     setError("");
     setErrorAzimuth("");
-
     if (rawValue === "-" || rawValue === "") {
       setAzimut(rawValue);
       return;
     }
-
     let value = Number(rawValue);
     if (isNaN(value)) value = 0;
-
-    if (value > 180 || value < -180) {
-      setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
-    }
-
+    if (value > 180 || value < -180)
+      setErrorAzimuth("L'azimut doit être entre -180° et 180°.");
     if (value > 180) value = 180;
     if (value < -180) value = -180;
-
     setAzimut(value.toString());
   };
 
+  // Function to get azimuth direction
+  const getAzimuthDirection = (az: number) => {
+    if (az === 0) return "Sud";
+    if (az > 0) return `Sud-Ouest (${az}°)`;
+    return `Sud-Est (${Math.abs(az)}°)`;
+  };
+
   return (
-    <div className="min-h-screen bg-[#f4f6fb] text-slate-900">
+    <div className="min-h-screen bg-white text-[#15172b]">
       <Header />
       <Hero />
 
-      <div className="max-w-[1220px] mx-auto flex flex-col mb-6 px-3 lg:px-4">
-        <main className="flex lg:flex-row flex-col gap-4 lg:gap-5 mt-8">
-          {/* COLONNE GAUCHE : carte + adresse */}
-          <div className="lg:w-[38%] w-full space-y-4">
-            {/* Carte */}
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                <div>
-                 
-                  <h3 className="text-sm font-bold text-black">
-                    Localisation sur la carte
-                  </h3>
-                </div>
-                <span className="rounded-full bg-slate-50 px-2 py-1 text-[11px] text-slate-500 border border-slate-200">
-                  Cliquer sur la carte
-                </span>
+      {/* Action Bar */}
+      <div className="sticky top-[74px] z-[120] bg-[#f5f5f7] backdrop-blur-[20px] border-b border-[#ececec]">
+        <div className="max-w-[1200px] mx-auto px-10 py-[0.85rem] flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-[0.8rem] min-w-0">
+            <span className="inline-flex items-center gap-[0.45rem] text-[0.62rem] font-bold tracking-[0.16em] uppercase text-white bg-[#c93b18] px-[0.65rem] py-[0.32rem] rounded-[2px]">
+              Étude Installation PV
+            </span>
+            <span className="text-[0.8rem] text-[#454a63] truncate">
+              <strong>{puissancePv || "0"} kWc</strong> ·
+              {clickedPosition.address || "Adresse non définie"} ·
+              {clickedPosition.lat.toFixed(4)} /{" "}
+              {clickedPosition.lng.toFixed(4)}
+            </span>
+          </div>
+          <Button className="bg-[#0b0e1d] hover:bg-[#141832] text-white text-[0.82rem] font-semibold px-[1.5rem] py-[0.8rem] rounded-[6px] transition-all hover:-translate-y-[2px] flex items-center gap-2">
+            <Download size={15} /> Télécharger le rapport
+          </Button>
+        </div>
+      </div>
+
+      <main className="max-w-[1200px] mx-auto px-10 pt-16 md:pt-24 bg-white">
+        {/* Intro */}
+        <div className="mb-12">
+          <div className="flex items-center gap-[0.6rem] text-[0.7rem] font-semibold tracking-[0.3em] uppercase text-[#c93b18] mb-[1.4rem]">
+            <span className="w-[26px] h-px bg-[#c93b18]" />
+            Paramètres de l&apos;étude
+          </div>
+          <h2 className="font-serif text-[clamp(2rem,3.6vw,3rem)] leading-[1.05] tracking-[-0.015em] mb-4">
+            Votre installation,{" "}
+            <em className="italic text-[#c93b18] font-medium">configurée</em>
+          </h2>
+          <p className="text-[1.05rem] text-[#454a63] max-w-[620px]">
+            Localisation, coordonnées et performances du système photovoltaïque
+          </p>
+          <p className="text-[1.05rem] text-[#454a63] max-w-[620px]">
+            retenu pour cette simulation.
+          </p>
+        </div>
+
+        {/* Config Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1.3rem] items-start">
+          {/* Col 1: Map */}
+          <div className="cfg-card">
+            <h3 className="font-medium text-[17px]">Localisation</h3>
+            <p className="cfg-sub">Position géographique du site analysé.</p>
+            <div className="relative h-[320px] rounded-[18px] overflow-hidden border border-[#e8e8ea] z-0">
+              <DynamicMap onPositionChange={handlePositionChange} />
+            </div>
+          </div>
+
+          {/* Col 2: Address & Shadows */}
+          <div className="cfg-card">
+            <h3>Adresse & coordonnées</h3>
+            <p className="cfg-sub">Adresse géocodée et latitude / longitude.</p>
+            <div className="field-sm">
+              <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="field-sm">
+                <label>
+                  Latitude <span className="text-red-600">*</span>
+                </label>
+                <Input
+                  name="latitude"
+                  value={clickedPosition.lat}
+                  onChange={handleInputChange}
+                />
               </div>
-              <div className="h-[1px] w-full bg-slate-100" />
-              <div className="h-[320px] rounded-b-2xl overflow-hidden">
-                <DynamicMap onPositionChange={handlePositionChange} />
+              <div className="field-sm">
+                <label>
+                  Longitude <span className="text-red-600">*</span>
+                </label>
+                <Input
+                  name="longitude"
+                  value={clickedPosition.lng}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
 
-          </div>
+            <div className="cfg-divider" />
 
-          {/* COLONNE 2 : Étape 1 AU-DESSUS de Étape 2 */}
-  <div className="lg:w-[35%] w-full space-y-4 mt-4 lg:mt-0">
-    {/* Étape 1 : Adresse & coordonnées */}
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-5 space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-       
-          <h2 className="font-bold text-black text-[18px]">
-            Adresse & coordonnées
-          </h2>
-          <p className="italic text-[11px] text-[#d32f2f] mt-1">
-            Sélectionnez l&apos;adresse ou saisissez la latitude / longitude.
-          </p>
-        </div>
-       
-      </div>
-
-      <AddressAutocomplete onAddressSelect={handleAddressSelect} />
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className="text-[15px] text-slate-700 font-bold">
-            Latitude <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            className="h-9 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-            name="latitude"
-            placeholder="Ex : 48.85"
-            value={clickedPosition.lat}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-[15px] text-slate-700 font-bold">
-            Longitude <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            className="h-9 border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:ring-[#0f427c]/30"
-            name="longitude"
-            placeholder="Ex : 2.35"
-            value={clickedPosition.lng}
-            onChange={handleInputChange}
-          />
-        </div>
-      </div>
-
-      {error ===
-        "Veuillez sélectionner votre adresse sur la carte ou entrer sa latitude et longitude exacte." && (
-        <p className="text-[12px] text-red-500 mt-1">
-          {error}
-        </p>
-      )}
-    </div>
-
-    {/* Étape 2 : Gestion des ombrages */}
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-5 space-y-4">
-  <div className="flex items-start justify-between gap-3">
-    <div>
-      <h2 className="font-bold text-black text-[18px]">
-        Gestion des ombrages
-      </h2>
-      <p className="text-[12px] text-slate-500 mt-1">
-        Ajoutez les obstacles susceptibles de créer de l&apos;ombre sur vos panneaux.
-      </p>
-    </div>
-  </div>
-
-  <div className="flex justify-between items-start gap-2">
-    <Label className="text-[12px] text-black font-bold">
-      Calcul automatique de l&apos;horizon{" "}
-      <span className="text-red-500">*</span>
-    </Label>
-    <RadioGroup
-      onValueChange={(value) => handleTerrainShadowsChange(value)}
-      className="flex gap-3"
-      value={useTerrainShadows}
-    >
-      <div className="flex items-center gap-1.5 text-[12px]">
-        <RadioGroupItem value="oui" id="oui" />
-        <Label htmlFor="oui">Oui</Label>
-      </div>
-      <div className="flex items-center gap-1.5 text-[12px]">
-        <RadioGroupItem value="non" id="non" />
-        <Label htmlFor="non">Non</Label>
-      </div>
-    </RadioGroup>
-  </div>
-
-  {showObstacleInputs && (
-    <div className="mt-3 space-y-4">
-      {/* en-tête + bouton ajout simple */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-            Obstacles personnalisés
-          </p>
-          <h2 className="font-semibold text-[#0f427c] text-[0.95rem]">
-            Obstacles & points d&apos;ombrage
-          </h2>
-        </div>
-
-      
-      </div>
-
-      {obstacles.map((obstacle, obstacleIndex) => (
-        <div
-          key={obstacleIndex}
-          className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 space-y-3"
-        >
-          {/* Titre obstacle + bouton supprimer en texte */}
-          <div className="flex justify-between items-center gap-2">
-            <h3 className="font-semibold text-[0.95rem] text-slate-900">
-              {obstacle.name || `Obstacle ${obstacleIndex + 1}`}
-            </h3>
-            <Button
-              type="button"
-              onClick={() => removeObstacle(obstacleIndex)}
-              variant="ghost"
-              className="h-8 px-2 text-[11px] text-red-500 hover:bg-red-50 flex items-center gap-1"
-            >
-              <TrashIcon className="h-3.5 w-3.5" />
-              Supprimer
-            </Button>
-          </div>
-
-          {/* Nom obstacle */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] text-slate-700">
-              Nom de l&apos;obstacle
-            </Label>
-            <Input
-              className="h-8 text-xs border-slate-300 bg-white text-slate-800 focus-visible:ring-[#0f427c]/30"
-              value={obstacle.name}
-              onChange={(e) =>
-                handleObstacleNameChange(obstacleIndex, e.target.value)
-              }
-              placeholder={`Obstacle ${obstacleIndex + 1}`}
-            />
-          </div>
-
-          {/* Points azimut / hauteur */}
-          <div className="space-y-2 mt-1">
-            {obstacle.points.map((point, pointIndex) => (
-              <div
-                key={pointIndex}
-                className="flex gap-3 items-end"
+            <h3>Gestion des ombrages</h3>
+            <p className="cfg-sub">
+              Obstacles susceptibles de créer de l&apos;ombre sur les panneaux.
+            </p>
+            <div className="field-sm">
+              <label>
+                Calcul automatique de l'horizon{" "}
+                <span className="text-red-600">*</span>
+              </label>
+              <RadioGroup
+                value={useTerrainShadows}
+                onValueChange={handleTerrainShadowsChange}
+                className="flex gap-6 mt-2"
               >
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[11px] text-slate-700">
-                    Azimut (°)
-                  </Label>
-                  <Input
-                    className="h-8 text-xs border-slate-300 bg-white text-slate-800"
-                    name="point-azimuth"
-                    value={point.azimuth ?? ""}
-                    onChange={(e) =>
-                      handlePointChange(
-                        obstacleIndex,
-                        pointIndex,
-                        "azimuth",
-                        e.target.value
-                      )
-                    }
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem
+                    value="oui"
+                    id="h-oui"
+                    activeColor="#c93b18"
+                    className="border-gray-200"
                   />
+                  <label htmlFor="h-oui">Oui</label>
                 </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[11px] text-slate-700">
-                    Hauteur (°)
-                  </Label>
-                  <Input
-                    className="h-8 text-xs border-slate-300 bg-white text-slate-800"
-                    name="point-height"
-                    value={point.height ?? ""}
-                    onChange={(e) =>
-                      handlePointChange(
-                        obstacleIndex,
-                        pointIndex,
-                        "height",
-                        e.target.value
-                      )
-                    }
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem
+                    value="non"
+                    id="h-non"
+                    activeColor="#c93b18"
+                    className="border-gray-200"
                   />
+                  <label htmlFor="h-non">Non</label>
                 </div>
+              </RadioGroup>
+            </div>
 
-                
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* Bouton d’ajout en bas aussi (optionnel, plus UX) */}
-      {obstacles.length > 0 && (
-        <div className="pt-1">
-          <Button
-            type="button"
-            onClick={addObstacle}
-            variant="outline"
-            className="w-full h-9 text-[12px] border-dashed border-slate-300 text-slate-600 hover:border-[#0f427c] hover:text-[#0f427c] hover:bg-[#0f427c]/5 flex items-center justify-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Ajouter un autre obstacle
-          </Button>
-        </div>
-      )}
-    </div>
-  )}
-</div>
-
-  </div>
-
-          {/* COLONNE DROITE : PV + chute + calepinage */}
-          <div className="lg:w-[32%] w-full">
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
+            {showObstacleInputs && (
+              <div className="mt-6 space-y-4">
                 <div>
-                  
-                  <h2 className="font-bold text-black text-[18px]">
-                    Performance du système PV
-                  </h2>
-                  <p className="italic text-[11px] text-[#d32f2f] mt-1">
-                    Saisissez la puissance cible et l&apos;orientation.
+                  <h4 className="text-[0.66rem] uppercase tracking-[0.14em] text-[#3a55b0] font-bold">
+                    Obstacles personnalisés
+                  </h4>
+                  <p className="text-xs text-[#6c757d] mt-1">
+                    Obstacles & points d'ombrage
                   </p>
                 </div>
-               
+                {obstacles.map((obs, obsIdx) => (
+                  <div
+                    key={obsIdx}
+                    className="p-4 bg-[#f5f5f7] rounded-xl border border-[#e8e8ea] space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm font-semibold text-[#15172b]">
+                          Obstacle {obsIdx + 1}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => removeObstacle(obsIdx)}
+                        variant="ghost"
+                        className="h-8 text-red-600 hover:text-red-500 flex gap-1 flex-end"
+                      >
+                        <Trash2 size={14} /> Supprimer
+                      </Button>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                        Nom de l'obstacle
+                      </label>
+                      <Input
+                        value={obs.name}
+                        onChange={(e) =>
+                          handleObstacleNameChange(obsIdx, e.target.value)
+                        }
+                        className="h-9 text-sm bg-white mt-1"
+                      />
+                    </div>
+                    {obs.points.map((pt, ptIdx) => (
+                      <div key={ptIdx} className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                            Azimut (°)
+                          </label>
+                          <Input
+                            className="h-9 text-sm bg-white mt-1"
+                            value={pt.azimuth ?? ""}
+                            onChange={(e) =>
+                              handlePointChange(
+                                obsIdx,
+                                ptIdx,
+                                "azimuth",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="0-360"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                            Hauteur (°)
+                          </label>
+                          <Input
+                            className="h-9 text-sm bg-white mt-1"
+                            value={pt.height ?? ""}
+                            onChange={(e) =>
+                              handlePointChange(
+                                obsIdx,
+                                ptIdx,
+                                "height",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="0-90"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                <Button
+                  onClick={addObstacle}
+                  variant="outline"
+                  className="w-full mt-2 border-dashed rounded-lg border-gray-300 text-gray-700 hover:border-[#3a55b0] hover:bg-white"
+                >
+                  <Plus size={14} className="mr-2" /> Ajouter un autre obstacle
+                </Button>
               </div>
+            )}
+          </div>
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[15px] text-black font-bold">
-                    Puissance PV crête installée [kW]{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    className={`h-9 text-sm border-slate-300 bg-white text-slate-800 focus-visible:ring-[#008f31]/30 ${
-                      formErrors.puissancePv ? "border-red-500 bg-red-50" : ""
-                    }`}
-                    value={puissancePv}
-                    onChange={(e) => setPuissancePv(e.target.value)}
-                    placeholder="Ex : 6"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[15px] text-black font-bold">
-                    Pertes du système [%]{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    className={`h-9 text-sm border-slate-300 bg-white text-slate-800 focus-visible:ring-[#008f31]/30 ${
-                      formErrors.systemLosses ? "border-red-500 bg-red-50" : ""
-                    }`}
-                    value={systemLosses}
-                    onChange={(e) => setSystemLosses(e.target.value)}
-                    placeholder="Ex : 14"
-                  />
-                </div>
+          {/* Col 3: PV Performance */}
+          <div className="cfg-card">
+            <h3>Performance du système PV</h3>
+            <p className="cfg-sub">Puissance cible, orientation et pertes.</p>
+            <div className="field-sm">
+              <label>
+                Puissance PV installée [kWc]{" "}
+                <span className="text-red-600">*</span>
+              </label>
+              <Input
+                className={formErrors.puissancePv ? "border-red-500" : ""}
+                value={puissancePv}
+                onChange={(e) => setPuissancePv(e.target.value)}
+                placeholder="9"
+              />
+            </div>
+            <div className="field-sm">
+              <label>
+                Pertes du système [%] <span className="text-red-600">*</span>
+              </label>
+              <Input
+                className={formErrors.systemLosses ? "border-red-500" : ""}
+                value={systemLosses}
+                onChange={(e) => setSystemLosses(e.target.value)}
+                placeholder="14"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="field-sm">
+                <label>
+                  Inclinaison [°] <span className="text-red-600">*</span>
+                </label>
+                <Input
+                  className={formErrors.inclinaison ? "border-red-500" : ""}
+                  value={inclinaison}
+                  onChange={(e) => setInclinaison(e.target.value)}
+                  placeholder="35"
+                />
               </div>
-
-              <div className="pt-3 border-t border-slate-200" />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[15px] text-slate-700 font-bold">
-                    Inclinaison [°] <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    className={`h-9 text-sm border-slate-300 bg-white text-slate-800 focus-visible:ring-[#008f31]/30 ${
-                      formErrors.inclinaison ? "border-red-500 bg-red-50" : ""
-                    }`}
-                    value={inclinaison}
-                    onChange={(e) => setInclinaison(e.target.value)}
-                    placeholder="Ex : 35"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[15px] text-slate-700 font-bold">
-                    Azimut [°] <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    className={`h-9 text-sm border-slate-300 bg-white text-slate-800 focus-visible:ring-[#008f31]/30 ${
-                      error || errorAzimuth ? "border-red-500 bg-red-50" : ""
-                    }`}
-                    value={azimut}
-                    onChange={handleAzimutChange}
-                    placeholder="Entre -180 et 180"
-                  />
-                </div>
+              <div className="field-sm">
+                <label>
+                  Azimut [°] <span className="text-red-600">*</span>
+                </label>
+                <Input
+                  className={errorAzimuth ? "border-red-500" : ""}
+                  value={azimut}
+                  onChange={handleAzimutChange}
+                  placeholder="0"
+                />
               </div>
+            </div>
 
-              {error === "Veuillez remplir les champs manquants." && (
-                <p className="text-[12px] text-red-500 mt-1">
-                  {error}
-                </p>
-              )}
-              {errorAzimuth && (
-                <p className="text-[12px] text-red-500 mt-1">
-                  {errorAzimuth}
-                </p>
-              )}
+            {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+            {errorAzimuth && (
+              <p className="text-red-500 text-xs mt-2">{errorAzimuth}</p>
+            )}
 
-              {/* Chute de tension */}
-              <div className="pt-3 border-t border-slate-200" />
+            <div className="cfg-divider" />
+
+            <div className="space-y-4">
+              {/* Voltage Drop Section - FIXED */}
               <div className="space-y-2">
-                <Label className="text-[13px] text-black font-bold">
+                <label className="text-[13px] font-bold">
                   Calculer la chute de tension ?
-                </Label>
+                </label>
                 <RadioGroup
-                  className="flex gap-4 mt-1"
+                  className="flex gap-4"
                   value={calculateVoltageDrop}
-                  onValueChange={(val) => {
-                    const v = val as "oui" | "non";
-                    setCalculateVoltageDrop(v);
-                    if (v === "oui") {
-                      setIsVoltageModalOpen(true);
-                    }
+                  onValueChange={(val: any) => {
+                    setCalculateVoltageDrop(val);
+                    // Don't open modal automatically
                   }}
                 >
-                  <div className="flex items-center gap-1.5 text-[12px]">
-                    <RadioGroupItem id="chute-oui" value="oui" />
-                    <Label htmlFor="chute-oui">Oui</Label>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem
+                      value="oui"
+                      id="v-oui"
+                      activeColor="#c93b18"
+                    />
+                    <Label htmlFor="v-oui" className="text-xs">
+                      Oui
+                    </Label>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[12px]">
-                    <RadioGroupItem id="chute-non" value="non" />
-                    <Label htmlFor="chute-non">Non</Label>
-                  </div>
-                </RadioGroup>
-
-                {voltageDropResult && calculateVoltageDrop === "oui" && (
-                  <div className="mt-3 rounded-xl bg-[#008f31]/6 border border-[#008f31]/30 px-3 py-2.5 text-[12px]">
-                    <p className="font-semibold text-[#008f31] text-[13px] mb-1">
-                      Résultats de la chute de tension
-                    </p>
-                    <p>
-                      Chute de tension ≈{" "}
-                      <span className="font-semibold">
-                        {voltageDropResult.vdrop ?? "–"} V
-                      </span>
-                    </p>
-                    <p>
-                      Pourcentage de chute de tension ≈{" "}
-                      <span className="font-semibold">
-                        {voltageDropResult.vdropPct ?? "–"} %
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-slate-600 mt-1">
-                      Résistance de fil : {voltageDropResult.rwire ?? "–"} Ω
-                    </p>
-
-                    <button
-                      type="button"
-                      className="mt-2 text-[11px] underline text-[#0f427c]"
-                      onClick={() => setIsVoltageModalOpen(true)}
-                    >
-                      Modifier le calcul
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Calepinage */}
-              <div className="pt-3 border-t border-slate-200" />
-              <div className="space-y-2">
-                <Label className="text-[13px] text-black font-bold">
-                  Ajouter un calepinage ?
-                </Label>
-                <RadioGroup
-  className="flex gap-4 mt-1"
-  value={addCalpinage}
-  onValueChange={(val) => {
-    const v = val as "oui" | "non";
-    setAddCalpinage(v);
-    if (v === "oui") {
-      setIsRoofPlannerOpen(true);   // 🔹 ouvre la popup
-    }
-  }}
->
-
-                  <div className="flex items-center gap-1.5 text-[12px]">
-                    <RadioGroupItem id="calp-oui" value="oui" />
-                    <Label htmlFor="calp-oui">Oui</Label>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[12px]">
-                    <RadioGroupItem id="calp-non" value="non" />
-                    <Label htmlFor="calp-non">Non</Label>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem
+                      value="non"
+                      id="v-non"
+                      activeColor="#c93b18"
+                    />
+                    <Label htmlFor="v-non" className="text-xs">
+                      Non
+                    </Label>
                   </div>
                 </RadioGroup>
-              </div>
-
-              {addCalpinage === "oui" && (
-  <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-[12px]">
-    <p className="text-slate-700">
-      Ouvrez l&apos;outil de calepinage pour définir la zone de panneaux sur le toit.
+                
+                {/* Show button only when "oui" is selected */}
+{calculateVoltageDrop === "oui" && !voltageDropResult && (
+  <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
+    <p className="text-sm text-[#3a4055] mb-4">
+      Ouvrez le calculateur pour vérifier la chute de tension de votre ligne (matériau, section, longueur).
     </p>
-    <button
-      type="button"
-      onClick={() => setIsRoofPlannerOpen(true)}
-      className="mt-2 inline-flex items-center justify-center rounded-lg border border-[#0f427c] px-3 py-1.5 text-[12px] font-medium text-[#0f427c] hover:bg-[#0f427c]/5"
+    <Button
+      onClick={() => setIsVoltageModalOpen(true)}
+      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
     >
-      Ouvrir le calepinage
-    </button>
+      <Zap size={18} />
+      Ouvrir le calculateur
+    </Button>
   </div>
 )}
+                
+                {/* Display results if available */}
+                {voltageDropResult && calculateVoltageDrop === "oui" && (
+  <div className="mt-4 p-5 bg-[#f0f9f4] border border-[#d1e7dd] rounded-2xl">
+    {/* Header with Icon */}
+    <div className="flex items-center gap-2 mb-4 text-[#1e6043]">
+      <Zap size={18} />
+      <p className="font-semibold text-[#1e6043] text-xs">Résultats de la chute de tension</p>
+    </div>
 
+    {/* Results Grid */}
+    <div className="space-y-3 text-xs">
+      <div className="flex justify-between items-center">
+        <span className="text-[#4b5563]">Chute de tension</span>
+        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdrop} V</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-[#4b5563]">Pourcentage de chute de tension</span>
+        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdropPct} %</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-[#4b5563]">Résistance de fil</span>
+        <span className="font-semibold text-slate-900">{voltageDropResult.rwire} Ω</span>
+      </div>
+    </div>
+
+    {/* Divider and Action */}
+    <div className="mt-4 pt-4 border-t border-[#d1e7dd]">
+      <button
+        onClick={() => setIsVoltageModalOpen(true)}
+        className="flex items-center gap-2 text-[#1e6043] font-medium hover:text-[#1e6043]/80 transition-colors"
+      >
+        <Pencil size={16} />
+        Modifier le calcul
+      </button>
+    </div>
+  </div>
+)}
+              </div>
+
+              {/* Calepinage Section - FIXED */}
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold">
+                  Ajouter un calepinage ?
+                </label>
+                <RadioGroup
+                  className="flex gap-4"
+                  value={addCalpinage}
+                  onValueChange={(val: any) => {
+                    setAddCalpinage(val);
+                    // Don't open modal automatically
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem
+                      value="oui"
+                      id="c-oui"
+                      activeColor="#c93b18"
+                    />
+                    <Label htmlFor="c-oui" className="text-xs">
+                      Oui
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem
+                      value="non"
+                      id="c-non"
+                      activeColor="#c93b18"
+                    />
+                    <Label htmlFor="c-non" className="text-xs">
+                      Non
+                    </Label>
+                  </div>
+                </RadioGroup>
+                
+                {/* Show button only when "oui" is selected */}
+                {addCalpinage === "oui" && (
+  <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
+    <p className="text-sm text-[#3a4055] mb-4">
+      Ouvrez l'outil de calepinage pour définir la zone de panneaux sur le toit.
+    </p>
+    <Button
+      onClick={() => setIsRoofPlannerOpen(true)}
+      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
+    >
+      <Grid3X3 size={18} />
+      Ouvrir le calepinage
+    </Button>
+  </div>
+)}
+              </div>
             </div>
           </div>
-        </main>
+        </div>
 
-        {/* Bouton Visualiser résultats */}
-        <div className="flex justify-end w-full mx-auto lg:px-0 px-1 z-[1000] mt-4">
+        {/* Visualise Button */}
+        <div className="flex justify-center mt-12 reveal in d1 pb-10">
           <Button
             onClick={handleVisualiserResultats}
-            className="bg-[#344d95] hover:bg-[#d32f2f] text-white font-semibold lg:w-[29%] w-full rounded-2xl shadow-sm"
+            className="bg-[#2a2e72] hover:bg-[#191d49] text-white font-semibold text-[0.9rem] px-12 py-6 rounded-lg transition-all hover:-translate-y-1 flex items-center gap-2 "
           >
-            Visualiser les résultats
+            Visualiser les résultats <ChevronRight size={16} />
           </Button>
         </div>
 
-        {data && !error && (
-          <PrintComponentTwo
-            data={data}
-            monthNames={monthNames}
-            azimut={azimut}
-            ref={componentRef}
-            inclinaison={inclinaison}
-            error={error}
-            obstacles={obstacles}
-            voltageDropResult={voltageDropResult}
-            panels={panels}
-          />
+        {/* Results Area - Only shown when data is not null (after successful API call) */}
+        {data && (
+          <div className="mt-24 reveal in">
+            <div className="bg-[#f5f5f7] w-screen relative left-1/2 right-1/2 -mx-[50vw]">
+              <div className="max-w-[1200px] mx-auto px-10 py-12">
+                <div className="text-center mb-12">
+                  <div className="inline-flex items-center gap-[0.5rem] mb-6">
+                    <img
+                      src="/logo-mafatec-2048x423.png"
+                      alt="MAFATEC"
+                      className="h-[30px] w-auto"
+                    />
+                    <span className="font-bold text-[0.8rem] tracking-[0.12em] text-[#3a55b0] border-[1.5px] border-[#3a55b0] px-[0.4rem] py-[0.12rem] rounded-[3px]">
+                      RGE
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-[0.6rem] text-[0.7rem] font-semibold tracking-[0.3em] uppercase text-[#c9a96a] mb-2">
+                    <span className="w-[26px] h-px bg-[#c9a96a]" />
+                    Analyse de production
+                  </div>
+                  <h2 className="font-serif text-[clamp(2rem,3.6vw,3rem)] leading-[1.05] tracking-[-0.015em]">
+                    Les résultats de votre{" "}
+                    <em className="italic text-[#c93b18]">étude</em>
+                  </h2>
+                </div>
+
+                {/* NEW SECTION: Résultats simulation - Paramètres d'implantation */}
+                <div className="mb-10 p-6 rounded-2xl">
+                  {/* Header Section */}
+                  <div className="flex justify-start gap-4 mb-6">
+                    <div className="bg-[#f3e9e7] p-3 h-fit rounded-xl">
+                      <LineChart className="text-[#c93b18] w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
+                        Résultats <em className="italic text-[#c93b18] font-normal">simulation</em>
+                      </h2>
+                      <p className="text-sm text-[#6c757d]">
+                        Paramètres d'implantation retenus et indicateurs de performance calculés.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Cards Container */}
+                  <div className="flex gap-4">
+                    {/* Inclinaison Card */}
+                    <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 w-fit">
+                      <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <TrendingUp className="text-slate-600 w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">INCLINAISON</p>
+                        <p className="text-xl font-bold text-[#15172b]">{inclinaison}°</p>
+                      </div>
+                      <div className="bg-[#eef0f7] text-[#4a55a8] px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ml-4">
+                        FOURNI
+                      </div>
+                    </div>
+
+                    {/* Azimut Card */}
+                    <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 w-fit">
+                      <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <Clock className="text-slate-600 w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">AZIMUT</p>
+                        <p className="text-xl font-bold text-[#15172b]">{azimut}° · {getAzimuthDirection(parseFloat(azimut))}</p>
+                      </div>
+                      <div className="bg-[#eef0f7] text-[#4a55a8] px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ml-4">
+                        FOURNI
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+                  {/* Card 1: Entrées fournies */}
+                  <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
+                    <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Entrées fournies</h3>
+                    <div className="space-y-2 pl-2">
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Latitude</p><p className="text-xs font-medium">{clickedPosition.lat.toFixed(6)}</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Longitude</p><p className="text-xs font-medium">{clickedPosition.lng.toFixed(6)}</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Horizon</p><p className="text-xs font-medium">{useTerrainShadows === "oui" ? "Calculé" : "Défini manuellement"}</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">PV installée</p><p className="text-xs font-medium">{puissancePv} kWc</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Pertes système</p><p className="text-xs font-medium">{systemLosses} %</p></div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Résultats simulation */}
+                  <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
+                    <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Résultats simulation</h3>
+                    <div className="space-y-2 pl-2">
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Inclinaison</p><p className="text-xs font-medium">{inclinaison}°</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Azimut</p><p className="text-xs font-medium">{azimut}°</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Production annuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed.E_y.toFixed(2)} kWh</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Irradiation annuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed["H(i)_y"].toFixed(2)} kWh/m²</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Variabilité interannuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed.SD_y.toFixed(2)}</p></div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Changements production */}
+                  <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
+                    <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Changements production</h3>
+                    <div className="space-y-2 pl-2">
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Angle d'incidence</p><p className="text-xs font-medium">{data?.outputs.totals.fixed.l_aoi.toFixed(2)}</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Effets spectraux</p><p className="text-xs font-medium">{data?.outputs.totals.fixed.l_spec} </p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Temp. & faible irrad.</p><p className="text-xs font-medium">{data?.outputs.totals.fixed.l_tg.toFixed(2)} %</p></div>
+                      <div className="flex justify-between"><p className="text-xs text-gray-500">Pertes totales</p><p className="text-xs font-medium">{data?.outputs.totals.fixed.l_total.toFixed(2)} </p></div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Chute tension câblage */}
+                  <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
+                    <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Chute tension câblage</h3>
+                    {voltageDropResult && calculateVoltageDrop === "oui" ? (
+                      <div className="space-y-2 pl-2">
+                        <div className="flex justify-between"><p className="text-xs text-gray-500">Chute de tension</p><p className="text-xs font-medium">{voltageDropResult.vdrop} V</p></div>
+                        <div className="flex justify-between">
+                          <p className="text-xs text-gray-500">Pourcentage</p>
+                          <p className="text-xs font-medium">{voltageDropResult.vdropPct} %</p>
+                        </div>
+                        <div className="flex justify-between"><p className="text-xs text-gray-500">Résistance de fil</p><p className="text-xs font-medium">{voltageDropResult.rwire} Ω</p></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-24 pl-2">
+                        <p className="text-xs text-gray-400 text-center">Aucun calcul de chute de tension n'a été renseigné.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <PrintComponentTwo
+                  data={data}
+                  monthNames={[
+                    "Janv",
+                    "Févr",
+                    "Mars",
+                    "Avril",
+                    "Mai",
+                    "Juin",
+                    "Juil",
+                    "Août",
+                    "Sept",
+                    "Oct",
+                    "Nov",
+                    "Déc",
+                  ]}
+                  azimut={azimut}
+                  inclinaison={inclinaison}
+                  error={error}
+                  obstacles={obstacles}
+                  voltageDropResult={voltageDropResult}
+                  panels={panels}
+                />
+              </div>
+            </div>
+          </div>
         )}
-      </div>
+      </main>
 
-      {/* Popup chute de tension */}
-      {isVoltageModalOpen && (
-  <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-    <div className="relative w-full max-w-3xl mx-3 sm:mx-4">
-      <div className="relative max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-2xl">
-        <VoltageDropCalculator
-          onClose={() => setIsVoltageModalOpen(false)}
-          onResult={(result) => {
-            setVoltageDropResult(result);
-          }}
-        />
-      </div>
-    </div>
-  </div>
-)}
+      {/* Final CTA */}
+      <section className="xcta grain bg-[#0c0f18] py-32 text-center px-6 relative">
+        {/* The subtle lighting gradient from the image */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(214,81,40,0.15),transparent_50%)]" />
 
-
-
-{/* Popup calepinage (RoofPlanner) */}
-{isRoofPlannerOpen && (
-  <div className="fixed inset-0 z-[2050] overflow-y-auto bg-slate-900/40 backdrop-blur-sm">
-    {/* spacer pour centrer + permettre le scroll */}
-    <div className="min-h-screen px-4 py-6 flex items-center justify-center">
-      <div className="relative w-full max-w-3xl">
-        <div className="relative max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
-          <RoofPlanner
-            panels={panels}
-            onPanelsChange={setPanels}
-            onClose={() => setIsRoofPlannerOpen(false)}
-          />
+        <div className="xcta-in max-w-5xl mx-auto flex flex-col items-center relative z-10">
+          {/* Increased font size to 6xl (7xl on medium screens) */}
+          <h2 className="font-serif text-6xl md:text-7xl text-white leading-tight reveal in mb-8 tracking-tight">
+            Prêt à concrétiser votre{" "}
+            <em className="italic text-[#d65128] font-medium not-italic">projet solaire</em> ?
+          </h2>
+          <p className="reveal in d1 text-xl text-[#a3b3c3] max-w-2xl mb-14">
+            Un conseiller MAFATEC vous accompagne, de l'étude détaillée à la mise en service — certifié RGE & Qualifelec.
+          </p>
+          <div className="reveal in d2">
+            {/* Group class added to trigger the hover effect on the child icon */}
+            <Button className="group btn bg-[#d65128] hover:bg-[#d65128]/90 text-white font-semibold py-6 px-10 rounded-lg shadow-2xl inline-flex items-center gap-3 text-xl transition-all hover:scale-105">
+              Recevoir mon étude complète 
+              {/* Added transform transition to the icon */}
+              <ChevronRight 
+                size={24} 
+                className="transition-transform duration-300 group-hover:translate-x-1.5" 
+              />
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      </section>
+
+      {/* Modals */}
+      {isVoltageModalOpen && (
+        <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl overflow-hidden rounded-[24px] shadow-2xl bg-white">
+            <VoltageDropCalculator
+              onClose={() => setIsVoltageModalOpen(false)}
+              onResult={(res) => setVoltageDropResult(res)}
+            />
+          </div>
+        </div>
+      )}
+      {isRoofPlannerOpen && (
+        <div className="fixed inset-0 z-[2050] overflow-y-auto bg-slate-900/40 backdrop-blur-sm">
+          {/* spacer pour centrer + permettre le scroll */}
+          <div className="min-h-screen px-4 py-6 flex items-center justify-center">
+            <div className="relative w-full max-w-3xl">
+              <div className="relative max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                <RoofPlanner
+                  panels={panels}
+                  onPanelsChange={setPanels}
+                  onClose={() => setIsRoofPlannerOpen(false)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

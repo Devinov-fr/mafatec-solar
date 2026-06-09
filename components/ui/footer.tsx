@@ -1,24 +1,28 @@
 import React from 'react';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear(); // Get the current year dynamically
-
   return (
-    <footer className='w-full p-6 bg-[#0F427C] text-[12px]'>
-      <div className='flex justify-center pb-4'>
-        <img className="lg:w-[10%] w-[40%]" src='/Footer_logo.png' alt="Footer Logo" />
+    <footer className="w-full border-t border-slate-200 py-6 bg-white">
+      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between text-[#4a5568] text-sm">
+        
+        {/* Left: Address */}
+        <div>
+          12 Rue Paul Langevin, 93270 Sevran
+        </div>
+
+        {/* Center: Certifications */}
+        <div className="font-medium text-[#2d3748]">
+          RGE · Qualifelec · Qualit'EnR · IRVE · KNX
+        </div>
+
+        {/* Right: Links */}
+        <div className="flex items-center gap-6">
+          <a href="/mon-espace" className="hover:text-black transition-colors">Mon espace</a>
+          <a href="/demo-espaces" className="hover:text-black transition-colors">Démo espaces</a>
+          <a href="/passation-dev" className="hover:text-black transition-colors">Passation dev</a>
+        </div>
+        
       </div>
-      <div className='flex justify-center lg:gap-10 gap-1 lg:flex-row flex-col text-center pb-2 text-white'>
-        <a href="https://mafatec.com/certifications-et-partenariats/" className="hover:underline">Certifications</a>
-        <a href="https://mafatec.com/demarches-administratives" className="hover:underline">Démarches Administratives</a>
-        <a href="https://mafatec.com/contact" className="hover:underline">Contact</a>
-        <a href="https://mafatec.com/mentions-legales" className="hover:underline">Mentions légales</a>
-        <a href="https://mafatec.com/politique-de-confidentialite" className="hover:underline">Politique de confidentialité</a>
-      </div>
-      <div className='p-2 w-[30%] mx-auto border-b border-b-white text-white '></div>
-      <p className='text-center text-white pt-4 text-[10px]'>
-        {currentYear} <a href="https://mafatec.com/" className="text-white hover:underline">MAFATEC</a>. All rights reserved
-      </p> 
     </footer>
   );
 };

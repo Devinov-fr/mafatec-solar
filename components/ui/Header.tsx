@@ -1,324 +1,131 @@
-import { X } from "lucide-react";
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { Menu, X, User } from "lucide-react";
 
 const Header: React.FC = () => {
-  const [isSubMenuOpen, setSubMenuOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLLIElement | null>(null);
-  const subMenuRef = useRef<HTMLUListElement | null>(null);
+  const [isSolid, setSolid] = useState(false);
 
- const handleMouseEnter = () => setSubMenuOpen(true);
-const handleMouseLeave = () => setSubMenuOpen(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setSolid(window.scrollY > 14);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
+  // Close menu when resizing to desktop view
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isMenuOpen) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMenuOpen]);
 
-  const toggleMenu = () => {
-    setMenuOpen(!isMenuOpen);
-  };
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen]);
 
   return (
-    <header className="h-[80px] bg-white pt-4 shadow-md">
-      <div className="max-w-[1200px] mx-auto flex items-center px-4 gap-4">
-        {/* LOGO à gauche */}
-        <div className="flex-none w-[150px]">
-          <a href="https://mafatec.com/" aria-label="Retour à l'accueil">
-            <img
-              src="/logo-mafatec-2048x423.png"
-              alt="logo Mafatec"
-              className="max-w-[150px] h-auto"
-            />
+    <>
+      <header 
+        className={`fixed top-0 left-0 right-0 z-[300] h-[74px] flex items-center justify-between px-[1rem] sm:px-[1.5rem] md:px-[2.2rem] gap-[1.5rem] transition-all duration-[0.45s] ease-in-out bg-white border-b border-[#e6e6e6] ${
+          isSolid ? "shadow-[0_1px_0_#ececec,0_14px_32px_rgba(15,18,30,0.05)]" : ""
+        }`}
+      >
+        {/* Logo */}
+        <a href="https://mafatec.com/" className="flex-shrink-0 flex items-center">
+          <img
+            src="/logo-mafatec-2048x423.png"
+            alt="MAFATEC"
+            className="h-6 w-auto"
+          />
+        </a>
+
+        {/* Breadcrumbs (Centered) - Hidden on tablet/mobile */}
+        <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 hidden lg:flex items-center gap-[0.55rem] whitespace-nowrap max-w-[58%] overflow-hidden">
+          <a href="https://mafatec.com/" className="text-[0.74rem] font-medium tracking-[0.04em] text-[#7a7e95] hover:text-[#15172b] transition-colors">
+            Accueil
           </a>
         </div>
 
-        {/* GROUPE NAV + BOUTONS à droite (desktop) */}
-        <div className="hidden md:flex items-center gap-6 ml-auto">
-          {/* NAV */}
-          <nav onMouseLeave={handleMouseLeave}>
-            <ul className="flex items-center gap-6 text-black">
-              {/* Accueil */}
-              <li className="text-[15px] relative group font-bold">
-                <a href="https://mafatec.com/" className="block">
-                  Accueil
-                </a>
-                {/* Soulignement animé depuis le centre */}
-                <div
-                  className="
-                    pointer-events-none
-                    absolute left-1/2 -translate-x-1/2 -bottom-[3px]
-                    h-[2px] bg-[#d32f2f] rounded-full
-                    w-0
-                    transition-all duration-300
-                    group-hover:w-[60%]
-                  "
-                />
-              </li>
+        {/* Right Actions */}
+        <div className="flex items-center gap-[0.75rem] sm:gap-[1.4rem] flex-shrink-0">
+          {/* Login Button - Visible on all devices, next to burger menu on mobile */}
+          <a 
+            href="#" 
+            className="flex items-center gap-[0.5rem] font-sans text-[0.76rem] font-semibold tracking-[0.02em] text-white bg-[#0b0e1d] px-[0.9rem] sm:px-[1.15rem] py-[0.55rem] sm:py-[0.6rem] rounded-[8px] whitespace-nowrap transition-all duration-[0.35s] hover:-translate-y-[2px] hover:bg-[#141832]"
+          >
+            <User className="w-[14px] h-[14px] sm:w-[15px] sm:h-[15px]" strokeWidth={1.8} />
+            <span className="text-[0.7rem] sm:text-[0.76rem]">Connexion</span>
+          </a>
+          
+          {/* Burger Menu - Visible only on tablet and mobile (max-width: 1023px) */}
+          <button 
+            className="lg:hidden p-2 text-[#15172b] hover:bg-[rgba(0,0,0,0.05)] rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#a8884a] relative z-[301]"
+            onClick={() => setMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? <X className="h-5 w-5 sm:h-6 sm:w-6" /> : <Menu className="h-5 w-5 sm:h-6 sm:w-6" />}
+          </button>
+        </div>
+      </header>
 
-              {/* séparateur vertical entre Accueil et À propos */}
-              <span
-                aria-hidden="true"
-                className="h-5 w-px bg-slate-300/70"
-              />
-
-              {/* À propos */}
-              <li className="text-[15px] font-bold relative group">
-                <a href="https://mafatec.com/a-propos/" className="block">
-                  À propos
-                </a>
-                <div
-                  className="
-                    pointer-events-none
-                    absolute left-1/2 -translate-x-1/2 -bottom-[3px]
-                    h-[2px] bg-[#d32f2f] rounded-full
-                    w-0
-                    transition-all duration-300
-                    group-hover:w-[60%]
-                  "
-                />
-              </li>
-
-              {/* séparateur vertical entre À propos et Nos services */}
-              <span
-                aria-hidden="true"
-                className="h-5 w-px bg-slate-300/70"
-              />
-
-             
-              {/* Nos services + sous-menu */}
-<li
-  className="relative text-[15px] group font-bold"
-  onMouseEnter={handleMouseEnter}
-  onMouseLeave={handleMouseLeave}
-  ref={menuRef}
->
-  <span className="cursor-pointer inline-flex items-center gap-2">
-    Nos services
-    <span
-      className="inline-block h-[6px] w-[6px] border-b-[2px] border-r-[2px] border-[#d32f2f] 
-                 rotate-45 transition-transform duration-300 group-hover:translate-y-[2px]"
-    />
-  </span>
-
-  {/* Soulignement animé depuis le centre */}
-  <div
-    className={`
-      pointer-events-none
-      absolute left-1/2 -translate-x-1/2 -bottom-[2px]
-      h-[2px] bg-[#d32f2f] rounded-full
-      w-[60%]
-      origin-center
-      will-change-transform
-      transition-transform duration-300
-      ${isSubMenuOpen ? "scale-x-100" : "scale-x-0"}
-    `}
-  />
-
-  {isSubMenuOpen && (
-    <div
-      className="
-        absolute left-1/2 -translate-x-1/2 top-full
-        z-[9999]
-      "
-      // (optionnel, tu peux enlever ces 2 handlers si tu veux garder seulement ceux du <li>)
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Bande transparente pour coller au texte, mais garder le hover */}
-      <div className="h-3 w-full bg-transparent" />
-
-      {/* Bloc réel du sous-menu */}
-      <ul
-        className="
-          w-[320px] rounded-xl
-          bg-white/95 backdrop-blur-md shadow-[0_16px_40px_rgba(15,23,42,0.18)]
-          border border-slate-100/80 p-2.5 text-[0.9rem]
-        "
-        ref={subMenuRef}
+      {/* Mobile Menu Overlay - Highest z-index to appear on top of everything */}
+      <div 
+        className={`lg:hidden fixed inset-0 z-[999] bg-white transition-all duration-[0.4s] ease-in-out ${
+          isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+        }`}
+        style={{
+          top: isMenuOpen ? "74px" : "74px",
+          height: isMenuOpen ? "calc(100vh - 74px)" : "calc(100vh - 74px)",
+        }}
       >
-        {[
-          {
-            href: "https://mafatec.com/nos-services/solutions-solaires-innovantes-et-certifiees/",
-            label: "Solutions Solaires Innovantes et Certifiées",
-          },
-          {
-            href: "https://mafatec.com/nos-services/audits-energetiques-personnalises/",
-            label: "Audits Énergétiques Personnalisés",
-          },
-          {
-            href: "https://mafatec.com/nos-services/etudes-techniques-electriques-cfo-cfa/",
-            label: "Études Techniques Électriques CFO/CFA",
-          },
-          {
-            href: "https://mafatec.com/nos-services/electricite-cfo-cfa/",
-            label: "Électricité CFO/CFA",
-          },
-          {
-            href: "https://mafatec.com/nos-services/domotique-intelligente/",
-            label: "Domotique Intelligente",
-          },
-          {
-            href: "https://mafatec.com/nos-services/bornes-de-recharge-electrique/",
-            label: "Bornes de Recharge Électrique",
-          },
-        ].map((item) => (
-          <li key={item.href} className="py-1">
-            <a
-              href={item.href}
-              className="
-                flex items-start gap-2 px-3 py-1.5 rounded-md
-                text-[13px] text-black
-                hover:bg-[#0f427c0d] hover:text-[#0f427c]
-                border-l-[2px] border-transparent
-                transition-colors duration-200
-              "
-            >
-              <span>{item.label}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )}
-</li>
-
-            </ul>
-          </nav>
-
-          {/* petit séparateur AVANT les boutons (10px de haut) */}
-          <span
-            aria-hidden="true"
-            className="h-8 w-[0.5px] bg-slate-300/80"
-          />
-
-          {/* BOUTONS à droite (desktop, lg+) */}
-          <div className="hidden lg:flex items-center gap-2">
-            <button
-              className="p-[10px] w-[170px] rounded-[5px] text-[13px] font-bold text-white bg-[#d32f2f] cursor-pointer"
-              onClick={() =>
-                (window.location.href = "https://simulateur-cee.mafatec.com/")
-              }
-            >
-              Simulateur CEE
-            </button>
-            <button
-              className="p-[10px] w-[170px] rounded-[5px] text-[13px] font-bold text-white bg-[#344d95] cursor-pointer"
-              onClick={() =>
-                (window.location.href = "https://mafatec.com/contact/")
-              }
-            >
-              Demande de devis
-            </button>
+        <div className="h-full overflow-y-auto px-[1.5rem] sm:px-[2rem] pb-[2rem] pt-[2rem]">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="border-t border-[#e8e8ea] py-[1.3rem]">
+              <h5 className="text-[0.66rem] tracking-[0.22em] uppercase text-[#a8884a] mb-4 font-semibold">
+                Menu
+              </h5>
+              <a 
+                href="https://mafatec.com/" 
+                className="block font-serif text-[1.5rem] text-[#15172b] py-3 hover:text-[#a8884a] transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Accueil
+              </a>
+              <a 
+                href="#" 
+                className="block font-serif text-[1.5rem] text-[#15172b] py-3 hover:text-[#a8884a] transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Connexion à mon espace
+              </a>
+            </div>
           </div>
         </div>
-
-        {/* BOUTON MOBILE (hamburger) à droite sur mobile */}
-        <button
-          className="md:hidden p-2 text-gray-600 focus:outline-none ml-auto"
-          onClick={toggleMenu}
-        >
-          {isMenuOpen ? <X /> : "☰"}
-        </button>
       </div>
 
-      {/* MENU MOBILE */}
+      {/* Backdrop overlay - Also on top but below the menu */}
       {isMenuOpen && (
-  <div
-    className="
-      fixed inset-x-0 top-[80px] bottom-0
-      bg-white z-[2000] shadow-lg
-      overflow-y-auto
-    "
-  >
-    <ul className="flex flex-col items-center gap-2 p-4 text-black">
-      <li className="cursor-pointer">
-        <a href="https://mafatec.com/">Accueil</a>
-      </li>
-
-      <li className="cursor-pointer">
-        <a href="https://mafatec.com/a-propos/">À propos</a>
-      </li>
-      <li className="relative cursor-pointer">
-        <span className="cursor-pointer">Nos services</span>
-
-        {/* 👉 en mobile, on peut garder un sous-menu simple en colonne */}
-        {isSubMenuOpen && (
-          <ul className="mt-2 w-full max-w-xs bg-white rounded-lg border border-slate-200 shadow-md">
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/solutions-solaires-innovantes-et-certifiees/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Solutions Solaires Innovantes et Certifiées
-              </a>
-            </li>
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/audits-energetiques-personnalises/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Audits Énergétiques Personnalisés
-              </a>
-            </li>
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/etudes-techniques-electriques-cfo-cfa/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Études Techniques Électriques CFO/CFA
-              </a>
-            </li>
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/electricite-cfo-cfa/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Électricité CFO/CFA
-              </a>
-            </li>
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/domotique-intelligente/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Domotique Intelligente
-              </a>
-            </li>
-            <li className="py-1 cursor-pointer">
-              <a
-                href="https://mafatec.com/nos-services/bornes-de-recharge-electrique/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Bornes de Recharge Électrique
-              </a>
-            </li>
-          </ul>
-        )}
-      </li>
-
-      
-    </ul>
-
-    {/* Boutons sous le menu en mobile */}
-    <div className="flex flex-col lg:hidden justify-center gap-2 w-full pb-10">
-      <button
-        className="p-[10px] mx-auto w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#d32f2f] cursor-pointer"
-        onClick={() =>
-          (window.location.href = "https://simulateur-cee.mafatec.com/")
-        }
-      >
-        Simulateur CEE
-      </button>
-      <button
-        className="p-[10px] mx-auto w-[200px] rounded-[5px] text-[13px] font-semibold text-white bg-[#344d95] cursor-pointer"
-        onClick={() =>
-          (window.location.href = "https://mafatec.com/contact/")
-        }
-      >
-        Demande de devis
-      </button>
-    </div>
-  </div>
-)}
-
-    </header>
+        <div 
+          className="lg:hidden fixed inset-0 z-[998] bg-black/50 backdrop-blur-sm"
+          style={{ top: "74px" }}
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+    </>
   );
 };
 

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState, PointerEvent as ReactPointerEvent } from "react";
 import type { Panel } from "@/components/ui/PrintComponentTwo";
+import { Grid3X3 } from "lucide-react";
 
 interface RoofPlannerProps {
   panels: Panel[];
@@ -504,55 +505,68 @@ const RoofPlanner: React.FC<RoofPlannerProps> = ({ panels, onPanelsChange, onClo
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-3 bg-white">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="pr-4">
-          <h2 className="text-lg font-semibold text-[#0f427c]">Calepinage – blocs de panneaux</h2>
-          <p className="text-xs text-slate-500 mt-1">
+
+
+          <div className="flex items-start justify-between">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#c93b18]/10 ring-1 ring-[#d65128]/20">
+          <span className="text-xl"><Grid3X3 className="text-[#c93b18]"/></span>
+        </div>
+        <div>
+          <h2 className="text-2xl font-serif text-slate-900">
+            Calepinage – <span className="italic text-[#c93b18]">blocs de panneaux</span>
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-slate-500">
             Cliquez un panneau pour le sélectionner. La poubelle est visible sur le panneau (hover ou sélection).
           </p>
         </div>
-
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-1 h-8 w-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
-          >
-            <span className="text-lg leading-none">&times;</span>
-          </button>
-        )}
       </div>
+      <button onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+    </div>
 
       <div className="flex flex-col gap-3 mb-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Nombre de panneaux</p>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={1}
-              value={targetCount}
-              onChange={(e) => setTargetCount(e.target.value)}
-              className="w-24 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0f427c]"
-              placeholder="Ex : 12"
-            />
-            <span className="text-[11px] text-slate-500">(optionnel)</span>
-          </div>
+<div className="space-y-4">
+  {/* Header/Label section */}
+  <div className="flex justify-between items-start">
+    <div className="space-y-1">
+      <label className="text-sm font-semibold text-slate-800">
+        Nombre de panneaux du bloc
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={1}
+          value={targetCount}
+          onChange={(e) => setTargetCount(e.target.value)}
+          className="w-[360px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#272a6b] focus:ring-1 focus:ring-[#272a6b]"
+          placeholder="ex : 12"
+        />
+        <span className="text-sm text-slate-400 border border-slate-200 px-3 py-2 rounded-md bg-white">
+          optionnel
+        </span>
+      </div>
+    </div>
+  </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setPendingNewBlock(true);
-              setSelectedPanelId(null);
-            }}
-            className="inline-flex items-center mt-2 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-[12px] text-slate-700 hover:border-[#0f427c] hover:text-[#0f427c]"
-          >
-            Nouveau bloc de panneaux
-          </button>
+  {/* Button section */}
+  <button
+    type="button"
+    onClick={() => {
+      setPendingNewBlock(true);
+      setSelectedPanelId(null);
+    }}
+    className="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
+  >
+    <span className="mr-2 text-lg leading-none">+</span> Nouveau bloc de panneaux
+  </button>
 
-          {pendingNewBlock && (
-            <p className="text-[11px] text-emerald-600 mt-1">Cliquez sur la toiture pour placer le 1er panneau du bloc.</p>
-          )}
-        </div>
+  {/* Status message */}
+  {pendingNewBlock && (
+    <p className="text-sm text-[#272a6b] mt-1">
+      Cliquez sur la toiture pour placer le 1er panneau du bloc.
+    </p>
+  )}
+</div>
 
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Photo de toiture</p>

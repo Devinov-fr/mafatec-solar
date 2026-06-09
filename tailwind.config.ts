@@ -8,6 +8,33 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+      },
+      colors: {
+        ink: {
+          900: '#0B0E1D',
+        },
+        red: {
+          500: '#C93B18',
+        },
+        'logo-blue': '#3A55B0',
+        champagne: {
+          DEFAULT: '#C9A96A',
+          soft: '#E3CFA3',
+          deep: '#A8884A',
+        },
+        
+        paper: {
+          DEFAULT: '#FFFFFF',
+          2: '#F5F5F7',
+        },
+        'text-luxe': '#15172B',
+        'text-soft': '#454A63',
+        '[#7a7e95]': '#7A7E95',
+        'on-dark': '#F3EFE6',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

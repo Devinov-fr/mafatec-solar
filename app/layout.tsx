@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import { Comfortaa } from "next/font/google";
+import { Plus_Jakarta_Sans, Spectral } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-// 🔤 Police principale : Comfortaa
-const comfortaa = Comfortaa({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"], // tu peux réduire si tu veux
+  variable: "--font-sans",
+});
+
+const spectral = Spectral({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
 });
 
 export const metadata: Metadata = {
@@ -25,11 +31,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body className={comfortaa.className}>
+    <html lang="fr" className={`${plusJakartaSans.variable} ${spectral.variable}`}>
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
