@@ -1,12 +1,12 @@
 import React, { forwardRef, useState } from "react";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 
 import { Download } from "lucide-react";
@@ -357,26 +357,32 @@ const PrintComponentTwo = forwardRef<HTMLDivElement, PrintComponentProps>(
     },
     ref
   ) => {
-const chartDataProduction = data.outputs.monthly.fixed.map(
-  (monthlyData, index) => ({
-    month: monthNames[index],
-    value: monthlyData.E_m,  // Fix #1
-  })
-);
+    const chartDataProduction = data.outputs.monthly.fixed.map(
+      (monthlyData, index) => ({
+        month: monthNames[index],
+        value: monthlyData.E_m,
+      })
+    );
 
-const chartDataIrradiation = data.outputs.monthly.fixed.map(
-  (monthlyData, index) => ({
-    month: monthNames[index],
-    value: monthlyData["H(i)_m"],  // Fix #2
-  })
-);
+    const chartDataIrradiation = data.outputs.monthly.fixed.map(
+      (monthlyData, index) => ({
+        month: monthNames[index],
+        value: monthlyData["H(i)_m"],
+      })
+    );
 
-const chartDataVariability = data.outputs.monthly.fixed.map(
-  (monthlyData, index) => ({
-    month: monthNames[index],
-    value: monthlyData.SD_m,  // Fix #3
-  })
-);
+    const chartDataVariability = data.outputs.monthly.fixed.map(
+      (monthlyData, index) => ({
+        month: monthNames[index],
+        value: monthlyData.SD_m,
+      })
+    );
+
+    const chartConfigs = [
+      { title: "Production mensuelle (kWh)", data: chartDataProduction, color: "#C93B18", id: "prod" },
+      { title: "Irradiation mensuelle (kWh/m²)", data: chartDataIrradiation, color: "#B09B3A", id: "irrad" },
+      { title: "Variabilité mensuelle (kWh)", data: chartDataVariability, color: "#3A55B0", id: "var" },
+    ];
 
     const componentRef = ref as React.MutableRefObject<HTMLDivElement>;
 
@@ -434,7 +440,7 @@ const chartDataVariability = data.outputs.monthly.fixed.map(
             <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
               Énergie PV & irradiation <em className="italic text-[#c93b18]">mensuelle</em>
             </h2>
-            <p className="text-[14px] text-[#7a7e95]">Production, irradiation et variabilité, mois par mois.</p>
+            <p className="text-[14px] text-[#7a7e95] mt-2">Production, irradiation et variabilité, mois par mois.</p>
           </div>
 
           <div className="bg-white border border-line-warm rounded-[24px] overflow-hidden shadow-sm">
@@ -461,39 +467,54 @@ const chartDataVariability = data.outputs.monthly.fixed.map(
           </div>
         </div>
 
-        {/* Graphiques */}
+        {/* Graphiques - Version AreaChart avec gradients et points */}
         <div className="res-block">
           <div className="mb-8">
             <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
               Courbes <em className="italic text-[#c93b18]">mensuelles</em>
             </h2>
-            <p className="text-[14px] text-[#7a7e95]">Évolution de la production, de l&apos;irradiation et de la variabilité.</p>
+            <p className="text-[14px] text-[#7a7e95]">Évolution de la production, de l'irradiation et de la variabilité.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {[
-              { title: "Production mensuelle (kWh)", data: chartDataProduction, color: "#C93B18" },
-              { title: "Irradiation mensuelle (kWh/m²)", data: chartDataIrradiation, color: "#3A55B0" },
-              { title: "Variabilité mensuelle (kWh)", data: chartDataVariability, color: "#C9A96A" }
-            ].map((chart, idx) => (
-              <div key={idx} className="bg-white border border-line-warm rounded-[24px] p-6 shadow-sm">
+            {chartConfigs.map((chart) => (
+              <div key={chart.id} className="bg-white border border-[#e5e7eb] rounded-[24px] p-6 shadow-sm">
                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-text-luxe mb-6">{chart.title}</h4>
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chart.data}>
-                      <XAxis dataKey="month" hide />
-                      <YAxis hide />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: '600' }}
+                    <AreaChart data={chart.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={`grad-${chart.id}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={chart.color} stopOpacity={0.2} />
+                          <stop offset="100%" stopColor={chart.color} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid vertical={false} stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="month" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 11, fill: '#7a7e95' }}
+                        interval={2} 
                       />
-                      <Bar dataKey="value" fill={chart.color} radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 11, fill: '#7a7e95' }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke={chart.color} 
+                        strokeWidth={2} 
+                        fill={`url(#grad-${chart.id})`}
+                        dot={{ r: 4, fill: chart.color, stroke: "#fff", strokeWidth: 2 }}
+                      />
+                    </AreaChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: chart.color }} />
-                  <span className="text-[12px] text-[#7a7e95] font-medium">Valeur estimée</span>
                 </div>
               </div>
             ))}
@@ -504,9 +525,9 @@ const chartDataVariability = data.outputs.monthly.fixed.map(
         <div className="res-block">
           <div className="text-center mb-12">
             <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium text-text-luxe">
-              Diagramme solaire avec <em className="italic text-[#c93b18]">masques d&apos;ombrage</em>
+              Diagramme solaire avec <em className="italic text-[#c93b18]">masques d'ombrage</em>
             </h2>
-            <p className="text-[14px] text-[#7a7e95] mt-2">Trajectoire du soleil et impact des ombrages sur l&apos;année.</p>
+            <p className="text-[14px] text-[#7a7e95] mt-2">Trajectoire du soleil et impact des ombrages sur l'année.</p>
           </div>
 
           <div className="bg-white border border-line-warm rounded-[32px] p-8 md:p-12 shadow-sm overflow-hidden flex justify-center">
