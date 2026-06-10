@@ -1057,23 +1057,10 @@ const Home = () => {
                   </h2>
                 </div>
 
-                {/* Results Cards */}
-                <div className="mb-10 p-6 rounded-2xl">
-                  <div className="flex justify-start gap-4 mb-6">
-                    <div className="bg-[#f3e9e7] p-3 h-fit rounded-xl">
-                      <LineChart className="text-[#c93b18] w-6 h-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-[1.8rem] md:text-[2.2rem] font-serif font-medium">
-                        Résultats <em className="italic text-[#c93b18] font-normal">simulation</em>
-                      </h2>
-                      <p className="text-sm text-[#6c757d]">
-                        Paramètres d'implantation retenus et indicateurs de performance calculés.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
+                {/* Results Cards - Updated Layout */}
+                <div className="mb-10">
+                  {/* Inclinaison and Azimut Cards Row */}
+                  <div className="flex gap-4 mb-6">
                     <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 w-fit">
                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                         <TrendingUp className="text-slate-600 w-5 h-5" />
@@ -1100,10 +1087,62 @@ const Home = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Three Performance Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+{/* Production Annuelle Card */}
+  <div className="bg-[#15172b] rounded-3xl p-8">
+    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+      Production annuelle
+    </h3>
+    <div className="flex items-baseline gap-1 mb-2">
+      <span className="text-5xl font-serif text-white tracking-tight">
+        {data?.outputs?.totals?.fixed.E_y.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </span>
+      <span className="text-lg text-gray-400 font-light">kWh</span>
+    </div>
+    <p className="text-[12px] text-gray-400 font-light">
+      Énergie produite estimée sur une année complète.
+    </p>
+  </div>
+
+  {/* Irradiation Annuelle Card */}
+  <div className="bg-[#15172b] rounded-3xl p-8">
+    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+      Irradiation annuelle
+    </h3>
+    <div className="flex items-baseline gap-1 mb-2">
+      <span className="text-5xl font-serif text-white tracking-tight">
+        {data?.outputs?.totals?.fixed["H(i)_y"].toLocaleString('fr-FR', { minimumFractionDigits: 0 })}
+      </span>
+      <span className="text-lg text-gray-400 font-light">kWh/m²</span>
+    </div>
+    <p className="text-[12px] text-gray-400 font-light">
+      Rayonnement solaire reçu par mètre carré.
+    </p>
+  </div>
+
+  {/* Variabilité Interannuelle Card */}
+  <div className="bg-[#15172b] rounded-3xl p-8">
+    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+      Variabilité interannuelle
+    </h3>
+    <div className="flex items-baseline gap-1 mb-2">
+      <span className="text-5xl font-serif text-white tracking-tight">
+        {data?.outputs?.totals?.fixed.SD_y.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+      </span>
+      <span className="text-lg text-gray-400 font-light">%</span>
+    </div>
+    <p className="text-[12px] text-gray-400 font-light">
+      Écart-type de production d'une année sur l'autre.
+    </p>
+  </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-                  {/* Card 1 */}
+                {/* Additional Info Cards (Entrées fournies, Changements production, Chute tension) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+                  {/* Card 1 - Entrées fournies */}
                   <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
                     <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Entrées fournies</h3>
@@ -1116,20 +1155,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* Card 2 */}
-                  <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
-                    <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Résultats simulation</h3>
-                    <div className="space-y-2 pl-2">
-                      <div className="flex justify-between"><p className="text-xs text-gray-500">Inclinaison</p><p className="text-xs font-medium">{inclinaison}°</p></div>
-                      <div className="flex justify-between"><p className="text-xs text-gray-500">Azimut</p><p className="text-xs font-medium">{azimut}°</p></div>
-                      <div className="flex justify-between"><p className="text-xs text-gray-500">Production annuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed.E_y.toFixed(2)} kWh</p></div>
-                      <div className="flex justify-between"><p className="text-xs text-gray-500">Irradiation annuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed["H(i)_y"].toFixed(2)} kWh/m²</p></div>
-                      <div className="flex justify-between"><p className="text-xs text-gray-500">Variabilité interannuelle</p><p className="text-xs font-medium">{data?.outputs?.totals?.fixed.SD_y.toFixed(2)}</p></div>
-                    </div>
-                  </div>
-
-                  {/* Card 3 */}
+                  {/* Card 2 - Changements production */}
                   <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
                     <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Changements production</h3>
@@ -1141,7 +1167,7 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {/* Card 4 */}
+                  {/* Card 3 - Chute tension câblage */}
                   <div className="bg-white rounded-md border border-gray-100 p-5 relative overflow-hidden group">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c93b18] origin-top scale-y-0 transition-transform duration-500 ease-out group-hover:scale-y-100" />
                     <h3 className="text-[#c93b18] font-semibold text-sm uppercase tracking-wide mb-4 pl-2">Chute tension câblage</h3>
@@ -1186,14 +1212,14 @@ const Home = () => {
         <div className="max-w-5xl mx-auto flex flex-col items-center relative z-10">
           <h2 className="font-serif text-6xl md:text-7xl text-white leading-tight mb-8 tracking-tight">
             Prêt à concrétiser votre{" "}
-            <em className="italic text-[#d65128] font-medium not-italic">projet solaire</em> ?
+            <em className="italic text-[#d65128] font-medium ">projet solaire</em> ?
           </h2>
-          <p className="text-xl text-[#a3b3c3] max-w-2xl mb-14">
+          <p className="text-xl text-white max-w-2xl mb-14">
             Un conseiller MAFATEC vous accompagne, de l'étude détaillée à la mise en service — certifié RGE & Qualifelec.
           </p>
           <div>
             <Button className="group bg-[#d65128] hover:bg-[#d65128]/90 text-white font-semibold py-6 px-10 rounded-lg shadow-2xl inline-flex items-center gap-3 text-xl transition-all hover:scale-105">
-              Recevoir mon étude complète 
+              Nous contacter
               <ChevronRight size={24} className="transition-transform duration-300 group-hover:translate-x-1.5" />
             </Button>
           </div>

@@ -15,12 +15,14 @@ const Footer = () => {
           RGE · Qualifelec · Qualit'EnR · IRVE · KNX
         </div>
 
-        {/* Right: Links */}
+        <div></div>
+
+        {/* Right: Links 
         <div className="flex items-center gap-6">
           <a href="/mon-espace" className="hover:text-black transition-colors">Mon espace</a>
           <a href="/demo-espaces" className="hover:text-black transition-colors">Démo espaces</a>
           <a href="/passation-dev" className="hover:text-black transition-colors">Passation dev</a>
-        </div>
+        </div>*/}
         
       </div>
     </footer>
