@@ -24,6 +24,7 @@ import {
   Grid3X3,
   Pencil,
 } from "lucide-react";
+import ReportPDFPopup from "@/components/ui/ReportPDFPopup";
 
 // Map sans SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
@@ -327,7 +328,7 @@ const Home = () => {
     address: "",
   });
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
-  const [useTerrainShadows, setUseTerrainShadows] = useState("non");
+  const [useTerrainShadows, setUseTerrainShadows] = useState("non");ReportPDFPopup
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     {
       name: "Obstacle 1",
@@ -336,10 +337,10 @@ const Home = () => {
       points: [{ azimuth: 0, height: 0 }],
     },
   ]);
-  const [puissancePv, setPuissancePv] = useState("");
-  const [systemLosses, setSystemLosses] = useState("");
-  const [inclinaison, setInclinaison] = useState("");
-  const [azimut, setAzimut] = useState("");
+  const [puissancePv, setPuissancePv] = useState("9");
+  const [systemLosses, setSystemLosses] = useState("14");
+  const [inclinaison, setInclinaison] = useState("35");
+  const [azimut, setAzimut] = useState("0");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [errorAzimuth, setErrorAzimuth] = useState("");
@@ -357,7 +358,7 @@ const Home = () => {
   const [voltageDropResult, setVoltageDropResult] = useState<any>(null);
   const [panels, setPanels] = useState<Panel[]>([]);
   const [isPrinting, setIsPrinting] = useState(false);
-
+  const [isPDFPopupOpen, setIsPDFPopupOpen] = useState(false);
   // Ref for printing
   const printComponentRef = useRef<HTMLDivElement>(null);
 
@@ -464,6 +465,15 @@ const Home = () => {
       setIsPrinting(false);
     }
   };
+
+  // Fonction de génération PDF
+const handleGeneratePDF = async () => {
+  if (!data) {
+    alert("Veuillez d'abord visualiser les résultats");
+    return;
+  }
+  setIsPDFPopupOpen(true);
+};
 
   const handlePositionChange = (position: { lat: number; lng: number }) => {
     setClickedPosition((prev) => ({
@@ -622,7 +632,7 @@ const Home = () => {
             </span>
           </div>
           <Button 
-            onClick={handlePrint}
+            onClick={handleGeneratePDF}
             disabled={!data || isPrinting}
             className="bg-[#0b0e1d] hover:bg-[#141832] text-white text-[0.82rem] font-semibold px-[1.5rem] py-[0.8rem] rounded-[6px] transition-all hover:-translate-y-[2px] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -1253,6 +1263,23 @@ const Home = () => {
           </div>
         </div>
       )}
+
+{/* PDF Report Popup */}
+<ReportPDFPopup
+  isOpen={isPDFPopupOpen}
+  onClose={() => setIsPDFPopupOpen(false)}
+  data={data}
+  monthNames={["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"]}
+  azimut={azimut}
+  inclinaison={inclinaison}
+  clickedPosition={clickedPosition}
+  puissancePv={puissancePv}
+  systemLosses={systemLosses}
+  voltageDropResult={voltageDropResult}
+  panels={panels}
+  calepinageImage={panels.find(p => p.imageUrl)?.imageUrl || null}
+  obstacles={obstacles}  // Add this line
+/>
 
       <Footer />
     </div>
