@@ -621,7 +621,7 @@ const handleGeneratePDF = async () => {
       {/* Action Bar */}
       <div className="sticky top-[74px] z-[120] bg-[#f5f5f7] backdrop-blur-[20px] border-b border-[#ececec]">
         <div className="max-w-[1200px] mx-auto px-10 py-[0.85rem] flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-[0.8rem] min-w-0">
+          <div className="flex items-center gap-[0.8re[#A82E12]m] min-w-0">
             <span className="inline-flex items-center gap-[0.45rem] text-[0.62rem] font-bold tracking-[0.16em] uppercase text-white bg-[#c93b18] px-[0.65rem] py-[0.32rem] rounded-[2px]">
               Étude Installation PV
             </span>
@@ -1049,16 +1049,13 @@ const handleGeneratePDF = async () => {
                 <div className="text-center mb-12">
                   <div className="inline-flex items-center gap-[0.5rem] mb-6">
                     <img
-                      src="/logo-mafatec-2048x423.png"
+                      src="/mafatec-logo-rge.png"
                       alt="MAFATEC"
-                      className="h-[30px] w-auto"
+                      className="h-[60px] w-auto"
                     />
-                    <span className="font-bold text-[0.8rem] tracking-[0.12em] text-[#3a55b0] border-[1.5px] border-[#3a55b0] px-[0.4rem] py-[0.12rem] rounded-[3px]">
-                      RGE
-                    </span>
                   </div>
-                  <div className="flex items-center justify-center gap-[0.6rem] text-[0.7rem] font-semibold tracking-[0.3em] uppercase text-[#c9a96a] mb-2">
-                    <span className="w-[26px] h-px bg-[#c9a96a]" />
+                  <div className="flex items-center justify-center gap-[0.6rem] text-[0.7rem] font-semibold tracking-[0.3em] uppercase text-[#A82E12] mb-2">
+                    <span className="w-[26px] h-px bg-[#A82E12]" />
                     Analyse de production
                   </div>
                   <h2 className="font-serif text-[clamp(2rem,3.6vw,3rem)] leading-[1.05] tracking-[-0.015em]">
@@ -1102,7 +1099,7 @@ const handleGeneratePDF = async () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 {/* Production Annuelle Card */}
   <div className="bg-[#15172b] rounded-3xl p-8">
-    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+    <h3 className="text-[#A82E12] font-medium text-xs uppercase tracking-[0.2em] mb-3">
       Production annuelle
     </h3>
     <div className="flex items-baseline gap-1 mb-2">
@@ -1118,7 +1115,7 @@ const handleGeneratePDF = async () => {
 
   {/* Irradiation Annuelle Card */}
   <div className="bg-[#15172b] rounded-3xl p-8">
-    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+    <h3 className="text-[#A82E12] font-medium text-xs uppercase tracking-[0.2em] mb-3">
       Irradiation annuelle
     </h3>
     <div className="flex items-baseline gap-1 mb-2">
@@ -1134,7 +1131,7 @@ const handleGeneratePDF = async () => {
 
   {/* Variabilité Interannuelle Card */}
   <div className="bg-[#15172b] rounded-3xl p-8">
-    <h3 className="text-[#c8b8a0] font-medium text-xs uppercase tracking-[0.2em] mb-3">
+    <h3 className="text-[#A82E12] font-medium text-xs uppercase tracking-[0.2em] mb-3">
       Variabilité interannuelle
     </h3>
     <div className="flex items-baseline gap-1 mb-2">

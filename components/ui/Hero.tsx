@@ -11,8 +11,8 @@ const Hero = () => {
         <div className="max-w-[880px]">
           {/* Eyebrow */}
           <div className="flex items-center gap-[0.6rem] mb-[1.8rem] reveal in">
-            <span className="w-[26px] h-[1px] bg-[#c9a96a]" />
-            <span className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-[#e3cfa3]">
+            <span className="w-[26px] h-[1px] bg-[#A82E12]" />
+            <span className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-[#A82E12]">
               Outil en ligne · 100% gratuit
             </span>
           </div>
@@ -20,7 +20,7 @@ const Hero = () => {
           {/* Title */}
           <h1 className="font-serif text-[clamp(2.3rem,4.4vw,3.8rem)] leading-[1.1] tracking-[-0.015em] text-[#f3efe6] mb-[2.5rem] reveal in d1">
             Étude photovoltaïque professionnelle —<br />
-            votre analyse de production <em className="italic text-[#e3cfa3]">offerte</em>
+            votre analyse de production <em className="italic text-[#A82E12]">offerte</em>
           </h1>
 
           {/* Lead */}
@@ -38,7 +38,7 @@ const Hero = () => {
               "Sans engagement"
             ].map((feat) => (
               <div key={feat} className="flex items-center gap-[0.5rem]">
-                <Check className="w-[16px] h-[16px] text-[#e3cfa3]" strokeWidth={2.2} />
+                <Check className="w-[16px] h-[16px] text-[#A82E12]" strokeWidth={2.2} />
                 <span className="text-[0.84rem] text-[#f3efe6] font-medium">{feat}</span>
               </div>
             ))}
