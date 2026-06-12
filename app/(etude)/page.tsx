@@ -333,7 +333,7 @@ const Home = () => {
     address: "",
   });
   const [showObstacleInputs, setShowObstacleInputs] = useState(false);
-  const [useTerrainShadows, setUseTerrainShadows] = useState("non");ReportPDFPopup
+  const [useTerrainShadows, setUseTerrainShadows] = useState("non");
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     {
       name: "Obstacle 1",
@@ -354,8 +354,11 @@ const Home = () => {
     puissancePv: false,
     systemLosses: false,
     azimut: false,
-    obstacles: [] as any[],
     inclinaison: false,
+    address: false,
+    latitude: false,
+    longitude: false,
+    terrainShadows: false,
   });
   const [calculateVoltageDrop, setCalculateVoltageDrop] = useState<"oui" | "non">("non");
   const [addCalpinage, setAddCalpinage] = useState<"oui" | "non">("non");
@@ -486,10 +489,14 @@ const handleGeneratePDF = async () => {
       lat: position.lat,
       lng: position.lng,
     }));
+    // Clear address error when position changes
+    setFormErrors(prev => ({ ...prev, address: false, latitude: false, longitude: false }));
   };
   
   const handleAddressSelect = (lat: number, lng: number, address: string) => {
     setClickedPosition({ lat, lng, address });
+    // Clear address error when address is selected
+    setFormErrors(prev => ({ ...prev, address: false, latitude: false, longitude: false }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -500,12 +507,20 @@ const handleGeneratePDF = async () => {
         ...prev,
         [name === "latitude" ? "lat" : "lng"]: numValue,
       }));
+      // Clear errors for the edited field
+      if (name === "latitude") {
+        setFormErrors(prev => ({ ...prev, latitude: false }));
+      } else if (name === "longitude") {
+        setFormErrors(prev => ({ ...prev, longitude: false }));
+      }
     }
   };
 
   const handleTerrainShadowsChange = (value: string) => {
     setUseTerrainShadows(value);
     setShowObstacleInputs(value === "oui");
+    // Clear terrain shadows error
+    setFormErrors(prev => ({ ...prev, terrainShadows: false }));
   };
 
   const addObstacle = () =>
@@ -544,18 +559,21 @@ const handleGeneratePDF = async () => {
       puissancePv: puissancePv.trim() === "",
       systemLosses: systemLosses.trim() === "",
       azimut: azimut.trim() === "",
-      obstacles: [] as any[],
       inclinaison: inclinaison.trim() === "",
+      address: clickedPosition.address === "" && (clickedPosition.lat === 0 || clickedPosition.lng === 0),
+      latitude: clickedPosition.lat === 0,
+      longitude: clickedPosition.lng === 0,
+      terrainShadows: useTerrainShadows === "",
     };
     setFormErrors(newErrors);
-    return !Object.values(newErrors).some((v) =>
-      Array.isArray(v) ? v.some(Boolean) : v,
-    );
+    
+    // Return true if no errors
+    return !Object.values(newErrors).some((v) => v === true);
   };
 
   const handleVisualiserResultats = async () => {
     if (!validateForm()) {
-      setError("Veuillez remplir les champs manquants.");
+      setError("Veuillez remplir tous les champs obligatoires.");
       return;
     }
     setError("");
@@ -610,6 +628,10 @@ const handleGeneratePDF = async () => {
     if (value > 180) value = 180;
     if (value < -180) value = -180;
     setAzimut(value.toString());
+    // Clear azimut error when value is valid
+    if (value.toString().trim() !== "") {
+      setFormErrors(prev => ({ ...prev, azimut: false }));
+    }
   };
 
   const getAzimuthDirection = (az: number) => {
@@ -677,9 +699,12 @@ const handleGeneratePDF = async () => {
           <div className="cfg-card">
             <h3 className="font-medium text-[17px]">Localisation</h3>
             <p className="cfg-sub">Position géographique du site analysé.</p>
-            <div className="relative h-[320px] rounded-[18px] overflow-hidden border border-[#e8e8ea] z-0">
+            <div className={`relative h-[320px] rounded-[18px] overflow-hidden border border-[#e8e8ea]} z-0`}>
               <DynamicMap onPositionChange={handlePositionChange} />
             </div>
+            {/*{(formErrors.address || formErrors.latitude || formErrors.longitude) && (
+              <p className="text-red-500 text-xs mt-2">Veuillez sélectionner une adresse ou entrer les coordonnées</p>
+            )}*/}
           </div>
 
           {/* Col 2: Address & Shadows */}
@@ -688,7 +713,11 @@ const handleGeneratePDF = async () => {
             <p className="cfg-sub">Adresse géocodée et latitude / longitude.</p>
             <div className="field-sm">
               <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+                          {(formErrors.address || formErrors.latitude || formErrors.longitude) && (
+              <p className="text-red-500 text-xs mt-[-4px]">L'adresse est requise</p>
+            )}
             </div>
+            
             <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="field-sm">
                 <label>
@@ -698,7 +727,11 @@ const handleGeneratePDF = async () => {
                   name="latitude"
                   value={clickedPosition.lat}
                   onChange={handleInputChange}
+                  className={formErrors.latitude ? "border-red-500" : ""}
                 />
+                {formErrors.latitude && (
+                  <p className="text-red-500 text-xs mt-1">La latitude est requise</p>
+                )}
               </div>
               <div className="field-sm">
                 <label>
@@ -708,7 +741,11 @@ const handleGeneratePDF = async () => {
                   name="longitude"
                   value={clickedPosition.lng}
                   onChange={handleInputChange}
+                  className={formErrors.longitude ? "border-red-500" : ""}
                 />
+                {formErrors.longitude && (
+                  <p className="text-red-500 text-xs mt-1">La longitude est requise</p>
+                )}
               </div>
             </div>
 
@@ -726,7 +763,7 @@ const handleGeneratePDF = async () => {
               <RadioGroup
                 value={useTerrainShadows}
                 onValueChange={handleTerrainShadowsChange}
-                className="flex gap-6 mt-2"
+                className={`flex gap-6 mt-2 ${formErrors.terrainShadows ? 'border-red-500 p-2 rounded' : ''}`}
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem
@@ -747,6 +784,9 @@ const handleGeneratePDF = async () => {
                   <label htmlFor="h-non">Non</label>
                 </div>
               </RadioGroup>
+              {formErrors.terrainShadows && (
+                <p className="text-red-500 text-xs mt-1">Veuillez sélectionner une option</p>
+              )}
             </div>
 
             {showObstacleInputs && (
@@ -855,9 +895,17 @@ const handleGeneratePDF = async () => {
               <Input
                 className={formErrors.puissancePv ? "border-red-500" : ""}
                 value={puissancePv}
-                onChange={(e) => setPuissancePv(e.target.value)}
+                onChange={(e) => {
+                  setPuissancePv(e.target.value);
+                  if (e.target.value.trim() !== "") {
+                    setFormErrors(prev => ({ ...prev, puissancePv: false }));
+                  }
+                }}
                 placeholder="9"
               />
+              {formErrors.puissancePv && (
+                <p className="text-red-500 text-xs mt-1">La puissance PV est requise</p>
+              )}
             </div>
             <div className="field-sm">
               <label>
@@ -866,9 +914,17 @@ const handleGeneratePDF = async () => {
               <Input
                 className={formErrors.systemLosses ? "border-red-500" : ""}
                 value={systemLosses}
-                onChange={(e) => setSystemLosses(e.target.value)}
+                onChange={(e) => {
+                  setSystemLosses(e.target.value);
+                  if (e.target.value.trim() !== "") {
+                    setFormErrors(prev => ({ ...prev, systemLosses: false }));
+                  }
+                }}
                 placeholder="14"
               />
+              {formErrors.systemLosses && (
+                <p className="text-red-500 text-xs mt-1">Les pertes système sont requises</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="field-sm">
@@ -878,20 +934,31 @@ const handleGeneratePDF = async () => {
                 <Input
                   className={formErrors.inclinaison ? "border-red-500" : ""}
                   value={inclinaison}
-                  onChange={(e) => setInclinaison(e.target.value)}
+                  onChange={(e) => {
+                    setInclinaison(e.target.value);
+                    if (e.target.value.trim() !== "") {
+                      setFormErrors(prev => ({ ...prev, inclinaison: false }));
+                    }
+                  }}
                   placeholder="35"
                 />
+                {formErrors.inclinaison && (
+                  <p className="text-red-500 text-xs mt-1">L'inclinaison est requise</p>
+                )}
               </div>
               <div className="field-sm">
                 <label>
                   Azimut [°] <span className="text-red-600">*</span>
                 </label>
                 <Input
-                  className={errorAzimuth ? "border-red-500" : ""}
+                  className={formErrors.azimut ? "border-red-500" : ""}
                   value={azimut}
                   onChange={handleAzimutChange}
                   placeholder="0"
                 />
+                {formErrors.azimut && (
+                  <p className="text-red-500 text-xs mt-1">L'azimut est requis</p>
+                )}
               </div>
             </div>
 
