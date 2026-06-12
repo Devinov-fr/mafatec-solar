@@ -628,7 +628,7 @@ const handleGeneratePDF = async () => {
         <div className="sticky top-[74px] z-[120] bg-[#f5f5f7] backdrop-blur-[20px] border-b border-[#ececec]">
           <div className="max-w-[1200px] mx-auto px-10 py-[0.85rem] flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-[0.8re[#A82E12]m] min-w-0">
-              <span className="inline-flex items-center gap-[0.45rem] text-[0.62rem] font-bold tracking-[0.16em] uppercase text-white bg-[#c93b18] px-[0.65rem] py-[0.32rem] rounded-[2px] pl-2">
+              <span className="inline-flex items-center gap-[0.45rem] text-[0.62rem] font-bold tracking-[0.16em] uppercase text-white bg-[#c93b18] px-[0.65rem] py-[0.32rem] rounded-[2px] mr-2">
                 Étude Installation PV
               </span>
               <span className="text-[0.8rem] text-[#454a63] truncate">
