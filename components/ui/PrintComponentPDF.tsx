@@ -664,9 +664,9 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
               </Text>
             </View>
             <Text style={styles.coverTitle}>
-              Rapport d'
-              <Text style={styles.coverTitleEm}>analyse</Text>
-              {"\n"}solaire détaillé
+              Rapport de
+              <Text style={styles.coverTitleEm}>Production</Text>
+              {"\n"}photovoltaïque détaillé
             </Text>
             <Text style={styles.coverLead}>
               Estimation de production, irradiation et performance d'une

@@ -362,7 +362,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/*<Button
               onClick={handlePrint}
               disabled={isGenerating}
-              className="bg-[#13162f] hover:bg-[#141832] text-white"
+              className="bg-[#131839] hover:bg-[#141832] text-white"
             >
               <Printer size={16} className="mr-2" />
               Imprimer
@@ -393,7 +393,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               style={{
                 width: "210mm",
                 minHeight: "273.9mm",
-                background: "#13162f",
+                background: "#131839",
                 position: "relative",
                 overflow: "hidden",
                 marginBottom: "0px",
@@ -406,7 +406,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   position: "absolute",
                   inset: 0,
                   background:
-                    "radial-gradient(ellipse 80% 70% at 15% 85%, #13162f 0%, rgba(19, 22, 47, 0.7) 40%, transparent 70%)",
+                    "radial-gradient(ellipse 80% 70% at 15% 85%, #131839 0%, rgba(19, 22, 47, 0.7) 40%, transparent 70%)",
                 }}
               />
               <div
@@ -508,14 +508,15 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       color: "#f3efe6",
                       lineHeight: 1.04,
                       marginBottom: "20px",
+                    
                     }}
                   >
-                    Rapport d'
+                    Rapport de 
                     <em style={{ fontStyle: "italic", color: "#A82E12" }}>
-                      analyse
+                    {" "}Production
                     </em>
                     <br />
-                    solaire détaillé
+                    photovoltaïque détaillé
                   </h1>
                   <p
                     style={{
@@ -764,7 +765,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h2>
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#7a7e95",
                       marginTop: "4px",
                       marginBottom: "24px",
@@ -785,7 +786,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   >
                     <div
                       style={{
-                        background: "#13162f",
+                        background: "#131839",
                         borderRadius: "14px",
                         padding: "20px",
                         color: "#f3efe6",
@@ -818,8 +819,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: "9px",
-                          color: "rgba(243,239,230,0.4)",
+                          fontSize: "10px",
+                          color: "#ffffff",
                         }}
                       >
                         Énergie produite estimée sur une année complète.
@@ -827,7 +828,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     </div>
                     <div
                       style={{
-                        background: "#13162f",
+                        background: "#131839",
                         borderRadius: "14px",
                         padding: "20px",
                         color: "#f3efe6",
@@ -860,8 +861,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: "9px",
-                          color: "rgba(243,239,230,0.4)",
+                          fontSize: "10px",
+                          color: "#ffffff",
                         }}
                       >
                         Rayonnement solaire reçu par mètre carré.
@@ -869,7 +870,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     </div>
                     <div
                       style={{
-                        background: "#13162f",
+                        background: "#131839",
                         borderRadius: "14px",
                         padding: "20px",
                         color: "#f3efe6",
@@ -902,8 +903,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: "9px",
-                          color: "rgba(243,239,230,0.4)",
+                          fontSize: "10px",
+                          color: "#ffffff",
                         }}
                       >
                         Écart-type de production d'une année sur l'autre.
@@ -1268,7 +1269,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               display: "flex",
                               alignItems: "center",
                               gap: "8px",
-                              marginTop: "16px",
+                              marginTop: "14px",
                               marginBottom: "16px",
                             }}
                           >
@@ -1399,7 +1400,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     </h4>
                     <p
                       style={{
-                        fontSize: "10px",
+                        fontSize: "13px",
                         color: "#454a63",
                         lineHeight: 1.55,
                       }}
@@ -1543,7 +1544,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h2>
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#7a7e95",
                       marginTop: "4px",
                       marginBottom: "20px",
@@ -1797,7 +1798,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h2>
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#7a7e95",
                       marginTop: "4px",
                       marginBottom: "20px",
@@ -1828,13 +1829,13 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       }}
                     >
                       <thead>
-                        <tr style={{ background: "#13162f" }}>
+                        <tr style={{ background: "#131839" }}>
                           <th
                             style={{
                               padding: "14px 12px",
                               textAlign: "center",
                               color: "#f3efe6",
-                              fontSize: "8px",
+                              fontSize: "10px",
                               fontWeight: 700,
                               letterSpacing: "1px",
                               textTransform: "uppercase",
@@ -1848,7 +1849,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               padding: "14px 12px",
                               textAlign: "center",
                               color: "#f3efe6",
-                              fontSize: "8px",
+                              fontSize: "10px",
                               fontWeight: 700,
                               letterSpacing: "1px",
                               textTransform: "uppercase",
@@ -1858,7 +1859,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                             Production
                             <div
                               style={{
-                                fontSize: "7px",
+                                fontSize: "10px",
                                 fontWeight: 400,
                                 letterSpacing: "0.5px",
                                 marginTop: "4px",
@@ -1873,7 +1874,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               padding: "14px 12px",
                               textAlign: "center",
                               color: "#f3efe6",
-                              fontSize: "8px",
+                              fontSize: "10px",
                               fontWeight: 700,
                               letterSpacing: "1px",
                               textTransform: "uppercase",
@@ -1883,7 +1884,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                             Irradiation
                             <div
                               style={{
-                                fontSize: "7px",
+                                fontSize: "10px",
                                 fontWeight: 400,
                                 letterSpacing: "0.5px",
                                 marginTop: "4px",
@@ -1898,7 +1899,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               padding: "14px 12px",
                               textAlign: "center",
                               color: "#f3efe6",
-                              fontSize: "8px",
+                              fontSize: "10px",
                               fontWeight: 700,
                               letterSpacing: "1px",
                               textTransform: "uppercase",
@@ -1908,7 +1909,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                             Variabilité
                             <div
                               style={{
-                                fontSize: "7px",
+                                fontSize: "10px",
                                 fontWeight: 400,
                                 letterSpacing: "0.5px",
                                 marginTop: "4px",
@@ -1937,6 +1938,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                                 padding: "10px 12px",
                                 fontWeight: 600,
                                 textAlign: "center",
+                                fontSize:"12px"
                               }}
                             >
                               {monthNames[i]}
@@ -1946,6 +1948,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                                 padding: "10px 12px",
                                 textAlign: "center",
                                 fontWeight: "bold",
+                                fontSize:"12px"
                               }}
                             >
                               {formatNumber(m.E_m || 0, 2)}
@@ -1954,6 +1957,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               style={{
                                 padding: "10px 12px",
                                 textAlign: "center",
+                                fontSize:"12px"
                               }}
                             >
                               {formatNumber(m["H(i)_m"] || 0, 2)}
@@ -1962,6 +1966,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               style={{
                                 padding: "10px 12px",
                                 textAlign: "center",
+                                fontSize:"12px"
                               }}
                             >
                               {formatNumber(m.SD_m || 0, 2)}
@@ -1970,7 +1975,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         ))}
                         <tr
                           style={{
-                            background: "#13162f",
+                            background: "#131839",
                             fontWeight: "bold",
                             borderTop: "1px solid #e8e8ea",
                           }}
@@ -1981,6 +1986,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               color: "#ffffff",
                               textAlign: "center",
                               fontWeight: 700,
+                              fontSize:"13px"
                             }}
                           >
                             Total annuel
@@ -1991,6 +1997,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               textAlign: "center",
                               fontWeight: "bold",
                               color: "#ffffff",
+                              fontSize:"13px"
                             }}
                           >
                             {formatNumber(totalProduction, 2)}
@@ -2001,6 +2008,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               textAlign: "center",
                               fontWeight: "bold",
                               color: "#ffffff",
+                              fontSize:"13px"
                             }}
                           >
                             {formatNumber(totalIrradiation, 2)}
@@ -2011,6 +2019,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                               textAlign: "center",
                               fontWeight: "bold",
                               color: "#ffffff",
+                              fontSize:"13px"
                             }}
                           >
                             {formatNumber(variabiliteAnnuelle, 1)}
@@ -2043,7 +2052,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h4>
                   <p
                     style={{
-                      fontSize: "10px",
+                      fontSize: "13px",
                       color: "#454a63",
                       lineHeight: 1.55,
                     }}
@@ -2182,7 +2191,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h2>
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#7a7e95",
                       marginTop: "4px",
                       marginBottom: "20px",
@@ -2215,6 +2224,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#c93b18",
+                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2258,6 +2268,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#a8884a",
+                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2300,6 +2311,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#3a55b0",
+                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2447,7 +2459,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </h2>
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: "13px",
                       color: "#7a7e95",
                       marginTop: "4px",
                       marginBottom: "20px",
