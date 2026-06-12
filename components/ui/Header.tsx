@@ -54,7 +54,7 @@ const Header: React.FC = () => {
 
         {/* Breadcrumbs (Centered) - Hidden on tablet/mobile */}
         <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 hidden lg:flex items-center gap-[0.55rem] whitespace-nowrap max-w-[58%] overflow-hidden">
-          <a href="https://mafatec.com/" className="text-[0.74rem] font-medium tracking-[0.04em] text-[#7a7e95] hover:text-[#15172b] transition-colors">
+          <a href="https://solaire.mafatec.com/" className="text-[0.74rem] font-medium tracking-[0.04em] text-[#7a7e95] hover:text-[#15172b] transition-colors">
             Accueil
           </a>
         </div>
