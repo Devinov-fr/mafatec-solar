@@ -2,28 +2,23 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer className="w-full border-t border-slate-200 py-6 bg-white">
-      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between text-[#4a5568] text-sm">
-        
+    <footer className="site-footer border-t border-[var(--line-warm)] py-10 bg-white">
+      <div className="wrap site-footer-in max-w-[1200px] mx-auto px-10 flex flex-col md:flex-row items-center justify-between gap-6 text-[var(--text-soft)] text-[0.82rem]">
+
         {/* Left: Address */}
-        <div>
+        <div className="footer-addr">
           12 Rue Paul Langevin, 93270 Sevran
         </div>
 
         {/* Center: Certifications */}
-        <div className="font-medium text-[#2d3748]">
-          RGE · Qualifelec · Qualit'EnR · IRVE · KNX
+        <div className="footer-certs font-semibold text-[var(--text)]">
+          RGE · Qualifelec · Qualit&apos;EnR · IRVE · KNX
         </div>
 
-        <div></div>
-
-        {/* Right: Links 
-        <div className="flex items-center gap-6">
-          <a href="/mon-espace" className="hover:text-black transition-colors">Mon espace</a>
-          <a href="/demo-espaces" className="hover:text-black transition-colors">Démo espaces</a>
-          <a href="/passation-dev" className="hover:text-black transition-colors">Passation dev</a>
-        </div>*/}
-        
+        {/* Right: Logo */}
+        <div className="footer-logo">
+          <img src="/logo-mafatec-2048x423.png" alt="MAFATEC" className="h-4 w-auto opacity-80 grayscale" />
+        </div>
       </div>
     </footer>
   );
