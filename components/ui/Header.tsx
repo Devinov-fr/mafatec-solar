@@ -98,7 +98,7 @@ const Header: React.FC = () => {
                 Menu
               </h5>
               <a 
-                href="https://mafatec.com/" 
+                href="https://solaire.mafatec.com/" 
                 className="block font-serif text-[1.5rem] text-[#15172b] py-3 hover:text-[#a8884a] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
