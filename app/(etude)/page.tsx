@@ -34,6 +34,7 @@ const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
 // ---------------------------
 // Types et interfaces
 // ---------------------------
+// In ./app/(etude)/page.tsx
 interface Data {
   inputs: {
     economic_data: {
@@ -86,6 +87,10 @@ interface Data {
         l_total: number;
       };
     };
+  };
+  meta: {
+    inputs: any;
+    outputs: any;
   };
 }
 
