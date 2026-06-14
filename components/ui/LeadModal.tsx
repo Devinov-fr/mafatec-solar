@@ -11,9 +11,16 @@ interface LeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUnlock: (data: any) => void;
+  studyData?: {
+    puissance: string;
+    adresse: string;
+    production?: number;
+    irradiation?: number;
+    variabilite?: number;
+  };
 }
 
-const LeadModal = ({ isOpen, onClose, onUnlock }: LeadModalProps) => {
+const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => {
   const [step, setStep] = useState(1);
   const [universe, setUniverse] = useState<"part" | "pro" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +72,7 @@ const LeadModal = ({ isOpen, onClose, onUnlock }: LeadModalProps) => {
           body: JSON.stringify({
             ...formData,
             universe,
+            studyData,
           }),
         });
 

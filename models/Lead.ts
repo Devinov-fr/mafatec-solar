@@ -23,6 +23,13 @@ const LeadSchema = new Schema({
     enum: ['part', 'pro'],
     required: true,
   },
+  studyData: {
+    puissance: String,
+    adresse: String,
+    production: Number,
+    irradiation: Number,
+    variabilite: Number,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -734,7 +734,7 @@ const handleGeneratePDF = async () => {
             <h3>Adresse & coordonnées</h3>
             <p className="cfg-sub">Adresse géocodée et latitude / longitude.</p>
             <div className="field-sm">
-              <label>Adresse <span className="text-[var(--red-500)]">*</span></label>
+             
               <AddressAutocomplete onAddressSelect={handleAddressSelect} />
               {(formErrors.address || formErrors.latitude || formErrors.longitude) && (
                 <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">L&apos;adresse est requise</p>
@@ -901,31 +901,48 @@ const handleGeneratePDF = async () => {
               {calculateVoltageDrop === "oui" && (
                 <div className="reveal-card">
                   {!voltageDropResult ? (
-                    <div className="tool-prompt p-4 bg-[var(--paper-2)] rounded-[var(--r-md)] border border-[var(--line-warm)] border-l-2 border-l-[var(--champagne)]">
-                      <p className="text-[12px] text-[var(--text-soft)] mb-4 leading-relaxed">Vérifiez la chute de tension de votre ligne (matériau, section, longueur).</p>
-                      <button onClick={() => setIsVoltageModalOpen(true)} className="btn-open-tool w-full bg-[var(--navy-800)] hover:bg-[var(--navy-900)] text-white flex items-center justify-center gap-2 py-3.5 rounded-[var(--r-sm)] text-[0.8rem] font-semibold transition-all shadow-[var(--sh-sm)]">
-                        <Zap size={16} /> Ouvrir le calculateur
-                      </button>
-                    </div>
+                    <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
+                    <p className="text-sm text-[#3a4055] mb-4">
+                      Ouvrez le calculateur pour vérifier la chute de tension de votre ligne (matériau, section, longueur).
+                    </p>
+                    <Button
+                      onClick={() => setIsVoltageModalOpen(true)}
+                      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
+                    >
+                      <Zap size={18} />
+                      Ouvrir le calculateur
+                    </Button>
+                  </div>
                   ) : (
-                    <div className="chute-inline p-5 bg-green-50 border border-green-100 rounded-[var(--r-md)] border-l-2 border-l-green-500 relative">
-                      <div className="ci-title flex items-center gap-2 mb-3 text-green-700 font-bold text-[10px] uppercase tracking-wider">
-                        <Zap size={16} /> Résultats de la chute de tension
+<div className="mt-4 p-5 bg-[#f0f9f4] border border-[#d1e7dd] rounded-2xl">
+                    <div className="flex items-center gap-2 mb-4 text-[#1e6043]">
+                      <Zap size={18} />
+                      <p className="font-semibold text-[#1e6043] text-xs">Résultats de la chute de tension</p>
+                    </div>
+                    <div className="space-y-3 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[#4b5563]">Chute de tension</span>
+                        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdrop} V</span>
                       </div>
-                      <div className="ci-rows space-y-2 text-xs">
-                        <div className="ci-row flex justify-between">
-                          <span className="text-[var(--text-soft)]">Chute de tension</span>
-                          <span className="font-bold text-[var(--text)]">{voltageDropResult.vdrop} V</span>
-                        </div>
-                        <div className="ci-row flex justify-between">
-                          <span className="text-[var(--text-soft)]">Pourcentage</span>
-                          <span className="font-bold text-[var(--text)]">{voltageDropResult.vdropPct} %</span>
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[#4b5563]">Pourcentage de chute de tension</span>
+                        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdropPct} %</span>
                       </div>
-                      <button onClick={() => setIsVoltageModalOpen(true)} className="ci-edit mt-4 text-[10px] font-bold uppercase text-green-700 hover:underline flex items-center gap-1">
-                        <Pencil size={12} /> Modifier le calcul
+                      <div className="flex justify-between items-center">
+                        <span className="text-[#4b5563]">Résistance de fil</span>
+                        <span className="font-semibold text-slate-900">{voltageDropResult.rwire} Ω</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-[#d1e7dd]">
+                      <button
+                        onClick={() => setIsVoltageModalOpen(true)}
+                        className="flex items-center gap-2 text-[#1e6043] font-medium hover:text-[#1e6043]/80 transition-colors"
+                      >
+                        <Pencil size={16} />
+                        Modifier le calcul
                       </button>
                     </div>
+                  </div>
                   )}
                 </div>
               )}
@@ -958,12 +975,18 @@ const handleGeneratePDF = async () => {
               </div>
 
               {addCalpinage === "oui" && (
-                <div className="reveal-card p-4 bg-[var(--paper-2)] rounded-[var(--r-md)] border border-[var(--line-warm)] border-l-2 border-l-[var(--champagne)]">
-                  <p className="text-[12px] text-[var(--text-soft)] mb-4 leading-relaxed">Définissez la zone de panneaux sur le toit avec l&apos;outil dédié.</p>
-                  <button onClick={() => setIsRoofPlannerOpen(true)} className="w-full bg-[var(--navy-800)] hover:bg-[var(--navy-900)] text-white flex items-center justify-center gap-2 py-3.5 rounded-[var(--r-sm)] text-[0.8rem] font-semibold transition-all shadow-[var(--sh-sm)]">
-                    <Grid3X3 size={16} /> Ouvrir le calepinage
-                  </button>
-                </div>
+                <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
+                    <p className="text-sm text-[#3a4055] mb-4">
+                      Ouvrez l'outil de calepinage pour définir la zone de panneaux sur le toit.
+                    </p>
+                    <Button
+                      onClick={() => setIsRoofPlannerOpen(true)}
+                      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
+                    >
+                      <Grid3X3 size={18} />
+                      Ouvrir le calepinage
+                    </Button>
+                  </div>
               )}
             </div>
           </div>
@@ -1222,6 +1245,13 @@ const handleGeneratePDF = async () => {
         isOpen={isLeadModalOpen}
         onClose={() => setIsLeadModalOpen(false)}
         onUnlock={handleUnlock}
+        studyData={{
+          puissance: puissancePv,
+          adresse: clickedPosition.address,
+          production: data?.outputs?.totals?.fixed.E_y,
+          irradiation: data?.outputs?.totals?.fixed["H(i)_y"],
+          variabilite: data?.outputs?.totals?.fixed.SD_y,
+        }}
       />
 
 {/* PDF Report Popup */}
