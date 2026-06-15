@@ -149,12 +149,12 @@ const VoltageDropCalculator = ({
 
   const handleMaterialChange = (value: string) => {
     setMaterial(value);
-    if (MATERIAL_RHO[value] !== undefined) setRho(String(MATERIAL_RHO[value]));
+    if (MATERIAL_RHO[value] !== undefined) setRho(MATERIAL_RHO[value]);
   };
 
   const compute = () => {
     setError(null);
-    const rhoNum = parseFloat(rho);
+    const rhoNum = rho; // rho is already a number
     const dVal = parseFloat(diameterValue);
     const lenVal = parseFloat(lengthValue);
     const U = parseFloat(voltage);
@@ -254,7 +254,7 @@ const VoltageDropCalculator = ({
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-bold text-slate-700">Résistivité (Ω·m)</Label>
-              <Input className="h-10 border-slate-200 text-sm" value={rho} onChange={(e) => setRho(e.target.value)} />
+              <Input className="h-10 border-slate-200 text-sm" value={rho} onChange={(e) => setRho(parseFloat(e.target.value))} />
             </div>
           </div>
 
