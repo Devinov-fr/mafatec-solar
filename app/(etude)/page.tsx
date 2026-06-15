@@ -35,6 +35,11 @@ const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
   ssr: false,
 });
 
+// API URL configuration based on environment
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://solaire.mafatec.com/pvgis/calculate'
+  : 'http://127.0.0.1:5000/calculate';
+
 // ---------------------------
 // Types et interfaces
 // ---------------------------
@@ -626,7 +631,8 @@ const handleGeneratePDF = async () => {
     };
     
     try {
-      const response = await fetch("http://127.0.0.1:5000/calculate", {
+      // Using environment-based URL configuration
+      const response = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
