@@ -34,7 +34,6 @@ const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
 // ---------------------------
 // Types et interfaces
 // ---------------------------
-// In ./app/(etude)/page.tsx
 interface Data {
   inputs: {
     economic_data: {
@@ -337,11 +336,12 @@ const Home = () => {
   const [obstacles, setObstacles] = useState<Obstacle[]>([
     {
       name: "Obstacle 1",
-      azimuth: 0,
-      height: 0,
-      points: [{ azimuth: 0, height: 0 }],
+      azimuth: null,
+      height: null,
+      points: [{ azimuth: null, height: null }],
     },
   ]);
+  const [obstacleErrors, setObstacleErrors] = useState<{ [key: string]: boolean }>({});
   const [puissancePv, setPuissancePv] = useState("");
   const [systemLosses, setSystemLosses] = useState("14");
   const [inclinaison, setInclinaison] = useState("35");
@@ -519,20 +519,76 @@ const handleGeneratePDF = async () => {
   const handleTerrainShadowsChange = (value: string) => {
     setUseTerrainShadows(value);
     setShowObstacleInputs(value === "oui");
+    
+    // Reset obstacles to default empty state when "Non" is selected
+    if (value === "non") {
+      setObstacles([
+        {
+          name: "Obstacle 1",
+          azimuth: null,
+          height: null,
+          points: [{ azimuth: null, height: null }],
+        },
+      ]);
+      setObstacleErrors({});
+    } else {
+      // When "Oui" is selected, ensure obstacles are empty/null (no default 0s)
+      setObstacles([
+        {
+          name: "Obstacle 1",
+          azimuth: null,
+          height: null,
+          points: [{ azimuth: null, height: null }],
+        },
+      ]);
+    }
+    
     // Clear terrain shadows error
     setFormErrors(prev => ({ ...prev, terrainShadows: false }));
   };
 
-  const addObstacle = () =>
+  const validateObstacles = (): boolean => {
+    if (useTerrainShadows !== "oui") return true;
+    
+    const errors: { [key: string]: boolean } = {};
+    let isValid = true;
+    
+    obstacles.forEach((obstacle, obsIdx) => {
+      obstacle.points.forEach((point, ptIdx) => {
+        const azimuthKey = `obs_${obsIdx}_pt_${ptIdx}_azimuth`;
+        const heightKey = `obs_${obsIdx}_pt_${ptIdx}_height`;
+        
+        if (point.azimuth === null || point.azimuth === undefined || point.azimuth === 0) {
+          errors[azimuthKey] = true;
+          isValid = false;
+        } else {
+          errors[azimuthKey] = false;
+        }
+        
+        if (point.height === null || point.height === undefined || point.height === 0) {
+          errors[heightKey] = true;
+          isValid = false;
+        } else {
+          errors[heightKey] = false;
+        }
+      });
+    });
+    
+    setObstacleErrors(errors);
+    return isValid;
+  };
+
+  const addObstacle = () => {
     setObstacles((prev) => [
       ...prev,
       {
         name: `Obstacle ${prev.length + 1}`,
-        azimuth: 0,
-        height: 0,
-        points: [{ azimuth: 0, height: 0 }],
+        azimuth: null,
+        height: null,
+        points: [{ azimuth: null, height: null }],
       },
     ]);
+  };
     
   const removeObstacle = (indexToRemove: number) =>
     setObstacles(obstacles.filter((_, index) => index !== indexToRemove));
@@ -549,9 +605,15 @@ const handleGeneratePDF = async () => {
     value: string,
   ) => {
     const updated = [...obstacles];
-    updated[obsIdx].points[ptIdx][field] =
-      value === "" ? null : parseFloat(value);
+    const newValue = value === "" ? null : parseFloat(value);
+    updated[obsIdx].points[ptIdx][field] = newValue;
     setObstacles(updated);
+    
+    // Clear error for this specific field
+    const errorKey = `obs_${obsIdx}_pt_${ptIdx}_${field}`;
+    if (obstacleErrors[errorKey]) {
+      setObstacleErrors(prev => ({ ...prev, [errorKey]: false }));
+    }
   };
 
   const validateForm = () => {
@@ -567,8 +629,11 @@ const handleGeneratePDF = async () => {
     };
     setFormErrors(newErrors);
     
+    // Validate obstacles if "Oui" is selected
+    const areObstaclesValid = validateObstacles();
+    
     // Return true if no errors
-    return !Object.values(newErrors).some((v) => v === true);
+    return !Object.values(newErrors).some((v) => v === true) && areObstaclesValid;
   };
 
   const handleVisualiserResultats = async () => {
@@ -589,8 +654,8 @@ const handleGeneratePDF = async () => {
       outputformat: "json",
       usehorizon: useTerrainShadows === "oui" ? 0 : 1,
       userhorizon:
-        useTerrainShadows !== "oui"
-          ? obstacles.map((o) => o.height).join(",")
+        useTerrainShadows === "oui"
+          ? obstacles.map((o) => o.points.map(p => p.height).join(",")).join(",")
           : "0",
     };
     
@@ -702,9 +767,6 @@ const handleGeneratePDF = async () => {
             <div className={`relative h-[320px] rounded-[18px] overflow-hidden border border-[#e8e8ea]} z-0`}>
               <DynamicMap onPositionChange={handlePositionChange} />
             </div>
-            {/*{(formErrors.address || formErrors.latitude || formErrors.longitude) && (
-              <p className="text-red-500 text-xs mt-2">Veuillez sélectionner une adresse ou entrer les coordonnées</p>
-            )}*/}
           </div>
 
           {/* Col 2: Address & Shadows */}
@@ -796,7 +858,7 @@ const handleGeneratePDF = async () => {
                     Obstacles personnalisés
                   </h4>
                   <p className="text-xs text-[#6c757d] mt-1">
-                    Obstacles & points d'ombrage
+                    Définissez les obstacles qui pourraient créer de l'ombre (tous les champs sont obligatoires)
                   </p>
                 </div>
                 {obstacles.map((obs, obsIdx) => (
@@ -831,42 +893,50 @@ const handleGeneratePDF = async () => {
                       />
                     </div>
                     {obs.points.map((pt, ptIdx) => (
-                      <div key={ptIdx} className="flex gap-3">
-                        <div className="flex-1">
-                          <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-                            Azimut (°)
-                          </label>
-                          <Input
-                            className="h-9 text-sm bg-white mt-1"
-                            value={pt.azimuth ?? ""}
-                            onChange={(e) =>
-                              handlePointChange(
-                                obsIdx,
-                                ptIdx,
-                                "azimuth",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="0-360"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-                            Hauteur (°)
-                          </label>
-                          <Input
-                            className="h-9 text-sm bg-white mt-1"
-                            value={pt.height ?? ""}
-                            onChange={(e) =>
-                              handlePointChange(
-                                obsIdx,
-                                ptIdx,
-                                "height",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="0-90"
-                          />
+                      <div key={ptIdx} className="space-y-2">
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                              Azimut (°) <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              className={`h-9 text-sm bg-white mt-1 ${obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_azimuth`] ? 'border-red-500' : ''}`}
+                              value={pt.azimuth ?? ""}
+                              onChange={(e) =>
+                                handlePointChange(
+                                  obsIdx,
+                                  ptIdx,
+                                  "azimuth",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Ex: 45"
+                            />
+                            {obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_azimuth`] && (
+                              <p className="text-red-500 text-xs mt-1">L'azimut est requis</p>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                              Hauteur (°) <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              className={`h-9 text-sm bg-white mt-1 ${obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_height`] ? 'border-red-500' : ''}`}
+                              value={pt.height ?? ""}
+                              onChange={(e) =>
+                                handlePointChange(
+                                  obsIdx,
+                                  ptIdx,
+                                  "height",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Ex: 30"
+                            />
+                            {obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_height`] && (
+                              <p className="text-red-500 text-xs mt-1">La hauteur est requise</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1349,7 +1419,7 @@ const handleGeneratePDF = async () => {
   voltageDropResult={voltageDropResult}
   panels={panels}
   calepinageImage={panels.find(p => p.imageUrl)?.imageUrl || null}
-  obstacles={obstacles}  // Add this line
+  obstacles={obstacles}
 />
 
       <Footer />
