@@ -189,6 +189,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   break-after: page;
                   min-height: 297mm;
                   width: 210mm;
+                  position: relative;
                 }
                 .page:last-child {
                   page-break-after: auto;
@@ -349,6 +350,31 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
     panels.find((p: any) => p.imageUrl)?.imageUrl ||
     "/toit-maison.jpg";
 
+  // Footer component to ensure consistency
+  const PageFooter = ({ pageNumber, totalPages = 6 }) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderTop: "1px solid #e8e8ea",
+        fontSize: "8px",
+        color: "#7a7e95",
+        paddingTop: "15px",
+        marginTop: "auto",
+        width: "100%",
+      }}
+    >
+      <span>MAFATEC — Énergie solaire</span>
+      <span style={{ letterSpacing: "2px", textTransform: "uppercase" }}>
+        Étude Installation PV
+      </span>
+      <span>
+        Page {pageNumber} / {totalPages}
+      </span>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="relative w-full max-w-5xl h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
@@ -359,14 +385,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             <span className="italic text-[#c93b18]">Téléchargement PDF</span>
           </h2>
           <div className="flex items-center gap-3">
-            {/*<Button
-              onClick={handlePrint}
-              disabled={isGenerating}
-              className="bg-[#131839] hover:bg-[#141832] text-white"
-            >
-              <Printer size={16} className="mr-2" />
-              Imprimer
-            </Button>*/}
             <Button
               onClick={handleDownloadPDF}
               disabled={isGenerating}
@@ -386,13 +404,13 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
 
         {/* Scrollable Report Content */}
         <div className="flex-1 overflow-y-auto bg-[#e9eaee] p-6">
-          <div ref={reportRef} style={{ maxWidth: "210mm", margin: "0 auto" }}>
+          <div ref={reportRef} style={{ width: "210mm", minWidth: "210mm", margin: "0 auto" }}>
             {/* PAGE 1 - COVER */}
             <div
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "273.9mm",
+                minHeight: "297mm",
                 background: "#131839",
                 position: "relative",
                 overflow: "hidden",
@@ -413,9 +431,10 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                 style={{
                   position: "relative",
                   zIndex: 2,
-                  paddingTop: "4mm",
-                  paddingLeft: "8mm",
-                  paddingRight: "20mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -476,7 +495,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       alignItems: "center",
                       gap: "8px",
                       marginTop: "-40px",
-                      //paddingBottom: "24px",
                     }}
                   >
                     <div
@@ -484,7 +502,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -508,12 +526,11 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       color: "#f3efe6",
                       lineHeight: 1.04,
                       marginBottom: "20px",
-                    
                     }}
                   >
                     Rapport de 
                     <em style={{ fontStyle: "italic", color: "#A82E12" }}>
-                    {" "}Production
+                      {" "}Production
                     </em>
                     <br />
                     photovoltaïque détaillé
@@ -622,7 +639,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     fontSize: "8px",
                     color: "#ffffff",
                     minHeight: "50px",
-                    marginTop: "-100px",
                   }}
                 >
                   <div
@@ -666,21 +682,20 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "273mm",
+                minHeight: "297mm",
                 background: "#fff",
-                //marginBottom: "20px",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  paddingTop: "4mm",
-                  paddingLeft: "6mm",
-                  paddingRight: "22mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
                   flex: 1,
                 }}
               >
@@ -733,7 +748,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -1416,50 +1431,29 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid #e8e8ea",
-                    fontSize: "8px",
-                    color: "#7a7e95",
-                    minHeight: "40px",
-                    marginTop: "-20px",
-                  }}
-                >
-                  <span>MAFATEC — Énergie solaire</span>
-                  <span
-                    style={{ letterSpacing: "2px", textTransform: "uppercase" }}
-                  >
-                    Étude Installation PV
-                  </span>
-                  <span>Page 2 / 6</span>
-                </div>
+                <PageFooter pageNumber={2} />
               </div>
             </div>
 
-            {/* PAGE 3 - CALEPINAGE - FIXED WITH IMG TAG */}
+            {/* PAGE 3 - CALEPINAGE */}
             <div
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "274mm",
+                minHeight: "297mm",
                 background: "#fff",
-                marginBottom: "10px",
-                paddingTop: "20px",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  paddingTop: "4mm",
-                  paddingLeft: "6mm",
-                  paddingRight: "22mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
                   flex: 1,
                 }}
               >
@@ -1470,7 +1464,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       justifyContent: "space-between",
                       paddingBottom: "20px",
                       marginBottom: "24px",
-                      marginTop: "-20px",
                       borderBottom: "1px solid #e8e8ea",
                     }}
                   >
@@ -1513,7 +1506,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -1672,25 +1665,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid #e8e8ea",
-                    fontSize: "8px",
-                    color: "#7a7e95",
-                    minHeight: "40px",
-                  }}
-                >
-                  <span>MAFATEC — Énergie solaire</span>
-                  <span
-                    style={{ letterSpacing: "2px", textTransform: "uppercase" }}
-                  >
-                    Étude Installation PV
-                  </span>
-                  <span>Page 3 / 6</span>
-                </div>
+                <PageFooter pageNumber={3} />
               </div>
             </div>
 
@@ -1699,21 +1674,20 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "272mm",
+                minHeight: "297mm",
                 background: "#fff",
-                marginBottom: "30px",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  paddingTop: "4mm",
-                  paddingLeft: "6mm",
-                  paddingRight: "22mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
                   flex: 1,
                 }}
               >
@@ -1725,7 +1699,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       paddingBottom: "20px",
                       marginBottom: "24px",
                       borderBottom: "1px solid #e8e8ea",
-                      marginTop: "-15px",
                     }}
                   >
                     <div
@@ -1767,7 +1740,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -2028,62 +2001,43 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       </tbody>
                     </table>
                   </div>
-                </div>
 
-                <div
-                  style={{
-                    background: "#f5f5f7",
-                    padding: "16px",
-                    borderRadius: "12px",
-                    marginTop: "20px",
-                  }}
-                >
-                  <h4
+                  <div
                     style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      letterSpacing: "1.8px",
-                      textTransform: "uppercase",
-                      color: "#3a55b0",
-                      marginBottom: "6px",
+                      background: "#f5f5f7",
+                      padding: "16px",
+                      borderRadius: "12px",
+                      marginTop: "20px",
                     }}
                   >
-                    Note
-                  </h4>
-                  <p
-                    style={{
-                      fontSize: "13px",
-                      color: "#454a63",
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    Les valeurs mensuelles sont issues de la simulation
-                    d'irradiation pour le site et tiennent compte des pertes
-                    système. Le total annuel de production s'élève à{" "}
-                    {formatNumber(totalProduction, 2)} kWh.
-                  </p>
+                    <h4
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        letterSpacing: "1.8px",
+                        textTransform: "uppercase",
+                        color: "#3a55b0",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Note
+                    </h4>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#454a63",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      Les valeurs mensuelles sont issues de la simulation
+                      d'irradiation pour le site et tiennent compte des pertes
+                      système. Le total annuel de production s'élève à{" "}
+                      {formatNumber(totalProduction, 2)} kWh.
+                    </p>
+                  </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid #e8e8ea",
-                    fontSize: "8px",
-                    color: "#7a7e95",
-                    minHeight: "50px",
-                    marginTop: "-50px",
-                  }}
-                >
-                  <span>MAFATEC — Énergie solaire</span>
-                  <span
-                    style={{ letterSpacing: "2px", textTransform: "uppercase" }}
-                  >
-                    Étude Installation PV
-                  </span>
-                  <span>Page 4 / 6</span>
-                </div>
+                <PageFooter pageNumber={4} />
               </div>
             </div>
 
@@ -2092,21 +2046,20 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "266mm",
+                minHeight: "297mm",
                 background: "#fff",
-                marginBottom: "10px",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  paddingTop: "4mm",
-                  paddingLeft: "6mm",
-                  paddingRight: "22mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
                   flex: 1,
                 }}
               >
@@ -2118,7 +2071,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       paddingBottom: "20px",
                       marginBottom: "24px",
                       borderBottom: "1px solid #e8e8ea",
-                      marginTop: "-40px",
                     }}
                   >
                     <div
@@ -2160,7 +2112,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -2205,8 +2157,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     style={{
                       border: "1px solid #e8e8ea",
                       borderRadius: "12px",
-                      padding: "20px",
-                      marginBottom: "24px",
+                      padding: "12px",
+                      marginBottom: "16px",
                       background: "#fff",
                     }}
                   >
@@ -2224,7 +2176,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#c93b18",
-                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2249,8 +2200,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     style={{
                       border: "1px solid #e8e8ea",
                       borderRadius: "12px",
-                      padding: "20px",
-                      marginBottom: "24px",
+                      padding: "12px",
+                      marginBottom: "16px",
                       background: "#fff",
                     }}
                   >
@@ -2268,7 +2219,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#a8884a",
-                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2293,7 +2243,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     style={{
                       border: "1px solid #e8e8ea",
                       borderRadius: "12px",
-                      padding: "20px",
+                      padding: "12px",
                       background: "#fff",
                     }}
                   >
@@ -2311,7 +2261,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           height: "12px",
                           borderRadius: "50%",
                           background: "#3a55b0",
-                          marginTop: "14px"
                         }}
                       />
                       <span
@@ -2333,25 +2282,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid #e8e8ea",
-                    fontSize: "8px",
-                    color: "#7a7e95",
-                    minHeight: "50px",
-                  }}
-                >
-                  <span>MAFATEC — Énergie solaire</span>
-                  <span
-                    style={{ letterSpacing: "2px", textTransform: "uppercase" }}
-                  >
-                    Étude Installation PV
-                  </span>
-                  <span>Page 5 / 6</span>
-                </div>
+                <PageFooter pageNumber={5} />
               </div>
             </div>
 
@@ -2360,21 +2291,20 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               className="page"
               style={{
                 width: "210mm",
-                minHeight: "266mm",
+                minHeight: "297mm",
                 background: "#fff",
-                marginBottom: "10px",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  paddingTop: "4mm",
-                  paddingLeft: "6mm",
-                  paddingRight: "22mm",
+                  paddingTop: "10mm",
+                  paddingLeft: "15mm",
+                  paddingRight: "15mm",
+                  paddingBottom: "10mm",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
                   flex: 1,
                 }}
               >
@@ -2386,7 +2316,6 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       paddingBottom: "20px",
                       marginBottom: "24px",
                       borderBottom: "1px solid #e8e8ea",
-                      marginTop: "-20px",
                     }}
                   >
                     <div
@@ -2428,7 +2357,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                         width: "30px",
                         height: "1px",
                         background: "#A82E12",
-                        transform: "translateY(6px)", // Moves the line down by 1px
+                        transform: "translateY(6px)",
                       }}
                     />
                     <span
@@ -2474,16 +2403,16 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     style={{
                       padding: "0px",
                       background: "#fff",
-                      marginBottom: "20px",
+                      marginBottom: "10px",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      minHeight: "380px",
+                      minHeight: "320px",
                     }}
                   >
                     <div
                       style={{
-                        transform: "scale(0.8)",
+                        transform: "scale(0.75)",
                         transformOrigin: "center",
                       }}
                     >
@@ -2527,26 +2456,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid #e8e8ea",
-                    fontSize: "8px",
-                    color: "#7a7e95",
-                    minHeight: "20px",
-                    marginTop: "-20px",
-                  }}
-                >
-                  <span>MAFATEC — Énergie solaire</span>
-                  <span
-                    style={{ letterSpacing: "2px", textTransform: "uppercase" }}
-                  >
-                    Étude Installation PV
-                  </span>
-                  <span>Page 6 / 6</span>
-                </div>
+                <PageFooter pageNumber={6} />
               </div>
             </div>
           </div>

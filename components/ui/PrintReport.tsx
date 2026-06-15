@@ -290,9 +290,9 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
 
   // Consistent padding for all pages
   const pagePadding = {
-    paddingLeft: "10mm",
-    paddingRight: "14mm",
-    paddingTop: "4mm",
+    paddingLeft: "15mm",
+    paddingRight: "15mm",
+    paddingTop: "10mm",
     paddingBottom: "4mm"
   };
 
@@ -328,14 +328,13 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 1 - COVER */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "285mm", 
+              minHeight: "297mm", 
               background: "#13162f", 
               position: "relative", 
               overflow: "hidden",
               marginBottom: "0px",
               display: "flex",
-              flexDirection: "column",
-              paddingLeft:"20px"
+              flexDirection: "column"
             }}>
               <div style={{ 
                 position: "absolute", 
@@ -345,7 +344,9 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
               <div style={{ 
                 position: "relative", 
                 zIndex: 2, 
-                ...pagePadding,
+                paddingTop: "10mm",
+                paddingLeft: "15mm",
+                paddingRight: "15mm",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
@@ -419,7 +420,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 2 - SYNTHÈSE */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "278mm", 
+              minHeight: "297mm", 
               background: "#fff",
               marginBottom: "20px",
               display: "flex",
@@ -594,7 +595,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 3 - CALEPINAGE - FIXED WITH IMG TAG */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "280mm", 
+              minHeight: "297mm", 
               background: "#fff",
               marginBottom: "10px",
               paddingTop: "20px",
@@ -720,7 +721,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 4 - TABLEAU MENSUEL */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "278mm", 
+              minHeight: "297mm", 
               background: "#fff",
               marginBottom: "20px",
               display: "flex",
@@ -931,7 +932,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 5 - COURBES */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "278mm",
+              minHeight: "297mm",
               background: "#fff",
               marginBottom: "20px",
               marginTop: "20px",
@@ -965,7 +966,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   <h2 style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "24px", fontWeight: 600, color: "#15172b", marginBottom: "8px" }}>Courbes <em style={{ fontStyle: "italic", color: "#c93b18" }}>mensuelles</em></h2>
                   <p style={{ fontSize: "11px", color: "#7a7e95", marginTop: "4px", marginBottom: "20px" }}>Profil de production, d'irradiation et de variabilité sur les douze mois de l'année.</p>
 
-                  <div style={{ border: "1px solid #e8e8ea", borderRadius: "12px", padding: "20px", marginBottom: "24px", background: "#fff" }}>
+                  <div style={{ border: "1px solid #e8e8ea", borderRadius: "12px", padding: "12px", marginBottom: "16px", background: "#fff" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                       <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#c93b18" }} />
                       <span style={{ fontSize: "12px", fontWeight: "bold", color: "#15172b" }}>Production mensuelle (kWh)</span>
@@ -973,7 +974,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                     {renderAreaChart(chartDataProduction, "#c93b18", maxProduction, 160)}
                   </div>
 
-                  <div style={{ border: "1px solid #e8e8ea", borderRadius: "12px", padding: "20px", marginBottom: "24px", background: "#fff" }}>
+                  <div style={{ border: "1px solid #e8e8ea", borderRadius: "12px", padding: "12px", marginBottom: "16px", background: "#fff" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                       <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#a8884a" }} />
                       <span style={{ fontSize: "12px", fontWeight: "bold", color: "#15172b" }}>Irradiation mensuelle (kWh/m²)</span>
@@ -1009,7 +1010,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
             {/* PAGE 6 - DIAGRAMME SOLAIRE & CONCLUSION */}
             <div className="page" style={{ 
               width: "210mm", 
-              minHeight: "278mm", 
+              minHeight: "297mm", 
               background: "#fff",
               paddingTop: "20px",
               display: "flex",
@@ -1042,8 +1043,8 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   <h2 style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "24px", fontWeight: 600, color: "#15172b", marginBottom: "8px" }}>Diagramme solaire avec <em style={{ fontStyle: "italic", color: "#c93b18" }}>masques d'ombrage</em></h2>
                   <p style={{ fontSize: "11px", color: "#7a7e95", marginTop: "4px", marginBottom: "20px" }}>Trajectoire du soleil selon l'azimut et la hauteur angulaire, lignes horaires et impact des ombrages sur l'année.</p>
 
-                  <div style={{ padding: "20px", background: "#fff", marginBottom: "20px", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "380px" }}>
-                    <div style={{ transform: "scale(0.9)", transformOrigin: "center" }}>
+                  <div style={{ padding: "0px", background: "#fff", marginBottom: "10px", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "320px" }}>
+                    <div style={{ transform: "scale(0.75)", transformOrigin: "center" }}>
                       {(String(data?.inputs?.location?.latitude).startsWith("42.") || (data?.inputs?.location?.latitude || 0) < 42) && (
                         <Altitude42 obstacles={obstacles || []} />
                       )}

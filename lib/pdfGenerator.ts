@@ -11,7 +11,7 @@ export const generatePDF = async (element: HTMLElement, filename: string = "rapp
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
-      windowWidth: element.scrollWidth,
+      windowWidth: 1200, // Force a desktop-like viewport width
       windowHeight: element.scrollHeight,
     });
     
