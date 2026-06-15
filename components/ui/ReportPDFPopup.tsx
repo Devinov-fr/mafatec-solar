@@ -351,7 +351,12 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
     "/toit-maison.jpg";
 
   // Footer component to ensure consistency
-  const PageFooter = ({ pageNumber, totalPages = 6 }) => (
+  interface PageFooterProps {
+    pageNumber: number;
+    totalPages?: number;
+  }
+
+  const PageFooter: React.FC<PageFooterProps> = ({ pageNumber, totalPages = 6 }) => (
     <div
       style={{
         display: "flex",
