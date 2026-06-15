@@ -131,7 +131,7 @@ const VoltageDropCalculator = ({
   onResult,
 }: VoltageDropCalculatorProps) => {
   const [material, setMaterial] = useState("");
-  const [rho, setRho] = useState("");
+  const [rho, setRho] = useState(1.724e-8);
   const [diameterValue, setDiameterValue] = useState("");
   const [diameterUnit, setDiameterUnit] = useState<"mm" | "inch" | "awg">("mm");
   const [lengthValue, setLengthValue] = useState("");
@@ -263,18 +263,21 @@ const VoltageDropCalculator = ({
             <div className="space-y-1">
               <Label className="text-xs font-bold text-slate-700">Diamètre / taille du fil</Label>
               <div className="flex gap-2">
-                <Input type="number" className="h-10 border-slate-200" value={diameterValue} onChange={(e) => setDiameterValue(e.target.value)} />
+                <Input type="number" className="h-10 border-slate-200" value={diameterValue} onChange={(e) => setDiameterValue(e.target.value)} placeholder="Entrez la valeur" />
                 <select className="rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none" value={diameterUnit} onChange={(e) => setDiameterUnit(e.target.value as any)}>
-                  <option value="mm">mm²</option>
+                  <option value="mm">mm</option>
+                  <option value="inch">inch</option>
+                  <option value="awg">AWG</option>
                 </select>
               </div>
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-bold text-slate-700">Longueur (aller simple)</Label>
               <div className="flex gap-2">
-                <Input type="number" className="h-10 border-slate-200" value={lengthValue} onChange={(e) => setLengthValue(e.target.value)} />
+                <Input type="number" className="h-10 border-slate-200" value={lengthValue} onChange={(e) => setLengthValue(e.target.value)} placeholder="Entrez la longueur" />
                 <select className="rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none" value={lengthUnit} onChange={(e) => setLengthUnit(e.target.value as any)}>
                   <option value="m">mètres</option>
+                  <option value="ft">pieds</option>
                 </select>
               </div>
             </div>
@@ -293,15 +296,21 @@ const VoltageDropCalculator = ({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs font-bold text-slate-700">Tension (V)</Label>
-                <Input className="h-10 mt-1 border-slate-200" type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} />
+                <Input className="h-10 mt-1 border-slate-200" type="number" value={voltage} onChange={(e) => setVoltage(e.target.value)} placeholder="Ex: 230" />
               </div>
               <div>
                 <Label className="text-xs font-bold text-slate-700">Courant (A)</Label>
-                <Input className="h-10 mt-1 border-slate-200" type="number" value={current} onChange={(e) => setCurrent(e.target.value)} />
+                <Input className="h-10 mt-1 border-slate-200" type="number" value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="Ex: 10" />
               </div>
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" className="border-slate-300 px-8" onClick={onClose}>Fermer</Button>
