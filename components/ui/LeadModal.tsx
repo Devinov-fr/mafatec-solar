@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -183,7 +183,40 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
     email: "",
   });
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [countdown, setCountdown] = useState(3);
 
+  // Auto-close and reload after email sent
+  useEffect(() => {
+    if (step === 3 && submissionResult) {
+      // Reset countdown
+      setCountdown(3);
+      
+      // Countdown timer
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      // Auto-close and reload timer
+      const timer = setTimeout(() => {
+        onClose();
+        window.location.reload();
+      }, 3000);
+      
+      // Cleanup timers if component unmounts
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timer);
+      };
+    }
+  }, [step, submissionResult, onClose]);
+
+  // Don't render if not open - but keep hooks above this point
   if (!isOpen) return null;
 
   const isPro = universe === "pro";
@@ -568,9 +601,17 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
             <p className="text-[0.88rem] leading-[1.65] text-[var(--text-soft)] max-w-[420px] mx-auto">
               {msg}
             </p>
+            {countdown > 0 && (
+              <p className="text-[0.75rem] text-[var(--muted)] mt-4 animate-pulse">
+                Redirection vers l'étude dans {countdown} secondes...
+              </p>
+            )}
             {extra}
             <button
-              onClick={() => location.reload()}
+              onClick={() => {
+                onClose();
+                window.location.reload();
+              }}
               className="btn-success-close w-full mt-8 py-4 px-9 rounded-[var(--r-sm)] bg-[#f5f5f7] text-[var(--text)] font-bold tracking-wide hover:bg-slate-200 transition-all"
             >
               Nouvelle étude

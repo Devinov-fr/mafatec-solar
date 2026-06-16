@@ -15,10 +15,13 @@ const Footer = () => {
           RGE · Qualifelec · Qualit&apos;EnR · IRVE · KNX
         </div>
 
-        {/* Right: Logo */}
+        <div className="footer-logo"> </div>
+
+        {/* Right: Logo 
         <div className="footer-logo">
           <img src="/logo-mafatec-2048x423.png" alt="MAFATEC" className="h-4 w-auto opacity-80 grayscale" />
         </div>
+        */}
       </div>
     </footer>
   );
