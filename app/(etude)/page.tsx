@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Cookies from "js-cookie";
+import { useSession } from "next-auth/react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -143,7 +143,7 @@ const VoltageDropCalculator = ({
   onResult,
 }: VoltageDropCalculatorProps) => {
   const [material, setMaterial] = useState("");
-  const [rho, setRho] = useState(1.724e-8);
+  const [rho, setRho] = useState("1.724e-8");
   const [diameterValue, setDiameterValue] = useState("");
   const [diameterUnit, setDiameterUnit] = useState<"mm" | "inch" | "awg">("mm");
   const [lengthValue, setLengthValue] = useState("");
@@ -338,6 +338,7 @@ const VoltageDropCalculator = ({
 };
 
 const Home = () => {
+  const { data: session, status } = useSession();
   const [clickedPosition, setClickedPosition] = useState({
     lat: 0,
     lng: 0,
@@ -386,16 +387,16 @@ const Home = () => {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    const unlocked = Cookies.get("mafatec-etude-unlocked") === "true";
-    setIsUnlocked(unlocked);
-  }, []);
+    if (status === "authenticated") {
+      setIsUnlocked(true);
+    } else if (status === "unauthenticated") {
+      setIsUnlocked(false);
+    }
+  }, [status]);
 
   const handleUnlock = (data: any) => {
     setUserData(data);
     setIsUnlocked(true);
-    // Note: LeadModal now handles setting the cookie upon API success, 
-    // but we keep this as a fallback for consistency if handleUnlock is called directly.
-    Cookies.set("mafatec-etude-unlocked", "true", { expires: 7 });
   };
 
   // Ref for printing
@@ -1365,9 +1366,24 @@ const handlePointChange = (
         studyData={{
           puissance: puissancePv,
           adresse: clickedPosition.address,
+          lat: clickedPosition.lat,
+          lng: clickedPosition.lng,
           production: data?.outputs?.totals?.fixed.E_y,
           irradiation: data?.outputs?.totals?.fixed["H(i)_y"],
           variabilite: data?.outputs?.totals?.fixed.SD_y,
+          l_aoi: data?.outputs?.totals?.fixed.l_aoi,
+          l_spec: data?.outputs?.totals?.fixed.l_spec,
+          l_tg: data?.outputs?.totals?.fixed.l_tg,
+          l_total: data?.outputs?.totals?.fixed.l_total,
+          monthly: data?.outputs?.monthly?.fixed,
+          data: data, // Full PVGIS object
+          inclinaison,
+          azimut,
+          systemLosses,
+          panels,
+          obstacles,
+          voltageDropResult,
+          calepinageImage: panels.find(p => p.imageUrl)?.imageUrl || null,
         }}
       />
 
