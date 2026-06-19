@@ -1,26 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { User, Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 
 export default function LoginPage() {
-  const [role, setRole] = useState<'user' | 'admin'>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
-    const roleParam = searchParams.get('role');
     if (emailParam) setEmail(emailParam);
-    if (roleParam === 'admin') setRole('admin');
   }, [searchParams]);
+
+  // If already authenticated, redirect based on role
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      const userRole = (session.user as any).role;
+      if (userRole === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/mon-espace');
+      }
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +58,30 @@ export default function LoginPage() {
         }
       } else {
         toast.success('Connexion réussie');
-        router.push(role === 'admin' ? '/admin' : '/mon-espace');
+        
+        // Wait a moment for session to be established
+        setTimeout(async () => {
+          try {
+            // Fetch user profile to check role
+            const res = await fetch('/api/me/profile');
+            const data = await res.json();
+            
+            if (data.success && data.user) {
+              // Redirect based on role
+              if (data.user.role === 'admin') {
+                router.push('/admin');
+              } else {
+                router.push('/mon-espace');
+              }
+            } else {
+              // Fallback: redirect to mon-espace if we can't fetch profile
+              router.push('/mon-espace');
+            }
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            router.push('/mon-espace');
+          }
+        }, 500);
       }
     } catch (error) {
       toast.error('Une erreur est survenue');
@@ -67,7 +100,7 @@ export default function LoginPage() {
           <div className="mt-auto">
             <span className="aa-eyebrow flex items-center gap-[0.6rem] font-sans text-[0.66rem] font-semibold tracking-[0.28em] uppercase text-[#A82E12] mb-[1.6rem]">
               <span className="mark w-[26px] h-px bg-[#A82E12]"></span>
-              Espace client & administration
+              Espace client
             </span>
             <h2 className="font-serif font-medium text-[2.4rem] leading-[1.08] tracking-[-0.01em] text-[#f3efe6] mb-[1.2rem]">
               Retrouvez toutes vos <em className="not-italic italic text-[#A82E12]">études solaires</em> en un seul endroit
@@ -98,30 +131,11 @@ export default function LoginPage() {
         <div className="auth-card w-full max-w-[430px] bg-white border border-[#e8e8ea] rounded-[26px] p-[2.8rem_2.6rem] shadow-[0_40px_90px_rgba(11,14,29,0.22)]">
           <div className="ac-head mb-[1.8rem]">
             <h1 className="font-serif font-semibold text-[1.7rem] tracking-[-0.01em] text-[#15172b] mb-[0.5rem]">
-              {role === 'admin' ? 'Espace administration' : 'Connexion à votre espace'}
+              Connexion à votre espace
             </h1>
             <p className="text-[0.86rem] text-[#454a63] font-sans leading-[1.55]">
-              {role === 'admin' ? 'Accédez à la supervision de toutes les études.' : 'Accédez à votre tableau de bord pour suivre vos études.'}
+              Accédez à votre tableau de bord pour suivre vos études.
             </p>
-          </div>
-
-          <div className="auth-seg flex gap-[0.4rem] p-[0.32rem] bg-[#f5f5f7] border border-[#e8e8ea] rounded-[10px] mb-[1.8rem]">
-            <button 
-              type="button" 
-              onClick={() => setRole('user')}
-              className={`flex-1 inline-flex items-center justify-center gap-[0.45rem] p-[0.7rem_1rem] rounded-[7px] font-sans font-semibold text-[0.8rem] transition-all duration-300 ${role === 'user' ? 'bg-[#0b0e1d] text-white' : 'text-[#454a63] hover:text-[#0b0e1d]'}`}
-            >
-              <User size={15} />
-              Client
-            </button>
-            <button 
-              type="button" 
-              onClick={() => setRole('admin')}
-              className={`flex-1 inline-flex items-center justify-center gap-[0.45rem] p-[0.7rem_1rem] rounded-[7px] font-sans font-semibold text-[0.8rem] transition-all duration-300 ${role === 'admin' ? 'bg-[#0b0e1d] text-white' : 'text-[#454a63] hover:text-[#0b0e1d]'}`}
-            >
-              <Shield size={15} />
-              Administration
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-[1.15rem]">
@@ -176,15 +190,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {role === 'user' ? (
-            <div className="auth-foot mt-[1.5rem] text-center text-[0.8rem] text-[#454a63] font-sans">
-              Pas encore de compte&thinsp;? <a href="/" className="text-[#c93b18] font-semibold hover:underline">Lancez une étude gratuite</a> pour le créer.
-            </div>
-          ) : (
-            <div className="auth-demo mt-[1.5rem] p-[0.9rem_1rem] rounded-[8px] bg-transparent border border-dashed border-transparent text-[0.72rem] text-[#7a7e95] leading-[1.6] font-sans">
-
-            </div>
-          )}
+          <div className="auth-foot mt-[1.5rem] text-center text-[0.8rem] text-[#454a63] font-sans">
+            Pas encore de compte&thinsp;? <a href="/" className="text-[#c93b18] font-semibold hover:underline">Lancez une étude gratuite</a> pour le créer.
+          </div>
         </div>
       </main>
     </div>

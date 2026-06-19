@@ -1,3 +1,4 @@
+// app/api/send-study-email/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
@@ -5,7 +6,6 @@ import Study from "@/models/Study";
 import Lead from "@/models/Lead";
 import ActivationToken from "@/models/ActivationToken";
 import { sendEmail } from "@/lib/email";
-import { generateStudyPDFServer } from "@/lib/serverPDFGenerator";
 import { getStudyReadyEmailHtml, getActivationEmailHtml } from "@/lib/email";
 import crypto from 'crypto';
 
@@ -21,7 +21,14 @@ export async function POST(req: NextRequest) {
       entreprise,
       universe,
       studyData,
+      pdfBase64,
     } = body;
+
+    console.log('📝 ========== STARTING SEND STUDY EMAIL ==========');
+    console.log('📝 Email:', email);
+    console.log('📝 Prenom:', prenom);
+    console.log('📝 PDF Base64 received:', pdfBase64 ? `Yes (${pdfBase64.length} chars)` : 'No');
+    console.log('📝 studyData keys:', Object.keys(studyData || {}));
 
     // Validate required fields
     if (!prenom || !email || !studyData) {
@@ -32,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user exists
-    let existingUser = await User.findOne({ email });
+    let existingUser = await User.findOne({ email: email.toLowerCase() });
     let isNewUser = false;
     let activationToken = null;
 
@@ -43,8 +50,8 @@ export async function POST(req: NextRequest) {
       const token = crypto.randomUUID();
       
       // Create new user
-      const user = await User.create({
-        email,
+      existingUser = await User.create({
+        email: email.toLowerCase(),
         prenom,
         nom,
         entreprise: entreprise || "",
@@ -52,22 +59,35 @@ export async function POST(req: NextRequest) {
         activated: false,
       });
       
-      existingUser = user;
+      console.log('✅ User created:', existingUser.email);
 
       // Create activation token
-      const tokenDoc = await ActivationToken.create({
+      await ActivationToken.create({
         token: token,
-        userEmail: email,
+        userEmail: email.toLowerCase(),
         expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
       });
       
       activationToken = token;
+    } else {
+      console.log('✅ User exists:', existingUser.email);
     }
 
-    // Save study to database
+    // Generate public access token for the report
+    const publicToken = crypto.randomBytes(32).toString('hex');
+    const publicTokenExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    console.log('🔑 Public token generated:', publicToken.substring(0, 20) + '...');
+
+    // Prepare study data
+    const productionAnnuelle = studyData.production || 0;
+    const irradiationAnnuelle = studyData.irradiation || 0;
+    const variabiliteAnnuelle = studyData.variabilite || 0;
+
+    // Create study with all fields matching your model
     const study = await Study.create({
-      userEmail: email,
-      puissance: studyData.puissance,
+      userEmail: email.toLowerCase(),
+      puissance: studyData.puissance || "0",
       adresse: studyData.adresse || "Adresse non définie",
       lat: studyData.lat || 0,
       lng: studyData.lng || 0,
@@ -78,89 +98,94 @@ export async function POST(req: NextRequest) {
         panels: studyData.panels || [],
         obstacles: studyData.obstacles || [],
         voltageDropResult: studyData.voltageDropResult || null,
+        calepinageImage: studyData.calepinageImage || null,
       },
       results: {
-        production: studyData.production || 0,
-        irradiation: studyData.irradiation || 0,
-        variabilite: studyData.variabilite || 0,
+        production: productionAnnuelle,
+        irradiation: irradiationAnnuelle,
+        variabilite: variabiliteAnnuelle,
         monthly: studyData.monthly || [],
         fullData: studyData.data || {},
       },
+      // Public access fields
+      publicToken: publicToken,
+      publicTokenExpires: publicTokenExpires,
+    });
+
+    console.log('✅ Study created with ID:', study._id);
+    console.log('✅ Study publicToken:', study.publicToken);
+
+    // Create the report URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const reportUrl = `${appUrl}/rapport-public?id=${study._id}&token=${publicToken}`;
+    console.log('🔗 Report URL:', reportUrl);
+
+    // Update study with report URL
+    await Study.findByIdAndUpdate(study._id, {
+      reportUrl: reportUrl,
     });
 
     // Save lead
     await Lead.create({
       prenom,
       nom,
-      email,
+      email: email.toLowerCase(),
       entreprise: entreprise || "",
       universe: universe || "part",
       studyData: {
-        puissance: studyData.puissance,
+        puissance: studyData.puissance || "0",
         adresse: studyData.adresse || "Adresse non définie",
-        production: studyData.production || 0,
-        irradiation: studyData.irradiation || 0,
-        variabilite: studyData.variabilite || 0,
+        production: productionAnnuelle,
+        irradiation: irradiationAnnuelle,
+        variabilite: variabiliteAnnuelle,
       },
     });
 
-    // --- Generate PDF on server ---
-    let pdfBuffer: Buffer | null = null;
-    let pdfGenerated = false;
+    console.log('✅ Lead created for:', email);
 
-    try {
-      // Prepare data for PDF generation
-      const pdfData = {
-        puissance: studyData.puissance,
-        adresse: studyData.adresse || "Adresse non définie",
-        production: studyData.production || 0,
-        irradiation: studyData.irradiation || 0,
-        variabilite: studyData.variabilite || 0,
-        inclinaison: studyData.inclinaison || "35",
-        azimut: studyData.azimut || "0",
-        systemLosses: studyData.systemLosses || "14",
-        monthlyData: studyData.monthly || [],
-      };
+    // --- Store PDF if provided ---
+    const attachments = [];
 
-      // Generate PDF
-      pdfBuffer = await generateStudyPDFServer(pdfData);
-      pdfGenerated = true;
-      console.log(`✅ PDF generated successfully for ${email}`);
-      
-      // Update study with report URL
-      await Study.findByIdAndUpdate(study._id, {
-        reportUrl: `pdf-${study._id}-${Date.now()}.pdf`,
-      });
-      
-    } catch (pdfError) {
-      console.error('❌ Error generating PDF on server:', pdfError);
-      // Continue without PDF attachment
+    if (pdfBase64) {
+      try {
+        const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+        attachments.push({
+          filename: `etude-mafatec-${studyData.puissance || 'PV'}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        });
+        console.log(`📎 PDF attachment added (${pdfBuffer.length} bytes)`);
+        
+        // Store PDF in study (using the pdfData field from your model)
+        await Study.findByIdAndUpdate(study._id, {
+          pdfData: pdfBuffer,
+          pdfStored: true,
+        });
+      } catch (error) {
+        console.error('❌ Error processing PDF:', error);
+      }
+    } else {
+      console.log('⚠️ No PDF attachment to add');
     }
 
-    // --- Send email with PDF attachment ---
-    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`;
-    const activationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/activate?token=${activationToken}&email=${encodeURIComponent(email)}`;
+    // --- Prepare email ---
+    const loginUrl = `${appUrl}/login`;
+    const activationUrl = `${appUrl}/activate?token=${activationToken}&email=${encodeURIComponent(email)}`;
+
+    const studyForEmail = {
+      _id: study._id,
+      publicToken: publicToken,
+      reportUrl: reportUrl,
+      publicTokenExpires: publicTokenExpires,
+      puissance: studyData.puissance || "0",
+      adresse: studyData.adresse || "Adresse non définie",
+      production: productionAnnuelle,
+      irradiation: irradiationAnnuelle,
+      variabilite: variabiliteAnnuelle,
+    };
 
     let emailHtml = '';
     let subject = '';
-    const attachments = [];
-
-    // Add PDF as attachment if generated
-    if (pdfBuffer) {
-      attachments.push({
-        filename: `rapport-installation-pv-${studyData.puissance}kwc.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      });
-    }
-
-    const studyForEmail = {
-      puissance: studyData.puissance,
-      adresse: studyData.adresse || "Adresse non définie",
-      production: studyData.production || 0,
-      irradiation: studyData.irradiation || 0,
-      variabilite: studyData.variabilite || 0,
-    };
 
     if (isNewUser) {
       emailHtml = getActivationEmailHtml(prenom, activationUrl, studyForEmail);
@@ -169,6 +194,10 @@ export async function POST(req: NextRequest) {
       emailHtml = getStudyReadyEmailHtml(prenom, loginUrl, studyForEmail);
       subject = `Votre nouvelle étude MAFATEC est prête`;
     }
+
+    console.log(`📧 Sending email to: ${email}`);
+    console.log(`📎 Attachments count: ${attachments.length}`);
+    console.log(`🔗 Report URL in email: ${reportUrl}`);
 
     // Send email
     const emailResult = await sendEmail({
@@ -186,18 +215,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Email sent to ${email} with PDF: ${pdfGenerated}`);
+    console.log(`✅ Email sent successfully to ${email} with PDF: ${attachments.length > 0}`);
+    console.log('📝 ========== SEND STUDY EMAIL COMPLETE ==========');
 
     return NextResponse.json({
       success: true,
       isNew: isNewUser,
       activationToken: activationToken,
-      pdfAttached: pdfGenerated,
-      message: `Study created and email sent${pdfGenerated ? ' with PDF attachment' : ''}`,
+      pdfAttached: attachments.length > 0,
+      reportUrl: reportUrl,
+      studyId: study._id,
+      message: `Study created and email sent${attachments.length > 0 ? ' with PDF attachment' : ''}`,
     });
 
   } catch (error) {
-    console.error('Error in send-study-email API:', error);
+    console.error('❌ Error in send-study-email API:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

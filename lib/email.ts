@@ -1,3 +1,4 @@
+// lib/email.ts
 import nodemailer from 'nodemailer';
 import path from 'path';
 
@@ -106,6 +107,41 @@ const getStudyCardHtml = (study: any) => {
   `;
 };
 
+const getReportButtonHtml = (study: any) => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const reportUrl = study.reportUrl || `${appUrl}/rapport-public?id=${study._id}&token=${study.publicToken}`;
+  const daysValid = study.publicTokenExpires 
+    ? Math.ceil((new Date(study.publicTokenExpires).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    : 30;
+
+  return `
+    <tr><td style="padding:8px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fbf3ef;border:1px solid #efccbf;border-radius:12px;">
+        <tr><td style="padding:20px 24px; text-align: center;">
+          <p style="margin:0 0 12px;font-size:14px;color:#54586a;">
+            📄 <strong>Consultez votre rapport complet en ligne</strong>
+          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" style="background-color:#c93b18;border-radius:8px;">
+                <a href="${reportUrl}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">
+                  📄 Télécharger le rapport PDF
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:12px 0 0;font-size:11px;color:#8a7a68;">
+            🔗 Lien valable ${daysValid} jour${daysValid > 1 ? 's' : ''}
+          </p>
+          <p style="margin:4px 0 0;font-size:10px;color:#b3a898;">
+            ⚡ Aucune connexion requise
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  `;
+};
+
 export const getActivationEmailHtml = (prenom: string, activationUrl: string, study: any) => {
   return `
 <!DOCTYPE html>
@@ -124,9 +160,11 @@ export const getActivationEmailHtml = (prenom: string, activationUrl: string, st
     <tr><td style="padding:40px 40px 8px;">
       <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#c93b18;">Votre étude est prête</p>
       <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#15171f;font-weight:normal;">Merci, ${prenom} — voici votre analyse solaire</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Votre étude de production photovoltaïque a bien été générée. Le rapport complet est disponible ci-dessous.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Votre étude de production photovoltaïque a bien été générée.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">📎 <strong>Le rapport PDF est en pièce jointe.</strong> Vous pouvez également le consulter en ligne via le lien ci-dessous.</p>
     </td></tr>
     ${getStudyCardHtml(study)}
+    ${getReportButtonHtml(study)}
     <tr><td style="padding:24px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fbf3ef;border:1px solid #efccbf;border-radius:12px;">
         <tr><td style="padding:24px 26px;">
@@ -169,9 +207,11 @@ export const getStudyReadyEmailHtml = (prenom: string, loginUrl: string, study: 
     <tr><td style="padding:40px 40px 8px;">
       <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#c93b18;">Nouvelle étude disponible</p>
       <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#15171f;font-weight:normal;">Votre nouvelle analyse solaire est prête</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Bonjour ${prenom}, votre nouvelle étude photovoltaïque vient d'être générée. Vous trouverez le rapport PDF en pièce jointe.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Bonjour ${prenom}, votre nouvelle étude photovoltaïque vient d'être générée.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">📎 <strong>Le rapport PDF est en pièce jointe.</strong> Vous pouvez également le consulter en ligne via le lien ci-dessous.</p>
     </td></tr>
     ${getStudyCardHtml(study)}
+    ${getReportButtonHtml(study)}
     <tr><td style="padding:24px 40px 0;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
         <td align="center" style="background-color:#0b0e1d;border-radius:8px;">
@@ -210,6 +250,7 @@ export const getEmailWithPDFHtml = (prenom: string, study: any) => {
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Vous trouverez ci-joint le rapport complet au format PDF.</p>
     </td></tr>
     ${getStudyCardHtml(study)}
+    ${getReportButtonHtml(study)}
     <tr><td style="padding:30px 40px 0;">
       <p style="margin:0 0 8px;font-size:14px;font-weight:bold;color:#15171f;">📎 Pièce jointe : Rapport d'étude photovoltaïque</p>
       <p style="margin:0 0 16px;font-size:13px;color:#54586a;">Le fichier PDF contient l'intégralité des résultats de la simulation, y compris les graphiques mensuels et les analyses détaillées.</p>

@@ -1,3 +1,4 @@
+// app/api/studies/route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
@@ -130,37 +131,60 @@ export async function POST(req: Request) {
       console.log('✅ User exists:', user.email);
     }
 
-    // 2. Create Study
+    // Generate public access token for the report
+    const publicToken = crypto.randomBytes(32).toString('hex');
+    const publicTokenExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    console.log('🔑 Public token generated:', publicToken);
+
+    // Prepare study data
+    const productionAnnuelle = studyData.production || 0;
+    const irradiationAnnuelle = studyData.irradiation || 0;
+    const variabiliteAnnuelle = studyData.variabilite || 0;
+
+    // 2. Create Study with ALL fields including publicToken
     const study = await Study.create({
       userEmail: user.email,
-      puissance: studyData.puissance,
-      adresse: studyData.adresse,
-      lat: studyData.lat,
-      lng: studyData.lng,
+      puissance: studyData.puissance || "0",
+      adresse: studyData.adresse || "Adresse non définie",
+      lat: studyData.lat || 0,
+      lng: studyData.lng || 0,
       params: studyData.params || {
-        inclinaison: studyData.inclinaison,
-        azimut: studyData.azimut,
-        pertes: studyData.systemLosses,
-        panels: studyData.panels,
-        obstacles: studyData.obstacles,
-        voltageDropResult: studyData.voltageDropResult,
-        calepinageImage: studyData.calepinageImage,
+        inclinaison: studyData.inclinaison || "35",
+        azimut: studyData.azimut || "0",
+        systemLosses: studyData.systemLosses || "14",
+        panels: studyData.panels || [],
+        obstacles: studyData.obstacles || [],
+        voltageDropResult: studyData.voltageDropResult || null,
+        calepinageImage: studyData.calepinageImage || null,
       },
       results: studyData.results || {
-        production: studyData.production,
-        irradiation: studyData.irradiation,
-        variabilite: studyData.variabilite,
-        l_aoi: studyData.l_aoi,
-        l_spec: studyData.l_spec,
-        l_tg: studyData.l_tg,
-        l_total: studyData.l_total,
-        monthly: studyData.monthly,
-        data: studyData.data, // Full PVGIS object
+        production: productionAnnuelle,
+        irradiation: irradiationAnnuelle,
+        variabilite: variabiliteAnnuelle,
+        monthly: studyData.monthly || [],
+        fullData: studyData.data || {},
       },
+      // IMPORTANT: These fields MUST be set
+      publicToken: publicToken,
+      publicTokenExpires: publicTokenExpires,
     });
-    console.log('✅ Study created:', study._id);
 
+    console.log('✅ Study created with ID:', study._id);
+    console.log('✅ Study publicToken saved:', study.publicToken);
+
+    // Create the report URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const reportUrl = `${appUrl}/rapport-public?id=${study._id}&token=${publicToken}`;
+    console.log('🔗 Report URL:', reportUrl);
+
+    // Update study with report URL
+    await Study.findByIdAndUpdate(study._id, {
+      reportUrl: reportUrl,
+    });
+
+    console.log('✅ Study updated with reportUrl:', reportUrl);
+
     let activationToken = null;
 
     // --- Generate PDF ---
@@ -229,11 +253,15 @@ export async function POST(req: Request) {
     }
 
     const studyForEmail = {
-      puissance: studyData.puissance,
+      _id: study._id,
+      publicToken: publicToken,
+      reportUrl: reportUrl,
+      publicTokenExpires: publicTokenExpires,
+      puissance: studyData.puissance || "0",
       adresse: studyData.adresse || 'Adresse non définie',
-      production: studyData.production || 0,
-      irradiation: studyData.irradiation || 0,
-      variabilite: studyData.variabilite || 0,
+      production: productionAnnuelle,
+      irradiation: irradiationAnnuelle,
+      variabilite: variabiliteAnnuelle,
     };
 
     if (isNewUser || !user.activated) {
@@ -267,6 +295,7 @@ export async function POST(req: Request) {
 
     console.log(`📧 Sending email to: ${email}`);
     console.log(`📎 Attachments count: ${attachments.length}`);
+    console.log(`🔗 Report URL: ${reportUrl}`);
     if (attachments.length > 0) {
       console.log(`📄 Attachment: ${attachments[0].filename} (${attachments[0].content.length} bytes)`);
     }
@@ -296,6 +325,8 @@ export async function POST(req: Request) {
       studyId: study._id,
       activationToken,
       pdfAttached: pdfGenerated,
+      reportUrl: reportUrl,
+      publicToken: publicToken,
     }, { status: 201 });
 
   } catch (error: any) {

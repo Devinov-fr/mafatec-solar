@@ -18,13 +18,32 @@ const StudySchema = new Schema({
   lat: Number,
   lng: Number,
   params: {
-    type: Schema.Types.Mixed, // Inclinaison, azimut, pertes, ombrages, calepinage...
+    type: Schema.Types.Mixed, 
   },
   results: {
-    type: Schema.Types.Mixed, // Production, irradiation, variabilité, mensuels...
+    type: Schema.Types.Mixed, 
   },
   reportUrl: {
     type: String,
+  },
+  // Public access field
+  publicToken: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true,
+  },
+  publicTokenExpires: {
+    type: Date,
+    required: false,
+  },
+  pdfData: {
+    type: Buffer,
+    required: false,
+  },
+  pdfStored: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

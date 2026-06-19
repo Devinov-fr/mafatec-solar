@@ -56,38 +56,75 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) {
-      const firstErr = document.querySelector<HTMLInputElement>(".err");
-      firstErr?.focus();
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/studies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, universe, studyData }),
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setSubmissionResult({ 
-          isNew: data.isNew, 
-          user: { activated: !data.isNew },
-          activationLink: data.activationToken ? `activate?token=${data.activationToken}&email=${encodeURIComponent(formData.email)}` : undefined
-        });
-        setStep(3);
-        onUnlock({ ...formData, universe });
-      } else {
-        toast.error(data.error || "Une erreur est survenue lors de l'envoi.");
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validate()) {
+    const firstErr = document.querySelector<HTMLInputElement>(".err");
+    firstErr?.focus();
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    // Make sure studyData has all required fields
+    const payload = {
+      ...formData,
+      type: universe, // Add type field for the API
+      universe: universe,
+      studyData: {
+        // Ensure all required fields are present
+        puissance: studyData?.puissance || "0",
+        adresse: studyData?.adresse || "Adresse non définie",
+        lat: studyData?.lat || 0,
+        lng: studyData?.lng || 0,
+        inclinaison: studyData?.inclinaison || "35",
+        azimut: studyData?.azimut || "0",
+        systemLosses: studyData?.systemLosses || "14",
+        panels: studyData?.panels || [],
+        production: studyData?.production || 0,
+        irradiation: studyData?.irradiation || 0,
+        variabilite: studyData?.variabilite || 0,
+        monthly: studyData?.monthly || [],
+        data: studyData?.data || {},
+        params: studyData?.params || {},
+        results: studyData?.results || {},
+        voltageDropResult: studyData?.voltageDropResult || null,
+        calepinageImage: studyData?.calepinageImage || null,
+        obstacles: studyData?.obstacles || [],
       }
-    } catch {
-      toast.error("Une erreur de connexion est survenue.");
-    } finally {
-      setIsSubmitting(false);
+    };
+
+    console.log('📤 Sending payload:', payload);
+
+    const response = await fetch("/api/studies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      setSubmissionResult({ 
+        isNew: data.isNew, 
+        user: { activated: !data.isNew },
+        activationLink: data.activationToken ? `activate?token=${data.activationToken}&email=${encodeURIComponent(formData.email)}` : undefined
+      });
+      setStep(3);
+      // Pass the complete data to onUnlock
+      onUnlock({ 
+        ...formData, 
+        universe,
+        studyId: data.studyId,
+        reportUrl: data.reportUrl
+      });
+    } else {
+      toast.error(data.error || "Une erreur est survenue lors de l'envoi.");
     }
-  };
+  } catch (error) {
+    console.error('❌ Submit error:', error);
+    toast.error("Une erreur de connexion est survenue.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   /* ── STEP 1 ── */
   const renderStep1 = () => (
@@ -225,14 +262,11 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
         extra = (
           <div className="bg-[#f5f5f7] border border-[#e8e8ea] rounded-xl p-6 text-left space-y-4 mt-6">
             <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7e95]">
-              <Mail size={14} /> Lien d'activation (simulation d'email)
+              <Mail size={14} /> Lien d'activation
             </span>
             <a href={tokenLink} className="w-full py-3.5 px-6 rounded-[6px] bg-[#c93b18] text-white font-bold text-[0.8rem] flex items-center justify-center gap-2 transition-all hover:brightness-105">
               Activer mon compte <ArrowRight size={16} />
             </a>
-            <span className="text-[10px] text-[#7a7e95] block leading-normal italic">
-              Dans la version finale, ce lien est transmis uniquement par email. Affiché ici pour vous permettre de tester le parcours.
-            </span>
           </div>
         );
       }
@@ -247,7 +281,7 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
       extra = (
         <div className="bg-[#f5f5f7] border border-[#e8e8ea] rounded-xl p-6 text-left space-y-4 mt-6">
           <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7e95]">
-            <Mail size={14} /> Lien d'activation (simulation d'email)
+            <Mail size={14} /> Lien d'activation
           </span>
           <a href={`/login?email=${encodeURIComponent(email)}`} className="w-full py-3.5 px-6 rounded-[6px] bg-[#3a55b0] text-white font-bold text-[0.8rem] flex items-center justify-center gap-2 transition-all hover:bg-black">
             Activer mon compte <ArrowRight size={16} />

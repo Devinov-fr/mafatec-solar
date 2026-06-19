@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, User as UserIcon, FileText, Download, Users, Zap, CheckCircle, ShieldCheck } from 'lucide-react';
+import { LogOut, Search, User as UserIcon, FileText, Download, Users, Zap, CheckCircle, ShieldCheck, Mail, Upload, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -14,26 +15,32 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?role=admin');
+      return;
     }
 
     if (status === 'authenticated') {
-      if ((session.user as any).role !== 'admin') {
+      const userRole = (session.user as any)?.role;
+      console.log('User role:', userRole);
+      
+      if (userRole !== 'admin') {
+        toast.error('Accès réservé aux administrateurs');
         router.push('/mon-espace');
-      } else {
-        fetchData();
+        return;
       }
+      fetchData();
     }
-  }, [status]);
+  }, [status, session]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const [studiesRes, usersRes] = await Promise.all([
-        fetch(`/api/admin/studies`),
+        fetch('/api/admin/studies'),
         fetch('/api/admin/users')
       ]);
       
@@ -46,6 +53,78 @@ export default function AdminPage() {
       toast.error('Erreur de chargement');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExportEmails = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/admin/export-emails', {
+        credentials: 'include',
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Prepare data for Excel with proper headers
+        const excelData = data.users.map((user: any) => ({
+          'Email': user.email,
+          'Prénom': user.prenom || '',
+          'Nom': user.nom || '',
+          'Type': user.type === 'pro' ? 'Professionnel' : 'Particulier',
+          'Entreprise': user.entreprise || '',
+          'Activé': user.activated ? 'Oui' : 'Non',
+          "Nombre d'études": user.studyCount || 0
+        }));
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths for better readability
+        ws['!cols'] = [
+          { wch: 30 }, // Email
+          { wch: 15 }, // Prénom
+          { wch: 15 }, // Nom
+          { wch: 15 }, // Type
+          { wch: 20 }, // Entreprise
+          { wch: 10 }, // Activé
+          { wch: 18 }  // Nombre d'études
+        ];
+
+        // Append sheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Utilisateurs');
+
+        // Generate Excel file as binary
+        const excelBuffer = XLSX.write(wb, { 
+          bookType: 'xlsx', 
+          type: 'array',
+          bookSST: false
+        });
+        
+        // Create blob and download
+        const blob = new Blob([excelBuffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `export-utilisateurs-${new Date().toISOString().split('T')[0]}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success(`${data.users.length} utilisateurs exportés avec succès au format Excel`);
+      } else {
+        toast.error(data.error || 'Erreur lors de l\'export');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Une erreur est survenue lors de l\'export');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -66,11 +145,6 @@ export default function AdminPage() {
     const hay = `${st.userEmail} ${st.adresse} ${st.puissance}`.toLowerCase();
     return hay.includes(search.toLowerCase());
   });
-
-  const totalPw = studies.reduce((acc, st) => {
-    const p = parseFloat(String(st.puissance).replace(',', '.'));
-    return acc + (isNaN(p) ? 0 : p);
-  }, 0);
 
   return (
     <div className="dash min-h-screen bg-[#f5f5f7] font-sans">
@@ -98,7 +172,7 @@ export default function AdminPage() {
       </header>
 
       <main className="dash-main max-w-[1200px] mx-auto p-[3rem_2.2rem_5rem]">
-        <div className="dash-head mb-[2.4rem]">
+        <div className="dash-head flex items-end justify-between gap-[1.5rem] flex-wrap mb-[2.4rem]">
           <div>
             <span className="dh-eyebrow inline-flex items-center gap-[0.55rem] font-sans text-[0.64rem] font-bold tracking-[0.2em] uppercase text-[#c93b18] mb-[0.7rem]">
               <span className="mark w-[22px] h-[1.4px] bg-[#c93b18]"></span>
@@ -109,10 +183,24 @@ export default function AdminPage() {
             </h1>
             <p className="dh-sub text-[0.92rem] text-[#454a63] mt-[0.5rem]">Suivi des simulations et des clients ayant lancé une étude photovoltaïque.</p>
           </div>
+          <button
+            onClick={handleExportEmails}
+            disabled={isExporting || users.length === 0}
+            className="inline-flex items-center gap-3 px-6 py-3 bg-[#0b0e1d] text-white text-sm font-semibold rounded-lg hover:bg-[#1a1f3a] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          >
+            <FileSpreadsheet size={18} className="text-[#c93b18]" />
+            {isExporting ? (
+              <>
+                <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                Export en cours...
+              </>
+            ) : (
+              'Exporter vers Excel'
+            )}
+          </button>
         </div>
 
-        {/* Stats Strip */}
-        <div className="dash-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1.1rem] mb-[2.4rem]">
+        <div className="dash-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[1.1rem] mb-[2.4rem]">
           <div className="dstat bg-white border border-[#e8e8ea] rounded-[12px] p-[1.4rem_1.5rem] shadow-[0_2px_14px_rgba(11,14,29,0.06)]">
             <div className="ds-k text-[0.64rem] font-bold tracking-[0.14em] uppercase text-[#7a7e95] mb-[0.6rem] flex items-center gap-[0.45rem]">
               <FileText size={14} className="text-[#c93b18]" />
@@ -133,15 +221,6 @@ export default function AdminPage() {
               Comptes activés
             </div>
             <div className="ds-v font-serif font-medium text-[1.9rem] text-[#15172b] tracking-[-0.01em] line-clamp-1">{users.filter(u => u.activated).length}</div>
-          </div>
-          <div className="dstat bg-white border border-[#e8e8ea] rounded-[12px] p-[1.4rem_1.5rem] shadow-[0_2px_14px_rgba(11,14,29,0.06)]">
-            <div className="ds-k text-[0.64rem] font-bold tracking-[0.14em] uppercase text-[#7a7e95] mb-[0.6rem] flex items-center gap-[0.45rem]">
-              <Zap size={14} className="text-[#c93b18]" />
-              Puissance cumulée
-            </div>
-            <div className="ds-v font-serif font-medium text-[1.9rem] text-[#15172b] tracking-[-0.01em] line-clamp-1">
-              {totalPw % 1 === 0 ? totalPw : totalPw.toFixed(1)}<small className="font-sans text-[0.8rem] font-medium text-[#7a7e95] ml-[0.25rem]">kWc</small>
-            </div>
           </div>
         </div>
 
