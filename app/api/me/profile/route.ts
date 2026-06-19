@@ -1,6 +1,7 @@
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth'; // Changed import path
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 

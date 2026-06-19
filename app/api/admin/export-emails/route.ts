@@ -1,7 +1,7 @@
-// app/api/admin/export-emails/route.ts
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Study from '@/models/Study';
@@ -10,7 +10,6 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    // Check if user is authenticated and is admin
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Non authentifié' },
@@ -18,7 +17,6 @@ export async function GET() {
       );
     }
 
-    // Check if user has admin role
     const userRole = (session.user as any)?.role;
     if (userRole !== 'admin') {
       return NextResponse.json(
@@ -29,22 +27,18 @@ export async function GET() {
 
     await connectDB();
 
-    // Get all users (excluding admin accounts)
     const users = await User.find({ 
       role: { $ne: 'admin' } 
     }).select('email prenom nom type entreprise activated');
 
-    // Get all studies to count per user
     const studies = await Study.find({});
     
-    // Create a map of email -> study count
     const studyCountMap = studies.reduce((acc, study) => {
       const email = study.userEmail;
       acc[email] = (acc[email] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Combine user data with study counts
     const usersWithStudyCounts = users.map(user => ({
       email: user.email,
       prenom: user.prenom || '',

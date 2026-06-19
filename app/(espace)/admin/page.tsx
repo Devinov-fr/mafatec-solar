@@ -1,3 +1,4 @@
+// app/(espace)/admin/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
