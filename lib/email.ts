@@ -108,7 +108,7 @@ const getStudyCardHtml = (study: any) => {
 };
 
 const getReportButtonHtml = (study: any) => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://solaire.mafatec.com/';
   const reportUrl = study.reportUrl || `${appUrl}/rapport-public?id=${study._id}&token=${study.publicToken}`;
   const daysValid = study.publicTokenExpires 
     ? Math.ceil((new Date(study.publicTokenExpires).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))

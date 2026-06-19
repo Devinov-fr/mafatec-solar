@@ -232,7 +232,7 @@ export async function POST(req: Request) {
     console.log('✅ Study publicToken saved:', study.publicToken);
 
     // Create the report URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://solaire.mafatec.com/';
     const reportUrl = `${appUrl}/rapport-public?id=${study._id}&token=${publicToken}`;
     console.log('🔗 Report URL:', reportUrl);
 
