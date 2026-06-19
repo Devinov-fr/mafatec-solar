@@ -21,22 +21,25 @@ export const sendEmail = async (options: any) => {
     console.log('[DEV MODE] Email would be sent:', {
       to: options.to,
       subject: options.subject,
+      attachments: options.attachments?.length || 0,
     });
     return true;
   }
 
   try {
+    const attachments = [
+      {
+        filename: 'logo-mafatec-blanc.png',
+        path: path.join(process.cwd(), 'public', 'logo-mafatec-blanc.png'),
+        cid: 'logo_mafatec_blanc',
+      },
+      ...(options.attachments || []),
+    ];
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       ...options,
-      attachments: [
-        ...(options.attachments || []),
-        {
-          filename: 'logo-mafatec-blanc.png',
-          path: path.join(process.cwd(), 'public', 'logo-mafatec-blanc.png'),
-          cid: 'logo_mafatec_blanc',
-        },
-      ],
+      attachments,
     });
     return true;
   } catch (error) {
@@ -73,7 +76,7 @@ const getStudyCardHtml = (study: any) => {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td valign="middle" width="46" style="padding-right:14px;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="46" height="46" style="width:46px;height:46px;background-color:#0b0e1d;border-radius:11px;color:#c9a96a;font-family:Georgia,serif;font-size:20px;">☀</td></tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" width="46" height="46" style="width:46px;height:46px;background-color:#0b0e1d;border-radius:11px;color:#A82E12;font-family:Georgia,serif;font-size:20px;">☀</td></tr></table>
               </td>
               <td valign="middle">
                 <p style="margin:0 0 3px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#15171f;">Étude installation PV <span style="color:#c93b18;">${study.puissance} kWc</span></p>
@@ -117,7 +120,7 @@ export const getActivationEmailHtml = (prenom: string, activationUrl: string, st
     <tr><td style="background-color:#0b0e1d;padding:30px 40px 26px;" align="left">
       <img src="cid:logo_mafatec_blanc" alt="MAFATEC" width="132" style="display:block;border:0;height:auto;">
     </td></tr>
-    <tr><td style="height:3px;background-color:#c9a96a;line-height:3px;font-size:3px;">&nbsp;</td></tr>
+    <tr><td style="height:3px;background-color:#A82E12;line-height:3px;font-size:3px;">&nbsp;</td></tr>
     <tr><td style="padding:40px 40px 8px;">
       <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#c93b18;">Votre étude est prête</p>
       <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#15171f;font-weight:normal;">Merci, ${prenom} — voici votre analyse solaire</h1>
@@ -162,11 +165,11 @@ export const getStudyReadyEmailHtml = (prenom: string, loginUrl: string, study: 
     <tr><td style="background-color:#0b0e1d;padding:30px 40px 26px;" align="left">
       <img src="cid:logo_mafatec_blanc" alt="MAFATEC" width="132" style="display:block;border:0;height:auto;">
     </td></tr>
-    <tr><td style="height:3px;background-color:#c9a96a;line-height:3px;font-size:3px;">&nbsp;</td></tr>
+    <tr><td style="height:3px;background-color:#A82E12;line-height:3px;font-size:3px;">&nbsp;</td></tr>
     <tr><td style="padding:40px 40px 8px;">
       <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#c93b18;">Nouvelle étude disponible</p>
       <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#15171f;font-weight:normal;">Votre nouvelle analyse solaire est prête</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Bonjour ${prenom}, votre nouvelle étude photovoltaïque vient d'être générée. Elle a été automatiquement enregistrée dans votre espace.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Bonjour ${prenom}, votre nouvelle étude photovoltaïque vient d'être générée. Vous trouverez le rapport PDF en pièce jointe.</p>
     </td></tr>
     ${getStudyCardHtml(study)}
     <tr><td style="padding:24px 40px 0;">
@@ -175,6 +178,41 @@ export const getStudyReadyEmailHtml = (prenom: string, loginUrl: string, study: 
           <a href="${loginUrl}" style="display:inline-block;padding:15px 30px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">Accéder à mon espace →</a>
         </td>
       </tr></table>
+    </td></tr>
+    ${FOOTER_HTML}
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
+  `;
+};
+
+export const getEmailWithPDFHtml = (prenom: string, study: any) => {
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+</head>
+<body style="margin:0;padding:0;background-color:#e9eaee;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#e9eaee;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;border-radius:14px;overflow:hidden;">
+    <tr><td style="background-color:#0b0e1d;padding:30px 40px 26px;" align="left">
+      <img src="cid:logo_mafatec_blanc" alt="MAFATEC" width="132" style="display:block;border:0;height:auto;">
+    </td></tr>
+    <tr><td style="height:3px;background-color:#A82E12;line-height:3px;font-size:3px;">&nbsp;</td></tr>
+    <tr><td style="padding:40px 40px 8px;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#c93b18;">Votre étude est prête</p>
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#15171f;font-weight:normal;">Bonjour ${prenom},</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Votre étude photovoltaïque pour une installation de <strong>${study.puissance} kWc</strong> est maintenant disponible.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#54586a;">Vous trouverez ci-joint le rapport complet au format PDF.</p>
+    </td></tr>
+    ${getStudyCardHtml(study)}
+    <tr><td style="padding:30px 40px 0;">
+      <p style="margin:0 0 8px;font-size:14px;font-weight:bold;color:#15171f;">📎 Pièce jointe : Rapport d'étude photovoltaïque</p>
+      <p style="margin:0 0 16px;font-size:13px;color:#54586a;">Le fichier PDF contient l'intégralité des résultats de la simulation, y compris les graphiques mensuels et les analyses détaillées.</p>
     </td></tr>
     ${FOOTER_HTML}
   </table>

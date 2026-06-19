@@ -79,7 +79,7 @@ export default function AdminPage() {
           <a className="sp-brand flex items-center gap-[0.8rem]" href="/">
             <img src="/logo-mafatec-blanc.png" alt="MAFATEC" className="h-[26px]" />
             <span className="sp-divider w-px h-[22px] bg-[rgba(201,169,106,0.28)]"></span>
-            <span className="sp-space font-sans text-[0.72rem] font-semibold tracking-[0.16em] uppercase text-[#e3cfa3]">Administration</span>
+            <span className="sp-space font-sans text-[0.72rem] font-semibold tracking-[0.16em] uppercase text-[#A82E12]">Administration</span>
           </a>
           <div className="sp-top-right flex items-center gap-[1.3rem]">
             <div className="sp-user flex items-center gap-[0.6rem] text-[0.82rem] text-[rgba(243,239,230,0.62)]">
@@ -88,7 +88,7 @@ export default function AdminPage() {
             </div>
             <button 
               onClick={handleLogout}
-              className="sp-logout inline-flex items-center gap-[0.45rem] text-[0.78rem] font-semibold text-[rgba(243,239,230,0.62)] hover:text-[#e3cfa3] transition-colors duration-300"
+              className="sp-logout inline-flex items-center gap-[0.45rem] text-[0.78rem] font-semibold text-[rgba(243,239,230,0.62)] hover:text-[#A82E12] transition-colors duration-300"
             >
               <LogOut size={15} />
               DÉCONNEXION

@@ -69,7 +69,7 @@ export default function MonEspacePage() {
           <a className="sp-brand flex items-center gap-[0.8rem]" href="/">
             <img src="/logo-mafatec-blanc.png" alt="MAFATEC" className="h-[26px]" />
             <span className="sp-divider w-px h-[22px] bg-[rgba(201,169,106,0.28)]"></span>
-            <span className="sp-space font-sans text-[0.72rem] font-semibold tracking-[0.16em] uppercase text-[#e3cfa3]">Espace client</span>
+            <span className="sp-space font-sans text-[0.72rem] font-semibold tracking-[0.16em] uppercase text-[#A82E12]">Espace client</span>
           </a>
           <div className="sp-top-right flex items-center gap-[1.3rem]">
             <div className="sp-user flex items-center gap-[0.6rem] text-[0.82rem] text-[rgba(243,239,230,0.62)]">
@@ -80,7 +80,7 @@ export default function MonEspacePage() {
             </div>
             <button 
               onClick={handleLogout}
-              className="sp-logout inline-flex items-center gap-[0.45rem] text-[0.78rem] font-semibold text-[rgba(243,239,230,0.62)] hover:text-[#e3cfa3] transition-colors duration-300"
+              className="sp-logout inline-flex items-center gap-[0.45rem] text-[0.78rem] font-semibold text-[rgba(243,239,230,0.62)] hover:text-[#A82E12] transition-colors duration-300"
             >
               <LogOut size={15} />
               DÉCONNEXION
@@ -165,7 +165,7 @@ export default function MonEspacePage() {
             ) : (
               studies.map((study) => (
                 <div key={study._id} className="study-row flex items-center gap-[1.3rem] p-[1.3rem_1.7rem] border-b border-[#e8e8ea] last:border-b-0 hover:bg-[#f5f5f7] transition-colors duration-300">
-                  <span className="sr-ic w-[48px] h-[48px] shrink-0 rounded-[12px] bg-[#0b0e1d] text-[#e3cfa3] flex items-center justify-center">
+                  <span className="sr-ic w-[48px] h-[48px] shrink-0 rounded-[12px] bg-[#0b0e1d] text-white flex items-center justify-center">
                     <Zap size={24} />
                   </span>
                   <div className="sr-body flex-1 min-w-0">

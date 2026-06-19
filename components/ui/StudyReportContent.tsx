@@ -142,7 +142,7 @@ const StudyReportContent = React.forwardRef<HTMLDivElement, StudyReportContentPr
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <img src="/logo-mafatec-blanc.png" alt="MAFATEC" style={{ height: "20px" }} />
                 <div style={{ display: "flex", gap: "8px" }}>
-                  {["RGE", "Qualifelec"].map(t => <span key={t} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "9px", letterSpacing: "1.4px", textTransform: "uppercase", color: "#A82E12", padding: "4px 8px", borderRadius: "3px", border: "1px solid rgba(168,46,18,0.3)" }}>{t}</span>)}
+                  {["RGE", "Qualifelec"].map(t => <span key={t} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "9px", letterSpacing: "1.4px", textTransform: "uppercase", color: "#A82E12", padding: "4px 8px"}}>{t}</span>)}
                 </div>
               </div>
             </div>
@@ -285,29 +285,62 @@ const StudyReportContent = React.forwardRef<HTMLDivElement, StudyReportContentPr
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", border: "1px solid #e8e8ea", borderRadius: "12px", overflow: "hidden" }}>
               <thead>
                 <tr style={{ background: "#131839", color: "#f3efe6" }}>
-                  <th style={{ padding: "12px", textAlign: "left", textTransform: "uppercase" }}>Mois</th>
-                  <th style={{ padding: "12px", textAlign: "right", textTransform: "uppercase" }}>Production (kWh)</th>
-                  <th style={{ padding: "12px", textAlign: "right", textTransform: "uppercase" }}>Irradiation (kWh/m²)</th>
-                  <th style={{ padding: "12px", textAlign: "right", textTransform: "uppercase" }}>Variabilité (kWh)</th>
+                  <th style={{ padding: "12px", textAlign: "center", textTransform: "uppercase" }}>Mois</th>
+                  <th style={{ padding: "12px", textAlign: "center", textTransform: "uppercase" }}>Production <br /> (kWh)</th>
+                  <th style={{ padding: "12px", textAlign: "center", textTransform: "uppercase" }}>Irradiation <br />(kWh/m²)</th>
+                  <th style={{ padding: "12px", textAlign: "center", textTransform: "uppercase" }}>Variabilité <br />(kWh)</th>
                 </tr>
               </thead>
               <tbody>
                 {chartDataProduction.map((m: any, i: number) => (
                   <tr key={i} style={{ borderBottom: "1px solid #e8e8ea", background: i % 2 === 0 ? "#fff" : "#f9f9fb" }}>
-                    <td style={{ padding: "10px 12px", fontWeight: 600 }}>{m.month}</td>
-                    <td style={{ padding: "10px 12px", textAlign: "right" }}>{formatNumber(m.value, 2)}</td>
-                    <td style={{ padding: "10px 12px", textAlign: "right" }}>{formatNumber(chartDataIrradiation[i].value, 2)}</td>
-                    <td style={{ padding: "10px 12px", textAlign: "right" }}>{formatNumber(chartDataVariability[i].value, 2)}</td>
+                    <td style={{ padding: "10px 12px", fontWeight: 600, textAlign: "center" }}>{m.month}</td>
+                    <td style={{ padding: "10px 12px", textAlign: "center" }}>{formatNumber(m.value, 2)}</td>
+                    <td style={{ padding: "10px 12px", textAlign: "center" }}>{formatNumber(chartDataIrradiation[i].value, 2)}</td>
+                    <td style={{ padding: "10px 12px", textAlign: "center" }}>{formatNumber(chartDataVariability[i].value, 2)}</td>
                   </tr>
                 ))}
                 <tr style={{ background: "#131839", color: "#fff", fontWeight: "bold" }}>
-                  <td style={{ padding: "12px" }}>Total annuel</td>
-                  <td style={{ padding: "12px", textAlign: "right" }}>{formatNumber(totalProduction, 2)}</td>
-                  <td style={{ padding: "12px", textAlign: "right" }}>{formatNumber(totalIrradiation, 2)}</td>
-                  <td style={{ padding: "12px", textAlign: "right" }}>{formatNumber(variabiliteAnnuelle, 1)}</td>
+                  <td style={{ padding: "12px", textAlign: "center" }}>Total annuel</td>
+                  <td style={{ padding: "12px", textAlign: "center" }}>{formatNumber(totalProduction, 2)}</td>
+                  <td style={{ padding: "12px", textAlign: "center" }}>{formatNumber(totalIrradiation, 2)}</td>
+                  <td style={{ padding: "12px", textAlign: "center" }}>{formatNumber(variabiliteAnnuelle, 1)}</td>
                 </tr>
               </tbody>
             </table>
+            <div
+                    style={{
+                      background: "#f5f5f7",
+                      padding: "16px",
+                      borderRadius: "12px",
+                      marginTop: "auto"
+                    }}
+                  >
+                    <h4
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        letterSpacing: "1.8px",
+                        textTransform: "uppercase",
+                        color: "#3a55b0",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Note
+                    </h4>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#454a63",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      Les valeurs mensuelles sont issues de la simulation
+                      d'irradiation pour le site et tiennent compte des pertes
+                      système. Le total annuel de production s'élève à{" "}
+                      {formatNumber(totalProduction, 2)} kWh.
+                    </p>
+                  </div>
             <PageFooter pageNumber={4} />
           </div>
         </div>

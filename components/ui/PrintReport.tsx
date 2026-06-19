@@ -384,7 +384,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                       color: "#A82E12" 
                     }}>Étude de production photovoltaïque</span>
                   </div>
-                  <h1 style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "42px", fontWeight: 500, color: "#f3efe6", lineHeight: 1.04, marginBottom: "20px" }}>
+                  <h1 style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "42px", fontWeight: 500, color: "#A82E12", lineHeight: 1.04, marginBottom: "20px" }}>
                     Rapport d'<em style={{ fontStyle: "italic", color: "#A82E12" }}>analyse</em><br />solaire détaillé
                   </h1>
                   <p style={{ fontSize: "14px", lineHeight: 1.7, color: "rgba(243,239,230,0.62)", maxWidth: "450px" }}>
@@ -392,10 +392,10 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   </p>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginTop: "30px", paddingTop: "12px", borderTop: "1px solid rgba(201,169,106,0.28)" }}>
-                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Site analysé</div><div style={{ fontSize: "13px", color: "#f3efe6" }}>{clickedPosition.address || "Adresse non définie"}</div></div>
-                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Coordonnées</div><div style={{ fontSize: "13px", color: "#f3efe6" }}>{clickedPosition.lat.toFixed(6)} N · {clickedPosition.lng.toFixed(6)} E</div></div>
-                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Puissance installée</div><div style={{ fontSize: "13px", color: "#f3efe6" }}>{puissancePv} kWc </div></div>
-                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Production annuelle estimée</div><div style={{ fontSize: "13px", color: "#f3efe6" }}>{formatInteger(productionAnnuelle)} kWh / an</div></div>
+                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Site analysé</div><div style={{ fontSize: "13px", color: "#A82E12" }}>{clickedPosition.address || "Adresse non définie"}</div></div>
+                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Coordonnées</div><div style={{ fontSize: "13px", color: "#A82E12" }}>{clickedPosition.lat.toFixed(6)} N · {clickedPosition.lng.toFixed(6)} E</div></div>
+                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Puissance installée</div><div style={{ fontSize: "13px", color: "#A82E12" }}>{puissancePv} kWc </div></div>
+                    <div><div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "4px" }}>Production annuelle estimée</div><div style={{ fontSize: "13px", color: "#A82E12" }}>{formatInteger(productionAnnuelle)} kWh / an</div></div>
                   </div>
                 </div>
 
@@ -453,17 +453,17 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                   <p style={{ fontSize: "11px", color: "#7a7e95", marginTop: "4px", marginBottom: "24px" }}>Performance annuelle estimée pour l'installation configurée — inclinaison {inclinaison}°, azimut {azimut}° ({getAzimuthDirection(parseFloat(azimut))}).</p>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
-                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#f3efe6" }}>
+                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#A82E12" }}>
                       <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "12px" }}>Production annuelle</div>
                       <div style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "28px", fontWeight: 500, marginBottom: "8px" }}>{formatInteger(productionAnnuelle)}<span style={{ fontSize: "11px", marginLeft: "4px" }}>kWh</span></div>
                       <div style={{ fontSize: "9px", color: "rgba(243,239,230,0.4)" }}>Énergie produite estimée sur une année complète.</div>
                     </div>
-                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#f3efe6" }}>
+                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#A82E12" }}>
                       <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "12px" }}>Irradiation annuelle</div>
                       <div style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "28px", fontWeight: 500, marginBottom: "8px" }}>{formatInteger(irradiationAnnuelle)}<span style={{ fontSize: "11px", marginLeft: "4px" }}>kWh/m²</span></div>
                       <div style={{ fontSize: "9px", color: "rgba(243,239,230,0.4)" }}>Rayonnement solaire reçu par mètre carré.</div>
                     </div>
-                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#f3efe6" }}>
+                    <div style={{ background: "#13162f", borderRadius: "14px", padding: "20px", color: "#A82E12" }}>
                       <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#A82E12", marginBottom: "12px" }}>Variabilité interannuelle</div>
                       <div style={{ fontFamily: "'Spectral', Georgia, serif", fontSize: "28px", fontWeight: 500, marginBottom: "8px" }}>{formatNumber(variabiliteAnnuelle, 1)}<span style={{ fontSize: "11px", marginLeft: "4px" }}>kWh</span></div>
                       <div style={{ fontSize: "9px", color: "rgba(243,239,230,0.4)" }}>Écart-type de production d'une année sur l'autre.</div>
@@ -774,7 +774,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           <th style={{ 
                             padding: "14px 12px", 
                             textAlign: "center", 
-                            color: "#f3efe6", 
+                            color: "#A82E12", 
                             fontSize: "8px", 
                             fontWeight: 700, 
                             letterSpacing: "1px", 
@@ -786,7 +786,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           <th style={{ 
                             padding: "14px 12px", 
                             textAlign: "center", 
-                            color: "#f3efe6", 
+                            color: "#A82E12", 
                             fontSize: "8px", 
                             fontWeight: 700, 
                             letterSpacing: "1px", 
@@ -805,7 +805,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           <th style={{ 
                             padding: "14px 12px", 
                             textAlign: "center", 
-                            color: "#f3efe6", 
+                            color: "#A82E12", 
                             fontSize: "8px", 
                             fontWeight: 700, 
                             letterSpacing: "1px", 
@@ -824,7 +824,7 @@ const ReportPDFPopup: React.FC<ReportPDFPopupProps> = ({
                           <th style={{ 
                             padding: "14px 12px", 
                             textAlign: "center", 
-                            color: "#f3efe6", 
+                            color: "#A82E12", 
                             fontSize: "8px", 
                             fontWeight: 700, 
                             letterSpacing: "1px", 

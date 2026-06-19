@@ -65,27 +65,27 @@ export default function LoginPage() {
         <div className="auth-aside-in relative z-10 flex flex-col h-full">
           <img className="logo h-[30px] mb-auto self-start" src="/logo-mafatec-blanc.png" alt="MAFATEC" />
           <div className="mt-auto">
-            <span className="aa-eyebrow flex items-center gap-[0.6rem] font-sans text-[0.66rem] font-semibold tracking-[0.28em] uppercase text-[#e3cfa3] mb-[1.6rem]">
-              <span className="mark w-[26px] h-px bg-[#c9a96a]"></span>
+            <span className="aa-eyebrow flex items-center gap-[0.6rem] font-sans text-[0.66rem] font-semibold tracking-[0.28em] uppercase text-[#A82E12] mb-[1.6rem]">
+              <span className="mark w-[26px] h-px bg-[#A82E12]"></span>
               Espace client & administration
             </span>
             <h2 className="font-serif font-medium text-[2.4rem] leading-[1.08] tracking-[-0.01em] text-[#f3efe6] mb-[1.2rem]">
-              Retrouvez toutes vos <em className="not-italic italic text-[#e3cfa3]">études solaires</em> en un seul endroit
+              Retrouvez toutes vos <em className="not-italic italic text-[#A82E12]">études solaires</em> en un seul endroit
             </h2>
             <p className="text-[0.95rem] leading-[1.7] text-[rgba(243,239,230,0.62)] max-w-[38ch]">
               Consultez l'historique de vos simulations photovoltaïques, téléchargez vos rapports détaillés et lancez de nouvelles études en quelques clics.
             </p>
             <div className="aa-feats mt-8 flex flex-col gap-[0.9rem]">
               <span className="flex items-center gap-[0.7rem] text-[0.86rem] text-[#f3efe6]">
-                <Check className="w-[17px] h-[17px] text-[#e3cfa3] shrink-0" />
+                <Check className="w-[17px] h-[17px] text-[#A82E12] shrink-0" />
                 Historique complet de vos études
               </span>
               <span className="flex items-center gap-[0.7rem] text-[0.86rem] text-[#f3efe6]">
-                <Check className="w-[17px] h-[17px] text-[#e3cfa3] shrink-0" />
+                <Check className="w-[17px] h-[17px] text-[#A82E12] shrink-0" />
                 Rapports PDF téléchargeables à tout moment
               </span>
               <span className="flex items-center gap-[0.7rem] text-[0.86rem] text-[#f3efe6]">
-                <Check className="w-[17px] h-[17px] text-[#e3cfa3] shrink-0" />
+                <Check className="w-[17px] h-[17px] text-[#A82E12] shrink-0" />
                 Vos données protégées & jamais cédées
               </span>
             </div>
@@ -181,9 +181,8 @@ export default function LoginPage() {
               Pas encore de compte&thinsp;? <a href="/" className="text-[#c93b18] font-semibold hover:underline">Lancez une étude gratuite</a> pour le créer.
             </div>
           ) : (
-            <div className="auth-demo mt-[1.5rem] p-[0.9rem_1rem] rounded-[8px] bg-[#f5f5f7] border border-dashed border-[#e8e8ea] text-[0.72rem] text-[#7a7e95] leading-[1.6] font-sans">
-              <strong className="text-[#454a63] font-bold">Accès administration</strong><br />
-              Email : admin@mafatec.com · Mot de passe : Admin2025
+            <div className="auth-demo mt-[1.5rem] p-[0.9rem_1rem] rounded-[8px] bg-transparent border border-dashed border-transparent text-[0.72rem] text-[#7a7e95] leading-[1.6] font-sans">
+
             </div>
           )}
         </div>

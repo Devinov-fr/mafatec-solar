@@ -278,7 +278,7 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
             <h3 className="text-[1.8rem] font-serif font-medium leading-[1.2] mb-4 text-[#15172b]">{title}</h3>
             <p className="text-[0.88rem] leading-[1.65] text-[#454a63] max-w-[420px] mx-auto">{msg}</p>
             {extra}
-            <button onClick={() => { onClose(); window.location.reload(); }} className="w-full mt-8 py-4 px-9 rounded-[6px] bg-[#f5f5f7] text-[#15172b] font-bold tracking-wide hover:bg-slate-200 transition-all">
+            <button onClick={() => { window.location.reload(); }} className="w-full mt-8 py-4 px-9 rounded-[6px] bg-[#f5f5f7] text-[#15172b] font-bold tracking-wide hover:bg-slate-200 transition-all">
               Nouvelle étude
             </button>
           </div>

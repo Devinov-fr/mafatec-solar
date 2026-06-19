@@ -243,23 +243,23 @@ export default function ActivatePage() {
         <div className="auth-aside-in relative z-10 flex flex-col h-full">
           <img className="logo h-[30px] mb-auto self-start" src="/logo-mafatec-blanc.png" alt="MAFATEC" />
           <div className="mt-auto">
-            <span className="aa-eyebrow flex items-center gap-[0.6rem] font-sans text-[0.66rem] font-semibold tracking-[0.28em] uppercase text-[#e3cfa3] mb-[1.6rem]">
-              <span className="mark w-[26px] h-px bg-[#c9a96a]"></span>
+            <span className="aa-eyebrow flex items-center gap-[0.6rem] font-sans text-[0.66rem] font-semibold tracking-[0.28em] uppercase text-[#A82E12] mb-[1.6rem]">
+              <span className="mark w-[26px] h-px bg-[#A82E12]"></span>
               Activation de votre compte
             </span>
             <h2 className="font-serif font-medium text-[2.4rem] leading-[1.08] tracking-[-0.01em] text-[#f3efe6] mb-[1.2rem]">
-              Plus qu'une étape pour <em className="not-italic italic text-[#e3cfa3]">activer</em> votre espace
+              Plus qu'une étape pour <em className="not-italic italic text-[#A82E12]">activer</em> votre espace
             </h2>
             <p className="text-[0.95rem] leading-[1.7] text-[rgba(243,239,230,0.62)] max-w-[38ch]">
               Choisissez votre mot de passe pour finaliser la création de votre compte. Vous pourrez ensuite retrouver toutes vos études et lancer de nouvelles simulations à tout moment.
             </p>
             <div className="aa-feats mt-8 flex flex-col gap-[0.9rem]">
               <span className="flex items-center gap-[0.7rem] text-[0.86rem] text-[#f3efe6]">
-                <Lock className="w-[17px] h-[17px] text-[#e3cfa3] shrink-0" />
+                <Lock className="w-[17px] h-[17px] text-[#A82E12] shrink-0" />
                 Lien sécurisé valable 3 jours
               </span>
               <span className="flex items-center gap-[0.7rem] text-[0.86rem] text-[#f3efe6]">
-                <Check className="w-[17px] h-[17px] text-[#e3cfa3] shrink-0" />
+                <Check className="w-[17px] h-[17px] text-[#A82E12] shrink-0" />
                 Accès immédiat à vos études
               </span>
             </div>

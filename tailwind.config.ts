@@ -32,8 +32,8 @@ const config: Config = {
         },
         'logo-blue': '#3a55b0',
         champagne: {
-          DEFAULT: '#c9a96a',
-          soft: '#e3cfa3',
+          DEFAULT: '#A82E12',
+          soft: '#A82E12',
           deep: '#a8884a',
         },
         paper: {

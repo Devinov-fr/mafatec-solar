@@ -18,7 +18,7 @@ const Hero = () => {
           </div>
 
           {/* Title */}
-          <h1 className="font-serif text-[clamp(2.3rem,4.4vw,3.8rem)] leading-[1.1] tracking-[-0.015em] text-[#f3efe6] mb-[2.5rem] reveal in d1">
+          <h1 className="font-serif text-[clamp(2.3rem,4.4vw,3.8rem)] leading-[1.1] tracking-[-0.015em] text-white mb-[2.5rem] reveal in d1">
             Étude photovoltaïque professionnelle —<br />
             votre analyse de production <em className="italic text-[#A82E12]">offerte</em>
           </h1>

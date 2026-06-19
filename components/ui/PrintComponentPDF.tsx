@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 1.4,
     textTransform: "uppercase" as const,
-    color: "#e3cfa3",
+    color: "#A82E12",
     borderWidth: 1,
     borderColor: "rgba(201,169,106,0.28)",
     paddingHorizontal: 8,
@@ -86,14 +86,14 @@ const styles = StyleSheet.create({
   coverEyebrowMark: {
     width: 30,
     height: 1,
-    backgroundColor: "#c9a96a",
+    backgroundColor: "#A82E12",
   },
   coverEyebrowText: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 3,
     textTransform: "uppercase" as const,
-    color: "#e3cfa3",
+    color: "#A82E12",
   },
   coverTitle: {
     fontSize: 42,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   },
   coverTitleEm: {
     fontFamily: "Helvetica-Oblique",
-    color: "#e3cfa3",
+    color: "#A82E12",
   },
   coverLead: {
     fontSize: 14,
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1.5,
     textTransform: "uppercase" as const,
-    color: "#e3cfa3",
+    color: "#A82E12",
     marginBottom: 4,
   },
   coverMetaValue: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   coverSignStrong: {
     fontFamily: "Helvetica-Bold",
-    color: "#e3cfa3",
+    color: "#A82E12",
   },
   coverRef: {
     fontSize: 9,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1.5,
     textTransform: "uppercase" as const,
-    color: "#e3cfa3",
+    color: "#A82E12",
     marginBottom: 12,
   },
   kpiValue: {
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   },
   closingTitleEm: {
     fontFamily: "Helvetica-Oblique",
-    color: "#e3cfa3",
+    color: "#A82E12",
   },
   closingText: {
     fontSize: 11,
@@ -602,6 +602,7 @@ interface PrintComponentPDFProps {
   systemLosses: string;
   voltageDropResult: any;
   panels: any[];
+  logoUrl?: string;
 }
 
 export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
@@ -614,6 +615,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
   systemLosses,
   voltageDropResult,
   panels,
+  logoUrl,
 }) => {
   const productionAnnuelle = data?.outputs?.totals?.fixed.E_y || 0;
   const irradiationAnnuelle = data?.outputs?.totals?.fixed["H(i)_y"] || 0;
@@ -649,7 +651,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
         <View style={styles.coverBg} />
         <View style={styles.coverIn}>
           <View style={styles.coverTop}>
-            <Image src="/logo-mafatec-2048x423.png" style={styles.coverLogo} />
+            <Image src={logoUrl || "/logo-mafatec-2048x423.png"} style={styles.coverLogo} />
             <View style={styles.coverBadges}>
               <Text style={styles.coverBadge}>RGE</Text>
               <Text style={styles.coverBadge}>Qualifelec</Text>
@@ -723,7 +725,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.runhead}>
             <View style={styles.runheadLeft}>
               <Image
-                src="/logo-mafatec-2048x423.png"
+                src={logoUrl || "/logo-mafatec-2048x423.png"}
                 style={styles.runheadLogo}
               />
               <Text style={styles.runheadRge}>RGE</Text>
@@ -780,7 +782,6 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.dataGrid}>
             <View style={styles.dataCard}>
               <View style={styles.dataCardTitle}>
-                <Text style={styles.dataCardTitleIcon}>📋</Text>
                 <Text style={styles.dataCardTitleText}>Entrées fournies</Text>
               </View>
               <View style={styles.dataRow}>
@@ -819,7 +820,6 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
 
             <View style={styles.dataCard}>
               <View style={styles.dataCardTitle}>
-                <Text style={styles.dataCardTitleIcon}>⚡</Text>
                 <Text style={styles.dataCardTitleText}>
                   Changements de la production
                 </Text>
@@ -912,7 +912,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.runhead}>
             <View style={styles.runheadLeft}>
               <Image
-                src="/logo-mafatec-2048x423.png"
+                src={logoUrl || "/logo-mafatec-2048x423.png"}
                 style={styles.runheadLogo}
               />
               <Text style={styles.runheadRge}>RGE</Text>
@@ -1005,7 +1005,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.runhead}>
             <View style={styles.runheadLeft}>
               <Image
-                src="/logo-mafatec-2048x423.png"
+                src={logoUrl || "/logo-mafatec-2048x423.png"}
                 style={styles.runheadLogo}
               />
               <Text style={styles.runheadRge}>RGE</Text>
@@ -1096,7 +1096,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.runhead}>
             <View style={styles.runheadLeft}>
               <Image
-                src="/logo-mafatec-2048x423.png"
+                src={logoUrl || "/logo-mafatec-2048x423.png"}
                 style={styles.runheadLogo}
               />
               <Text style={styles.runheadRge}>RGE</Text>
@@ -1179,7 +1179,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.visual}>
             <View style={[styles.chartArea, { height: 180 }]}>
               <Text style={styles.chartStats}>
-                ☀️ Latitude {clickedPosition.lat.toFixed(2)}° N
+                Latitude {clickedPosition.lat.toFixed(2)}° N
               </Text>
               <Text style={styles.chartSub}>
                 Trajectoire solaire et masques d'ombrage
@@ -1229,7 +1229,7 @@ export const PrintComponentPDF: React.FC<PrintComponentPDFProps> = ({
           <View style={styles.runhead}>
             <View style={styles.runheadLeft}>
               <Image
-                src="/logo-mafatec-2048x423.png"
+                src={logoUrl || "/logo-mafatec-2048x423.png"}
                 style={styles.runheadLogo}
               />
               <Text style={styles.runheadRge}>RGE</Text>

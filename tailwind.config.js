@@ -46,8 +46,8 @@ module.exports = {
             900: "#191d49",
           },
           champagne: {
-            DEFAULT: "#c9a96a",
-            soft: "#e3cfa3",
+            DEFAULT: "#A82E12",
+            soft: "#A82E12",
             deep: "#a8884a",
           },
           paper: {

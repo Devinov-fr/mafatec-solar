@@ -76,7 +76,7 @@ export async function POST(req: Request) {
           </td>
         </tr>
         <tr>
-          <td style="height:3px;background-color:#c9a96a;line-height:3px;font-size:3px;">&nbsp;</td>
+          <td style="height:3px;background-color:#A82E12;line-height:3px;font-size:3px;">&nbsp;</td>
         </tr>
 
         <!-- Corps -->
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
                       <td valign="middle" width="46" style="padding-right:14px;">
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td align="center" valign="middle" width="46" height="46" style="width:46px;height:46px;background-color:#0b0e1d;border-radius:11px;color:#c9a96a;font-family:Georgia,serif;font-size:20px;">☀️</td>
+                            <td align="center" valign="middle" width="46" height="46" style="width:46px;height:46px;background-color:#0b0e1d;border-radius:11px;color:#A82E12;font-family:Georgia,serif;font-size:20px;">☀️</td>
                           </tr>
                         </table>
                       </td>

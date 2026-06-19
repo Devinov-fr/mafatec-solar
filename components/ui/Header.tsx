@@ -59,9 +59,7 @@ const Header: React.FC = () => {
             <Link href="/" className={`text-[0.74rem] font-bold tracking-[0.06em] uppercase transition-colors ${isSolid ? "text-[#7a7e95] hover:text-[#15172b]" : "text-white/70 hover:text-white"}`}>
               Accueil
             </Link>
-            <Link href="/#results" className={`text-[0.74rem] font-bold tracking-[0.06em] uppercase transition-colors ${isSolid ? "text-[#7a7e95] hover:text-[#15172b]" : "text-white/70 hover:text-white"}`}>
-              Résultats
-            </Link>
+
           </nav>
 
           {/* Actions */}
@@ -93,7 +91,7 @@ const Header: React.FC = () => {
                 className={`btn-login flex items-center gap-[0.5rem] font-sans text-[0.76rem] font-bold tracking-[0.04em] px-[1.15rem] py-[0.6rem] rounded-[8px] whitespace-nowrap transition-all duration-[0.35s] hover:-translate-y-[2px] ${
                   isSolid 
                     ? "text-white bg-[#0b0e1d] hover:bg-[#141832]" 
-                    : "text-[#0b0e1d] bg-[#e3cfa3] hover:bg-[#f3efe6]"
+                    : "text-white bg-[#A82E12] hover:bg-[#f3efe6] hover:text-[#A82E12]"
                 }`}
               >
                 <User className="w-[14px] h-[14px]" strokeWidth={2} />
@@ -122,23 +120,23 @@ const Header: React.FC = () => {
         <div className="h-full overflow-y-auto px-10 pb-10 pt-8 grain">
           <div className="max-w-[1200px] mx-auto">
             <div className="border-t border-white/10 py-[1.3rem]">
-              <h5 className="text-[0.66rem] tracking-[0.22em] uppercase text-[#c9a96a] mb-6 font-bold">
+              <h5 className="text-[0.66rem] tracking-[0.22em] uppercase text-[#A82E12] mb-6 font-bold">
                 Navigation
               </h5>
               <div className="flex flex-col gap-4">
                 <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center justify-between font-serif text-[1.8rem] py-2 group">
                   <span>Accueil</span>
-                  <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#c9a96a]" />
+                  <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#A82E12]" />
                 </Link>
                 {session ? (
                   <Link href="/mon-espace" onClick={() => setMenuOpen(false)} className="flex items-center justify-between font-serif text-[1.8rem] py-2 group">
                     <span>Mon espace client</span>
-                    <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#c9a96a]" />
+                    <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#A82E12]" />
                   </Link>
                 ) : (
                   <Link href="/login" onClick={() => setMenuOpen(false)} className="flex items-center justify-between font-serif text-[1.8rem] py-2 group">
                     <span>Connexion</span>
-                    <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#c9a96a]" />
+                    <ChevronRight className="opacity-0 -translate-x-4 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-[#A82E12]" />
                   </Link>
                 )}
               </div>
