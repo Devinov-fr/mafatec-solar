@@ -30,6 +30,10 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
   });
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
+  // Log what data we're receiving
+  console.log('🔵 LeadModal received studyData:', studyData);
+  console.log('🔵 studyData keys:', Object.keys(studyData || {}));
+
   if (!isOpen) return null;
 
   const isPro = universe === "pro";
@@ -56,75 +60,114 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!validate()) {
-    const firstErr = document.querySelector<HTMLInputElement>(".err");
-    firstErr?.focus();
-    return;
-  }
-  setIsSubmitting(true);
-  try {
-    // Make sure studyData has all required fields
-    const payload = {
-      ...formData,
-      type: universe, // Add type field for the API
-      universe: universe,
-      studyData: {
-        // Ensure all required fields are present
-        puissance: studyData?.puissance || "0",
-        adresse: studyData?.adresse || "Adresse non définie",
-        lat: studyData?.lat || 0,
-        lng: studyData?.lng || 0,
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) {
+      const firstErr = document.querySelector<HTMLInputElement>(".err");
+      firstErr?.focus();
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      console.log('📤 ========== SENDING TO API ==========');
+      console.log('📤 studyData received:', studyData);
+      
+      // CRITICAL: Build params and results from studyData
+      const params = {
         inclinaison: studyData?.inclinaison || "35",
         azimut: studyData?.azimut || "0",
         systemLosses: studyData?.systemLosses || "14",
+        pertes: studyData?.systemLosses || "14",
         panels: studyData?.panels || [],
+        obstacles: studyData?.obstacles || [],
+        voltageDropResult: studyData?.voltageDropResult || null,
+        calepinageImage: studyData?.calepinageImage || null,
+      };
+
+      const results = {
         production: studyData?.production || 0,
         irradiation: studyData?.irradiation || 0,
         variabilite: studyData?.variabilite || 0,
         monthly: studyData?.monthly || [],
-        data: studyData?.data || {},
-        params: studyData?.params || {},
-        results: studyData?.results || {},
-        voltageDropResult: studyData?.voltageDropResult || null,
-        calepinageImage: studyData?.calepinageImage || null,
-        obstacles: studyData?.obstacles || [],
+        fullData: studyData?.data || {},
+      };
+
+      console.log('📤 params being sent:', params);
+      console.log('📤 results being sent:', results);
+      console.log('📤 results.monthly length:', results.monthly?.length || 0);
+      console.log('📤 params.panels length:', params.panels?.length || 0);
+
+      const payload = {
+        prenom: formData.prenom,
+        nom: formData.nom,
+        email: formData.email,
+        entreprise: formData.entreprise,
+        type: universe,
+        universe: universe,
+        studyData: {
+          // Basic info
+          puissance: studyData?.puissance || "0",
+          adresse: studyData?.adresse || "Adresse non définie",
+          lat: studyData?.lat || 0,
+          lng: studyData?.lng || 0,
+          
+          // PARAMS - This is critical!
+          params: params,
+          
+          // RESULTS - This is critical!
+          results: results,
+          
+          // Keep flat values for backward compatibility
+          inclinaison: studyData?.inclinaison || "35",
+          azimut: studyData?.azimut || "0",
+          systemLosses: studyData?.systemLosses || "14",
+          panels: studyData?.panels || [],
+          obstacles: studyData?.obstacles || [],
+          voltageDropResult: studyData?.voltageDropResult || null,
+          calepinageImage: studyData?.calepinageImage || null,
+          production: studyData?.production || 0,
+          irradiation: studyData?.irradiation || 0,
+          variabilite: studyData?.variabilite || 0,
+          monthly: studyData?.monthly || [],
+          data: studyData?.data || {},
+        }
+      };
+
+      console.log('📤 Full payload being sent:', JSON.stringify(payload, null, 2));
+
+      const response = await fetch("/api/studies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await response.json();
+      console.log('📥 API Response:', data);
+      
+      if (response.ok && data.success) {
+        setSubmissionResult({ 
+          isNew: data.isNew, 
+          user: { activated: !data.isNew },
+          activationLink: data.activationToken ? `activate?token=${data.activationToken}&email=${encodeURIComponent(formData.email)}` : undefined
+        });
+        setStep(3);
+        onUnlock({ 
+          ...formData, 
+          universe,
+          studyId: data.studyId,
+          reportUrl: data.reportUrl
+        });
+        toast.success("Votre étude a été envoyée par email !");
+      } else {
+        toast.error(data.error || "Une erreur est survenue lors de l'envoi.");
       }
-    };
-
-    console.log('📤 Sending payload:', payload);
-
-    const response = await fetch("/api/studies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    if (response.ok && data.success) {
-      setSubmissionResult({ 
-        isNew: data.isNew, 
-        user: { activated: !data.isNew },
-        activationLink: data.activationToken ? `activate?token=${data.activationToken}&email=${encodeURIComponent(formData.email)}` : undefined
-      });
-      setStep(3);
-      // Pass the complete data to onUnlock
-      onUnlock({ 
-        ...formData, 
-        universe,
-        studyId: data.studyId,
-        reportUrl: data.reportUrl
-      });
-    } else {
-      toast.error(data.error || "Une erreur est survenue lors de l'envoi.");
+    } catch (error) {
+      console.error('❌ Submit error:', error);
+      toast.error("Une erreur de connexion est survenue.");
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error('❌ Submit error:', error);
-    toast.error("Une erreur de connexion est survenue.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   /* ── STEP 1 ── */
   const renderStep1 = () => (

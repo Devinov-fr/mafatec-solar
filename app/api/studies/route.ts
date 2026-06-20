@@ -16,31 +16,25 @@ async function generateStudyPDFBuffer(studyData: any) {
   console.log('[PDF] studyData.results exists?', !!studyData?.results);
   
   try {
-    // Import @react-pdf/renderer dynamically
     console.log('[PDF] Importing @react-pdf/renderer...');
     const { pdf } = await import('@react-pdf/renderer');
     console.log('[PDF] @react-pdf/renderer imported OK');
 
-    // Import the PDF component
     console.log('[PDF] Importing PrintComponentPDF...');
     const { PrintComponentPDF } = await import('@/components/ui/PrintComponentPDF');
     console.log('[PDF] PrintComponentPDF imported OK');
 
-    // Determine the correct logo path - use a public URL instead of file path
     const logoUrl = '/logo-mafatec-2048x423.png';
     console.log('[PDF] Using logo URL:', logoUrl);
 
-    // Prepare monthly data
     const monthlyData = studyData.monthly || studyData.results?.monthly || [];
     const monthNames = [
       'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
 
-    // Get the data for the PDF
     const pdfData = studyData.data || studyData.results?.data || studyData;
 
-    // Create props for the PDF component
     const pdfProps = {
       data: pdfData,
       monthNames: monthNames,
@@ -67,58 +61,40 @@ async function generateStudyPDFBuffer(studyData: any) {
     });
 
     console.log('[PDF] Creating React element...');
-    
-    // Create the React element
     const element = React.createElement(PrintComponentPDF, pdfProps);
 
     console.log('[PDF] Generating PDF stream...');
-    
-    // Generate the PDF
     const pdfStream = pdf(element);
     console.log('[PDF] pdf() stream created OK');
     
-    // Try different methods to get the buffer
     let buffer: Buffer | null = null;
     
-    // Method 1: Try toBuffer() if available
     if (typeof pdfStream.toBuffer === 'function') {
       console.log('[PDF] Using toBuffer() method...');
       buffer = await pdfStream.toBuffer();
-    } 
-    // Method 2: Try toBlob() then convert to buffer
-    else if (typeof pdfStream.toBlob === 'function') {
+    } else if (typeof pdfStream.toBlob === 'function') {
       console.log('[PDF] Using toBlob() method...');
       const blob = await pdfStream.toBlob();
       const arrayBuffer = await blob.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
-    }
-    // Method 3: Try toArrayBuffer() if available
-    else if (typeof pdfStream.toArrayBuffer === 'function') {
+    } else if (typeof pdfStream.toArrayBuffer === 'function') {
       console.log('[PDF] Using toArrayBuffer() method...');
       const arrayBuffer = await pdfStream.toArrayBuffer();
       buffer = Buffer.from(arrayBuffer);
-    }
-    // Method 4: If it's a ReadableStream, read it
-    else if (pdfStream && typeof pdfStream.pipe === 'function') {
+    } else if (pdfStream && typeof pdfStream.pipe === 'function') {
       console.log('[PDF] Using stream reading method...');
       const chunks = [];
       for await (const chunk of pdfStream) {
         chunks.push(chunk);
       }
       buffer = Buffer.concat(chunks);
-    }
-    // Method 5: Try to get the buffer directly if it's already a buffer
-    else if (Buffer.isBuffer(pdfStream)) {
+    } else if (Buffer.isBuffer(pdfStream)) {
       console.log('[PDF] pdfStream is already a buffer');
       buffer = pdfStream;
-    }
-    // Method 6: Try string conversion if it's a string
-    else if (typeof pdfStream === 'string') {
+    } else if (typeof pdfStream === 'string') {
       console.log('[PDF] Converting string to buffer...');
       buffer = Buffer.from(pdfStream, 'utf-8');
-    }
-    // Method 7: Use the pdf() function with options
-    else {
+    } else {
       console.log('[PDF] Trying alternative approach with pdf().toBuffer()...');
       try {
         const { pdf: pdfAlt } = await import('@react-pdf/renderer');
@@ -148,16 +124,18 @@ async function generateStudyPDFBuffer(studyData: any) {
     console.error('[PDF] Error message:', pdfError?.message);
     console.error('[PDF] Error stack:', pdfError?.stack);
     console.error('[PDF] ========== PDF GENERATION FAILED ==========');
-    
-    // Return null instead of throwing to allow the process to continue without PDF
     return null;
   }
 }
 
 export async function POST(req: Request) {
   try {
+    console.log('🔵 ========== API /api/studies POST STARTED ==========');
+    
     await dbConnect();
     const body = await req.json();
+    console.log('🔵 Received body keys:', Object.keys(body || {}));
+    
     const { prenom, nom, email, entreprise, type, universe, studyData } = body;
     const userType = type || universe || 'part';
 
@@ -165,9 +143,18 @@ export async function POST(req: Request) {
     console.log('📝 Email:', email);
     console.log('📝 studyData keys:', Object.keys(studyData || {}));
     console.log('📝 studyData.puissance:', studyData?.puissance);
-    console.log('📝 studyData.data exists?', !!studyData?.data);
+    console.log('📝 studyData.params exists?', !!studyData?.params);
+    console.log('📝 studyData.params keys:', Object.keys(studyData?.params || {}));
+    console.log('📝 studyData.results exists?', !!studyData?.results);
+    console.log('📝 studyData.results keys:', Object.keys(studyData?.results || {}));
+    console.log('📝 studyData.results.monthly length:', studyData?.results?.monthly?.length || 0);
+    console.log('📝 studyData.params.panels length:', studyData?.params?.panels?.length || 0);
+    
+    // LOG THE ENTIRE studyData to see what's coming in
+    console.log('📝 Full studyData:', JSON.stringify(studyData, null, 2));
 
     if (!email) {
+      console.log('❌ Email missing');
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
     }
 
@@ -196,40 +183,81 @@ export async function POST(req: Request) {
 
     console.log('🔑 Public token generated:', publicToken);
 
-    // Prepare study data
-    const productionAnnuelle = studyData.production || 0;
-    const irradiationAnnuelle = studyData.irradiation || 0;
-    const variabiliteAnnuelle = studyData.variabilite || 0;
+    // CRITICAL: Extract params and results from studyData
+    let params = studyData.params || {};
+    let results = studyData.results || {};
 
-    // 2. Create Study with ALL fields including publicToken
+    console.log('📦 Initial params keys:', Object.keys(params));
+    console.log('📦 Initial results keys:', Object.keys(results));
+
+    // If params is empty, try to build it from flat data
+    if (Object.keys(params).length === 0) {
+      console.log('⚠️ No params found, building from flat data...');
+      params = {
+        inclinaison: studyData.inclinaison || "35",
+        azimut: studyData.azimut || "0",
+        systemLosses: studyData.systemLosses || "14",
+        pertes: studyData.systemLosses || "14",
+        panels: studyData.panels || [],
+        obstacles: studyData.obstacles || [],
+        voltageDropResult: studyData.voltageDropResult || null,
+        calepinageImage: studyData.calepinageImage || null,
+      };
+      console.log('📦 Built params from flat data:', params);
+    } else {
+      console.log('✅ Params found with keys:', Object.keys(params));
+      console.log('📦 params.panels length:', params.panels?.length || 0);
+    }
+
+    // If results is empty, try to build it from flat data
+    if (Object.keys(results).length === 0 || !results.production) {
+      console.log('⚠️ No results found, building from flat data...');
+      results = {
+        production: studyData.production || 0,
+        irradiation: studyData.irradiation || 0,
+        variabilite: studyData.variabilite || 0,
+        monthly: studyData.monthly || [],
+        fullData: studyData.data || {},
+      };
+      console.log('📦 Built results from flat data:', results);
+      console.log('📦 results.monthly length:', results.monthly?.length || 0);
+    } else {
+      console.log('✅ Results found with keys:', Object.keys(results));
+      console.log('📦 results.monthly length:', results.monthly?.length || 0);
+    }
+
+    console.log('📦 Final params keys:', Object.keys(params));
+    console.log('📦 Final results keys:', Object.keys(results));
+    console.log('📦 Final results.monthly length:', results.monthly?.length || 0);
+    console.log('📦 Final params.panels length:', params.panels?.length || 0);
+    console.log('📦 Final params:', JSON.stringify(params, null, 2));
+    console.log('📦 Final results:', JSON.stringify(results, null, 2));
+
+    // 2. Create Study with ALL fields including params and results
     const study = await Study.create({
       userEmail: user.email,
       puissance: studyData.puissance || "0",
       adresse: studyData.adresse || "Adresse non définie",
       lat: studyData.lat || 0,
       lng: studyData.lng || 0,
-      params: studyData.params || {
-        inclinaison: studyData.inclinaison || "35",
-        azimut: studyData.azimut || "0",
-        systemLosses: studyData.systemLosses || "14",
-        panels: studyData.panels || [],
-        obstacles: studyData.obstacles || [],
-        voltageDropResult: studyData.voltageDropResult || null,
-        calepinageImage: studyData.calepinageImage || null,
-      },
-      results: studyData.results || {
-        production: productionAnnuelle,
-        irradiation: irradiationAnnuelle,
-        variabilite: variabiliteAnnuelle,
-        monthly: studyData.monthly || [],
-        fullData: studyData.data || {},
-      },
+      params: params,      // <-- CRITICAL: Save params
+      results: results,    // <-- CRITICAL: Save results
       publicToken: publicToken,
       publicTokenExpires: publicTokenExpires,
     });
 
     console.log('✅ Study created with ID:', study._id);
+    console.log('✅ Study params saved:', !!study.params);
+    console.log('✅ Study results saved:', !!study.results);
     console.log('✅ Study publicToken saved:', study.publicToken);
+    
+    // Verify the saved data
+    const savedStudy = await Study.findById(study._id);
+    console.log('✅ Verifying saved study:');
+    console.log('   - params keys:', Object.keys(savedStudy.params || {}));
+    console.log('   - results keys:', Object.keys(savedStudy.results || {}));
+    console.log('   - results.monthly length:', savedStudy.results?.monthly?.length || 0);
+    console.log('   - params.panels length:', savedStudy.params?.panels?.length || 0);
 
     // Create the report URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://solaire.mafatec.com/';
@@ -268,8 +296,8 @@ export async function POST(req: Request) {
         production: studyData.production || studyData.results?.production || 0,
         irradiation: studyData.irradiation || studyData.results?.irradiation || 0,
         variabilite: studyData.variabilite || studyData.results?.variabilite || 0,
-        params: studyData.params || {},
-        results: studyData.results || {},
+        params: params,
+        results: results,
       };
 
       console.log('📄 PDF Data prepared:', {
@@ -320,9 +348,9 @@ export async function POST(req: Request) {
       publicTokenExpires: publicTokenExpires,
       puissance: studyData.puissance || "0",
       adresse: studyData.adresse || 'Adresse non définie',
-      production: productionAnnuelle,
-      irradiation: irradiationAnnuelle,
-      variabilite: variabiliteAnnuelle,
+      production: studyData.production || 0,
+      irradiation: studyData.irradiation || 0,
+      variabilite: studyData.variabilite || 0,
     };
 
     if (isNewUser || !user.activated) {
@@ -392,6 +420,7 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('❌ Error in /api/studies:', error);
+    console.error('❌ Error stack:', error.stack);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

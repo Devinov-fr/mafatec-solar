@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 
@@ -26,9 +25,12 @@ import {
   Pencil,
   User,
   Building2,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import ReportPDFPopup from "@/components/ui/ReportPDFPopup";
 import LeadModal, { Gate } from "@/components/ui/LeadModal";
+import { toast } from "sonner";
 
 // Map sans SSR
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), {
@@ -45,7 +47,6 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 // ---------------------------
 // Types et interfaces
 // ---------------------------
-// In ./app/(etude)/page.tsx
 interface Data {
   inputs: {
     economic_data: {
@@ -111,6 +112,43 @@ interface Obstacle {
   height: number | null;
   points: { azimuth: number | null; height: number | null }[];
 }
+
+// Save Indicator Component
+const SaveIndicator = ({ isSaving, isSaved, error }: { isSaving: boolean; isSaved: boolean; error: string | null }) => {
+  if (!isSaving && !isSaved && !error) return null;
+  
+  return (
+    <div className="fixed bottom-6 right-6 z-[1000] bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 max-w-sm animate-slide-up">
+      <div className="flex items-center gap-3">
+        {isSaving ? (
+          <>
+            <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+            <div>
+              <p className="font-semibold text-sm text-gray-900">Sauvegarde en cours...</p>
+              <p className="text-xs text-gray-500">L'étude est en cours de sauvegarde</p>
+            </div>
+          </>
+        ) : isSaved ? (
+          <>
+            <CheckCircle className="w-6 h-6 text-green-500" />
+            <div>
+              <p className="font-semibold text-sm text-gray-900">Étude sauvegardée !</p>
+              <p className="text-xs text-gray-500">Votre étude a été enregistrée avec succès</p>
+            </div>
+          </>
+        ) : error ? (
+          <>
+            <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-500 font-bold">!</div>
+            <div>
+              <p className="font-semibold text-sm text-gray-900">Erreur de sauvegarde</p>
+              <p className="text-xs text-gray-500">{error}</p>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 const MATERIAL_RHO: Record<string, number> = {
   copper: 1.724e-8,
@@ -385,6 +423,12 @@ const Home = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  
+  // Save indicator states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [hasSaved, setHasSaved] = useState(false); // Track if study was already saved
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -394,9 +438,112 @@ const Home = () => {
     }
   }, [status]);
 
+  // Auto-hide save indicator after 5 seconds
+  useEffect(() => {
+    if (isSaved || saveError) {
+      const timer = setTimeout(() => {
+        setIsSaved(false);
+        setSaveError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSaved, saveError]);
+
   const handleUnlock = (data: any) => {
     setUserData(data);
     setIsUnlocked(true);
+  };
+
+  // New function to save study with data passed directly
+  const saveStudyWithData = async (dataToSave: Data) => {
+    if (!session?.user?.email) {
+      console.log('❌ Cannot save study: missing user email');
+      return false;
+    }
+
+    if (hasSaved) {
+      console.log('ℹ️ Study already saved, skipping...');
+      return true;
+    }
+
+    setIsSaving(true);
+    setIsSaved(false);
+    setSaveError(null);
+
+    try {
+      console.log('💾 Saving study for authenticated user with data:', dataToSave);
+
+      const payload = {
+        prenom: session.user.name?.split(' ')[0] || 'Utilisateur',
+        nom: session.user.name?.split(' ')[1] || '',
+        email: session.user.email,
+        entreprise: '',
+        type: 'part',
+        universe: 'part',
+        studyData: {
+          puissance: puissancePv,
+          adresse: clickedPosition.address,
+          lat: clickedPosition.lat,
+          lng: clickedPosition.lng,
+          inclinaison: inclinaison,
+          azimut: azimut,
+          systemLosses: systemLosses,
+          panels: panels,
+          obstacles: obstacles,
+          voltageDropResult: voltageDropResult,
+          calepinageImage: panels.find(p => p.imageUrl)?.imageUrl || null,
+          production: dataToSave?.outputs?.totals?.fixed.E_y || 0,
+          irradiation: dataToSave?.outputs?.totals?.fixed["H(i)_y"] || 0,
+          variabilite: dataToSave?.outputs?.totals?.fixed.SD_y || 0,
+          monthly: dataToSave?.outputs?.monthly?.fixed || [],
+          data: dataToSave || {},
+          l_aoi: dataToSave?.outputs?.totals?.fixed.l_aoi || 0,
+          l_spec: dataToSave?.outputs?.totals?.fixed.l_spec || "0",
+          l_tg: dataToSave?.outputs?.totals?.fixed.l_tg || 0,
+          l_total: dataToSave?.outputs?.totals?.fixed.l_total || 0,
+        }
+      };
+
+      console.log('📤 Sending study save request...');
+
+      const response = await fetch('/api/studies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      console.log('📥 Save study response:', result);
+
+      if (response.ok && result.success) {
+        setIsSaved(true);
+        setHasSaved(true);
+        toast.success('Étude sauvegardée avec succès !');
+        console.log('✅ Study saved successfully!');
+        return true;
+      } else {
+        setSaveError(result.error || 'Erreur lors de la sauvegarde');
+        toast.error(result.error || 'Erreur lors de la sauvegarde');
+        console.error('❌ Save failed:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error saving study:', error);
+      setSaveError('Une erreur est survenue lors de la sauvegarde');
+      toast.error('Une erreur est survenue lors de la sauvegarde');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Function to save study when user is authenticated (compatibility)
+  const saveStudyForAuthenticatedUser = async () => {
+    if (!data) {
+      console.log('❌ Cannot save study: no data yet');
+      return false;
+    }
+    return saveStudyWithData(data);
   };
 
   // Ref for printing
@@ -529,13 +676,11 @@ const handleGeneratePDF = async () => {
       lat: position.lat,
       lng: position.lng,
     }));
-    // Clear address error when position changes
     setFormErrors(prev => ({ ...prev, address: false, latitude: false, longitude: false }));
   };
   
   const handleAddressSelect = (lat: number, lng: number, address: string) => {
     setClickedPosition({ lat, lng, address });
-    // Clear address error when address is selected
     setFormErrors(prev => ({ ...prev, address: false, latitude: false, longitude: false }));
   };
 
@@ -547,7 +692,6 @@ const handleGeneratePDF = async () => {
         ...prev,
         [name === "latitude" ? "lat" : "lng"]: numValue,
       }));
-      // Clear errors for the edited field
       if (name === "latitude") {
         setFormErrors(prev => ({ ...prev, latitude: false }));
       } else if (name === "longitude") {
@@ -560,7 +704,6 @@ const handleGeneratePDF = async () => {
     setUseTerrainShadows(value);
     setShowObstacleInputs(value === "oui");
     
-    // Reset obstacles to default empty state when "Non" is selected
     if (value === "non") {
       setObstacles([
         {
@@ -572,7 +715,6 @@ const handleGeneratePDF = async () => {
       ]);
       setObstacleErrors({});
     } else {
-      // When "Oui" is selected, ensure obstacles are empty/null (no default 0s)
       setObstacles([
         {
           name: "Obstacle 1",
@@ -583,7 +725,6 @@ const handleGeneratePDF = async () => {
       ]);
     }
     
-    // Clear terrain shadows error
     setFormErrors(prev => ({ ...prev, terrainShadows: false }));
   };
 
@@ -649,7 +790,6 @@ const handlePointChange = (
     updated[obsIdx].points[ptIdx][field] = newValue;
     setObstacles(updated);
     
-    // Clear error for this specific field
     const errorKey = `obs_${obsIdx}_pt_${ptIdx}_${field}`;
     if (obstacleErrors[errorKey]) {
       setObstacleErrors(prev => ({ ...prev, [errorKey]: false }));
@@ -670,10 +810,8 @@ const handlePointChange = (
     };
     setFormErrors(newErrors);
     
-    // Validate obstacles if "Oui" is selected
     const areObstaclesValid = validateObstacles();
     
-    // Return true if no errors
     return !Object.values(newErrors).some((v) => v === true) && areObstaclesValid;
   };
 
@@ -684,6 +822,7 @@ const handlePointChange = (
     }
     setError("");
     setData(null);
+    setHasSaved(false); // Reset saved state when starting a new calculation
     
     const requestData = {
       lat: clickedPosition.lat,
@@ -701,7 +840,6 @@ const handlePointChange = (
     };
     
     try {
-      // Using environment-based URL configuration
       const response = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -712,7 +850,24 @@ const handlePointChange = (
         setError("Veuillez sélectionner votre adresse ou entrer ses coordonnées.");
         setData(null);
       } else {
+        // First set the data
         setData(result);
+        
+        // If user is authenticated, save after data is set
+        if (status === "authenticated" && session?.user?.email) {
+          console.log('🔐 User is authenticated, will save study...');
+          // Save after a short delay to ensure state is updated
+          setTimeout(() => {
+            // Use the result directly since setData might not have updated yet
+            const dataToSave = result;
+            if (dataToSave) {
+              console.log('💾 Saving study with data...');
+              saveStudyWithData(dataToSave);
+            }
+          }, 100);
+        } else {
+          console.log('👤 User is not authenticated, study will be saved via LeadModal');
+        }
       }
     } catch (err) {
       setError("Une erreur est survenue lors du calcul.");
@@ -735,7 +890,6 @@ const handlePointChange = (
     if (value > 180) value = 180;
     if (value < -180) value = -180;
     setAzimut(value.toString());
-    // Clear azimut error when value is valid
     if (value.toString().trim() !== "") {
       setFormErrors(prev => ({ ...prev, azimut: false }));
     }
@@ -752,6 +906,9 @@ const handlePointChange = (
       <Header />
       <Hero />
 
+      {/* Save Indicator Popup */}
+      <SaveIndicator isSaving={isSaving} isSaved={isSaved} error={saveError} />
+
       {/* Action Bar */}
       {data && (
         <div className="tool-actionbar sticky top-[74px] z-[120] bg-[rgba(250,250,250,0.92)] backdrop-blur-[20px] border-b border-[var(--line-warm)]">
@@ -764,6 +921,9 @@ const handlePointChange = (
                 <strong className="text-[var(--text)] font-semibold">{puissancePv || "0"} kWc</strong> ·{" "}
                 {clickedPosition.address || "Adresse non définie"} ·{" "}
                 {clickedPosition.lat.toFixed(2)} / {clickedPosition.lng.toFixed(2)}
+                {isSaved && (
+                  <span className="ml-2 text-green-600 text-xs font-bold">✓ Sauvegardée</span>
+                )}
               </span>
             </div>
             <button
@@ -810,7 +970,6 @@ const handlePointChange = (
             <h3>Adresse & coordonnées</h3>
             <p className="cfg-sub">Adresse géocodée et latitude / longitude.</p>
             <div className="field-sm">
-             
               <AddressAutocomplete onAddressSelect={handleAddressSelect} />
               {(formErrors.address || formErrors.latitude || formErrors.longitude) && (
                 <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">L&apos;adresse est requise</p>
@@ -886,7 +1045,7 @@ const handlePointChange = (
                       className="w-full py-2 px-3 border border-[var(--line-warm)] rounded-[5px] bg-white text-[0.86rem]"
                       placeholder="Nom de l'obstacle"
                     />
-{obs.points.map((pt, ptIdx) => (
+                    {obs.points.map((pt, ptIdx) => (
                       <div key={ptIdx} className="space-y-2">
                         <div className="flex gap-3">
                           <div className="flex-1">
@@ -1020,47 +1179,47 @@ const handlePointChange = (
                 <div className="reveal-card">
                   {!voltageDropResult ? (
                     <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
-                    <p className="text-sm text-[#3a4055] mb-4">
-                      Ouvrez le calculateur pour vérifier la chute de tension de votre ligne (matériau, section, longueur).
-                    </p>
-                    <Button
-                      onClick={() => setIsVoltageModalOpen(true)}
-                      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
-                    >
-                      <Zap size={18} />
-                      Ouvrir le calculateur
-                    </Button>
-                  </div>
-                  ) : (
-<div className="mt-4 p-5 bg-[#f0f9f4] border border-[#d1e7dd] rounded-2xl">
-                    <div className="flex items-center gap-2 mb-4 text-[#1e6043]">
-                      <Zap size={18} />
-                      <p className="font-semibold text-[#1e6043] text-xs">Résultats de la chute de tension</p>
-                    </div>
-                    <div className="space-y-3 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4b5563]">Chute de tension</span>
-                        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdrop} V</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4b5563]">Pourcentage de chute de tension</span>
-                        <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdropPct} %</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#4b5563]">Résistance de fil</span>
-                        <span className="font-semibold text-slate-900">{voltageDropResult.rwire} Ω</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-[#d1e7dd]">
-                      <button
+                      <p className="text-sm text-[#3a4055] mb-4">
+                        Ouvrez le calculateur pour vérifier la chute de tension de votre ligne (matériau, section, longueur).
+                      </p>
+                      <Button
                         onClick={() => setIsVoltageModalOpen(true)}
-                        className="flex items-center gap-2 text-[#1e6043] font-medium hover:text-[#1e6043]/80 transition-colors"
+                        className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
                       >
-                        <Pencil size={16} />
-                        Modifier le calcul
-                      </button>
+                        <Zap size={18} />
+                        Ouvrir le calculateur
+                      </Button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="mt-4 p-5 bg-[#f0f9f4] border border-[#d1e7dd] rounded-2xl">
+                      <div className="flex items-center gap-2 mb-4 text-[#1e6043]">
+                        <Zap size={18} />
+                        <p className="font-semibold text-[#1e6043] text-xs">Résultats de la chute de tension</p>
+                      </div>
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#4b5563]">Chute de tension</span>
+                          <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdrop} V</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#4b5563]">Pourcentage de chute de tension</span>
+                          <span className="font-semibold text-slate-900">≈ {voltageDropResult.vdropPct} %</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#4b5563]">Résistance de fil</span>
+                          <span className="font-semibold text-slate-900">{voltageDropResult.rwire} Ω</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-[#d1e7dd]">
+                        <button
+                          onClick={() => setIsVoltageModalOpen(true)}
+                          className="flex items-center gap-2 text-[#1e6043] font-medium hover:text-[#1e6043]/80 transition-colors"
+                        >
+                          <Pencil size={16} />
+                          Modifier le calcul
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1094,17 +1253,17 @@ const handlePointChange = (
 
               {addCalpinage === "oui" && (
                 <div className="mt-6 p-5 bg-[#f4f6fb] rounded-xl border border-slate-200">
-                    <p className="text-sm text-[#3a4055] mb-4">
-                      Ouvrez l'outil de calepinage pour définir la zone de panneaux sur le toit.
-                    </p>
-                    <Button
-                      onClick={() => setIsRoofPlannerOpen(true)}
-                      className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
-                    >
-                      <Grid3X3 size={18} />
-                      Ouvrir le calepinage
-                    </Button>
-                  </div>
+                  <p className="text-sm text-[#3a4055] mb-4">
+                    Ouvrez l'outil de calepinage pour définir la zone de panneaux sur le toit.
+                  </p>
+                  <Button
+                    onClick={() => setIsRoofPlannerOpen(true)}
+                    className="w-full bg-[#272a6b] hover:bg-[#272a6b]/90 text-white flex items-center justify-center gap-2 py-5 rounded-lg"
+                  >
+                    <Grid3X3 size={18} />
+                    Ouvrir le calepinage
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -1122,192 +1281,192 @@ const handlePointChange = (
         </div>
 
         {/* Results Area */}
-{data && (
-  <div id="results" className="results-section w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[var(--paper-2)] mt-24">
-    <div className="wrap mx-auto max-w-[1200px] px-10 py-12">
-      <div className="res-head flex flex-col items-center text-center mb-12">
-        <div className="res-logo inline-flex items-center gap-[0.5rem] mb-6">
-          <img src="/mafatec-logo-rge.png" alt="MAFATEC" className="h-[60px] w-auto" />
-        </div>
-        <span className="eyebrow flex items-center gap-2 font-sans text-[0.7rem] font-semibold tracking-[0.32em] uppercase text-[var(--red-500)] mb-2">
-          <span className="mark w-[26px] h-px bg-[var(--red-500)]" />
-          Analyse de production
-        </span>
-        <h2 className="sec-h text-[clamp(2rem,3.6vw,3rem)] leading-[1.05] tracking-[-0.015em] mb-4 font-[var(--head)] font-semibold">
-          Les résultats de votre <em className="italic text-[var(--red-500)] font-medium not-italic-sans">étude</em>
-        </h2>
-        {isUnlocked && userData && (
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[var(--line-warm)] shadow-sm">
-            <div className="text-[var(--red-500)]">
-              {userData.universe === "pro" ? <Building2 size={14} /> : <User size={14} />}
+        {data && (
+          <div id="results" className="results-section w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[var(--paper-2)] mt-24">
+            <div className="wrap mx-auto max-w-[1200px] px-10 py-12">
+              <div className="res-head flex flex-col items-center text-center mb-12">
+                <div className="res-logo inline-flex items-center gap-[0.5rem] mb-6">
+                  <img src="/mafatec-logo-rge.png" alt="MAFATEC" className="h-[60px] w-auto" />
+                </div>
+                <span className="eyebrow flex items-center gap-2 font-sans text-[0.7rem] font-semibold tracking-[0.32em] uppercase text-[var(--red-500)] mb-2">
+                  <span className="mark w-[26px] h-px bg-[var(--red-500)]" />
+                  Analyse de production
+                </span>
+                <h2 className="sec-h text-[clamp(2rem,3.6vw,3rem)] leading-[1.05] tracking-[-0.015em] mb-4 font-[var(--head)] font-semibold">
+                  Les résultats de votre <em className="italic text-[var(--red-500)] font-medium not-italic-sans">étude</em>
+                </h2>
+                {isUnlocked && userData && (
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[var(--line-warm)] shadow-sm">
+                    <div className="text-[var(--red-500)]">
+                      {userData.universe === "pro" ? <Building2 size={14} /> : <User size={14} />}
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-soft)]">
+                      Profil {userData.universe === "pro" ? "Professionnel" : "Particulier"}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
+                    <span className="text-[10px] font-medium text-[var(--muted)]">
+                      {userData.prenom} {userData.nom}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Simulation Results Header */}
+              <div className="sim-head flex items-center gap-4 mb-4">
+                <span className="sim-ic w-10 h-10 rounded-lg bg-white border border-[var(--line-warm)] flex items-center justify-center text-[var(--red-500)]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+                </span>
+                <div>
+                  <h3 className="text-[1.1rem] font-semibold">Résultats <em className="italic text-[var(--red-500)] not-italic-sans">simulation</em></h3>
+                  <div className="sim-sub text-[0.78rem] text-[var(--muted)]">Paramètres d&apos;implantation retenus et indicateurs de performance calculés.</div>
+                </div>
+              </div>
+
+              <div className="sim-provided flex flex-wrap gap-4 mb-8">
+                <div className="sp flex items-center gap-3 bg-white border border-[var(--line-warm)] rounded-xl px-4 py-3">
+                  <span className="sp-ic text-[var(--muted)]"><TrendingUp size={16} /></span>
+                  <span className="sp-txt flex flex-col">
+                    <span className="sp-k text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Inclinaison</span>
+                    <span className="sp-v text-[1.1rem] font-bold">{inclinaison}°</span>
+                  </span>
+                  <span className="sp-badge bg-[var(--paper-2)] text-[var(--logo-blue)] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ml-4">Fourni</span>
+                </div>
+                <div className="sp flex items-center gap-3 bg-white border border-[var(--line-warm)] rounded-xl px-4 py-3">
+                  <span className="sp-ic text-[var(--muted)]"><Clock size={16} /></span>
+                  <span className="sp-txt flex flex-col">
+                    <span className="sp-k text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Azimut</span>
+                    <span className="sp-v text-[1.1rem] font-bold">{azimut}° · {getAzimuthDirection(parseFloat(azimut))}</span>
+                  </span>
+                  <span className="sp-badge bg-[var(--paper-2)] text-[var(--logo-blue)] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ml-4">Fourni</span>
+                </div>
+              </div>
+
+              {/* KPIs (Gated) */}
+              <div className="kpis grid grid-cols-1 md:grid-cols-3 gap-[1.3rem] mb-[1.4rem]">
+                <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
+                  {!isUnlocked && (
+                    <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+                  )}
+                  <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Production annuelle</div>
+                  <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
+                    <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
+                      {data?.outputs?.totals?.fixed.E_y.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">kWh</span>
+                  </div>
+                  <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Énergie produite estimée sur une année complète.</div>
+                  {!isUnlocked && (
+                    <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Voir
+                    </button>
+                  )}
+                </div>
+
+                <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
+                  {!isUnlocked && (
+                    <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+                  )}
+                  <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Irradiation annuelle</div>
+                  <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
+                    <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
+                      {data?.outputs?.totals?.fixed["H(i)_y"].toLocaleString('fr-FR', { minimumFractionDigits: 0 })}
+                    </span>
+                    <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">kWh/m²</span>
+                  </div>
+                  <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Rayonnement solaire reçu par mètre carré et par an.</div>
+                  {!isUnlocked && (
+                    <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Voir
+                    </button>
+                  )}
+                </div>
+
+                <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
+                  {!isUnlocked && (
+                    <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+                  )}
+                  <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Variabilité interannuelle</div>
+                  <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
+                    <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
+                      {data?.outputs?.totals?.fixed.SD_y.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                    </span>
+                    <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">%</span>
+                  </div>
+                  <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Écart-type de production d&apos;une année sur l&apos;autre.</div>
+                  {!isUnlocked && (
+                    <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Voir
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Synth Cards */}
+              <div className="synth-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1.2rem] mb-12">
+                <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
+                  <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
+                    <User size={15} /> Entrées fournies
+                  </h4>
+                  <div className="synth-list flex flex-col gap-2.5">
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Latitude</span><span className="v font-bold">{clickedPosition.lat.toFixed(6)}</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Longitude</span><span className="v font-bold">{clickedPosition.lng.toFixed(6)}</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Horizon</span><span className="v font-bold">{useTerrainShadows === "oui" ? "Calculé" : "Manuel"}</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">PV installée</span><span className="v font-bold">{puissancePv} kWc</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pertes système</span><span className="v font-bold">{systemLosses} %</span></div>
+                  </div>
+                </div>
+
+                <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
+                  <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
+                    <LineChart size={15} /> Pertes de production
+                  </h4>
+                  <div className="synth-list flex flex-col gap-2.5">
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Angle d&apos;incidence</span><span className="v font-bold">{data?.outputs.totals.fixed.l_aoi.toFixed(2)}</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Effets spectraux</span><span className="v font-bold">{data?.outputs.totals.fixed.l_spec}</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Temp. & irrad.</span><span className="v font-bold">{data?.outputs.totals.fixed.l_tg.toFixed(2)} %</span></div>
+                    <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pertes totales</span><span className="v font-bold">{data?.outputs.totals.fixed.l_total.toFixed(2)}</span></div>
+                  </div>
+                </div>
+
+                <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
+                  <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
+                    <Zap size={15} /> Chute tension câblage
+                  </h4>
+                  {voltageDropResult && calculateVoltageDrop === "oui" ? (
+                    <div className="synth-list flex flex-col gap-2.5">
+                      <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Chute de tension</span><span className="v font-bold">{voltageDropResult.vdrop} V</span></div>
+                      <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pourcentage</span><span className="v font-bold">{voltageDropResult.vdropPct} %</span></div>
+                      <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Résistance fil</span><span className="v font-bold">{voltageDropResult.rwire} Ω</span></div>
+                    </div>
+                  ) : (
+                    <p className="empty-note text-[0.82rem] text-[var(--muted)] italic leading-relaxed">Aucun calcul de chute de tension renseigné.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Detailed Results (Table, Charts, etc.) */}
+              <PrintComponentTwo
+                ref={printComponentRef}
+                data={data}
+                monthNames={["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"]}
+                azimut={azimut}
+                inclinaison={inclinaison}
+                error={error}
+                obstacles={obstacles}
+                voltageDropResult={voltageDropResult}
+                panels={panels}
+                isUnlocked={isUnlocked}
+                onUnlock={() => setIsLeadModalOpen(true)}
+              />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-soft)]">
-              Profil {userData.universe === "pro" ? "Professionnel" : "Particulier"}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
-            <span className="text-[10px] font-medium text-[var(--muted)]">
-              {userData.prenom} {userData.nom}
-            </span>
           </div>
         )}
-      </div>
-
-      {/* Simulation Results Header */}
-      <div className="sim-head flex items-center gap-4 mb-4">
-        <span className="sim-ic w-10 h-10 rounded-lg bg-white border border-[var(--line-warm)] flex items-center justify-center text-[var(--red-500)]">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
-        </span>
-        <div>
-          <h3 className="text-[1.1rem] font-semibold">Résultats <em className="italic text-[var(--red-500)] not-italic-sans">simulation</em></h3>
-          <div className="sim-sub text-[0.78rem] text-[var(--muted)]">Paramètres d&apos;implantation retenus et indicateurs de performance calculés.</div>
-        </div>
-      </div>
-
-      <div className="sim-provided flex flex-wrap gap-4 mb-8">
-        <div className="sp flex items-center gap-3 bg-white border border-[var(--line-warm)] rounded-xl px-4 py-3">
-          <span className="sp-ic text-[var(--muted)]"><TrendingUp size={16} /></span>
-          <span className="sp-txt flex flex-col">
-            <span className="sp-k text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Inclinaison</span>
-            <span className="sp-v text-[1.1rem] font-bold">{inclinaison}°</span>
-          </span>
-          <span className="sp-badge bg-[var(--paper-2)] text-[var(--logo-blue)] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ml-4">Fourni</span>
-        </div>
-        <div className="sp flex items-center gap-3 bg-white border border-[var(--line-warm)] rounded-xl px-4 py-3">
-          <span className="sp-ic text-[var(--muted)]"><Clock size={16} /></span>
-          <span className="sp-txt flex flex-col">
-            <span className="sp-k text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Azimut</span>
-            <span className="sp-v text-[1.1rem] font-bold">{azimut}° · {getAzimuthDirection(parseFloat(azimut))}</span>
-          </span>
-          <span className="sp-badge bg-[var(--paper-2)] text-[var(--logo-blue)] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ml-4">Fourni</span>
-        </div>
-      </div>
-
-      {/* KPIs (Gated) */}
-      <div className="kpis grid grid-cols-1 md:grid-cols-3 gap-[1.3rem] mb-[1.4rem]">
-        <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
-          {!isUnlocked && (
-            <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-          )}
-          <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Production annuelle</div>
-          <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
-            <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
-              {data?.outputs?.totals?.fixed.E_y.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">kWh</span>
-          </div>
-          <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Énergie produite estimée sur une année complète.</div>
-          {!isUnlocked && (
-            <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              Voir
-            </button>
-          )}
-        </div>
-
-        <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
-          {!isUnlocked && (
-            <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-          )}
-          <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Irradiation annuelle</div>
-          <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
-            <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
-              {data?.outputs?.totals?.fixed["H(i)_y"].toLocaleString('fr-FR', { minimumFractionDigits: 0 })}
-            </span>
-            <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">kWh/m²</span>
-          </div>
-          <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Rayonnement solaire reçu par mètre carré et par an.</div>
-          {!isUnlocked && (
-            <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              Voir
-            </button>
-          )}
-        </div>
-
-        <div className={`kpi relative bg-[var(--ink-900)] text-[var(--on-dark)] rounded-[var(--r-lg)] p-8 overflow-hidden isolation-auto ${!isUnlocked ? "locked" : "unlocked"}`}>
-          {!isUnlocked && (
-            <span className="kpi-lock-ic absolute top-[1.3rem] right-[1.3rem] text-[var(--champagne-soft)] opacity-80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-          )}
-          <div className="kpi-label text-[0.68rem] font-bold tracking-[0.16em] uppercase text-[var(--champagne-soft)] mb-4">Variabilité interannuelle</div>
-          <div className={`${!isUnlocked ? "blur-[11px] opacity-70" : ""}`}>
-            <span className="kpi-value font-[var(--serif)] font-medium text-[clamp(2.1rem,3.4vw,2.9rem)] leading-none tracking-[-0.01em]">
-              {data?.outputs?.totals?.fixed.SD_y.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-            </span>
-            <span className="kpi-unit text-[0.9rem] font-medium text-[var(--on-dark-soft)] ml-1.5">%</span>
-          </div>
-          <div className="kpi-foot mt-4 text-[0.76rem] text-[var(--on-dark-mute)] leading-relaxed">Écart-type de production d&apos;une année sur l&apos;autre.</div>
-          {!isUnlocked && (
-            <button onClick={() => setIsLeadModalOpen(true)} className="kpi-mini-cta absolute right-[1.3rem] bottom-[1.3rem] inline-flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.1em] uppercase text-[var(--champagne-soft)] border border-[rgba(201,169,106,0.4)] px-3 py-1.5 rounded-[3px] bg-[rgba(7,9,18,0.4)] transition-all hover:border-[var(--champagne)] hover:text-white hover:bg-[var(--accent)]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              Voir
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Synth Cards */}
-      <div className="synth-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1.2rem] mb-12">
-        <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
-          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
-          <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
-            <User size={15} /> Entrées fournies
-          </h4>
-          <div className="synth-list flex flex-col gap-2.5">
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Latitude</span><span className="v font-bold">{clickedPosition.lat.toFixed(6)}</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Longitude</span><span className="v font-bold">{clickedPosition.lng.toFixed(6)}</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Horizon</span><span className="v font-bold">{useTerrainShadows === "oui" ? "Calculé" : "Manuel"}</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">PV installée</span><span className="v font-bold">{puissancePv} kWc</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pertes système</span><span className="v font-bold">{systemLosses} %</span></div>
-          </div>
-        </div>
-
-        <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
-          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
-          <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
-            <LineChart size={15} /> Pertes de production
-          </h4>
-          <div className="synth-list flex flex-col gap-2.5">
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Angle d&apos;incidence</span><span className="v font-bold">{data?.outputs.totals.fixed.l_aoi.toFixed(2)}</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Effets spectraux</span><span className="v font-bold">{data?.outputs.totals.fixed.l_spec}</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Temp. & irrad.</span><span className="v font-bold">{data?.outputs.totals.fixed.l_tg.toFixed(2)} %</span></div>
-            <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pertes totales</span><span className="v font-bold">{data?.outputs.totals.fixed.l_total.toFixed(2)}</span></div>
-          </div>
-        </div>
-
-        <div className="synth-card group bg-white border border-[var(--line-warm)] rounded-[var(--r-md)] p-6 relative overflow-hidden transition-all">
-          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--red-500)] scale-y-0 origin-top transition-transform duration-500 group-hover:scale-y-100" />
-          <h4 className="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.14em] uppercase text-[var(--red-500)] mb-4">
-            <Zap size={15} /> Chute tension câblage
-          </h4>
-          {voltageDropResult && calculateVoltageDrop === "oui" ? (
-            <div className="synth-list flex flex-col gap-2.5">
-              <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Chute de tension</span><span className="v font-bold">{voltageDropResult.vdrop} V</span></div>
-              <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Pourcentage</span><span className="v font-bold">{voltageDropResult.vdropPct} %</span></div>
-              <div className="row flex justify-between gap-4 text-[0.82rem]"><span className="k text-[var(--text-soft)]">Résistance fil</span><span className="v font-bold">{voltageDropResult.rwire} Ω</span></div>
-            </div>
-          ) : (
-            <p className="empty-note text-[0.82rem] text-[var(--muted)] italic leading-relaxed">Aucun calcul de chute de tension renseigné.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Detailed Results (Table, Charts, etc.) */}
-      <PrintComponentTwo
-        ref={printComponentRef}
-        data={data}
-        monthNames={["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"]}
-        azimut={azimut}
-        inclinaison={inclinaison}
-        error={error}
-        obstacles={obstacles}
-        voltageDropResult={voltageDropResult}
-        panels={panels}
-        isUnlocked={isUnlocked}
-        onUnlock={() => setIsLeadModalOpen(true)}
-      />
-    </div>
-  </div>
-)}
       </main>
 
       {/* Final CTA */}
@@ -1368,41 +1527,41 @@ const handlePointChange = (
           adresse: clickedPosition.address,
           lat: clickedPosition.lat,
           lng: clickedPosition.lng,
-          production: data?.outputs?.totals?.fixed.E_y,
-          irradiation: data?.outputs?.totals?.fixed["H(i)_y"],
-          variabilite: data?.outputs?.totals?.fixed.SD_y,
-          l_aoi: data?.outputs?.totals?.fixed.l_aoi,
-          l_spec: data?.outputs?.totals?.fixed.l_spec,
-          l_tg: data?.outputs?.totals?.fixed.l_tg,
-          l_total: data?.outputs?.totals?.fixed.l_total,
-          monthly: data?.outputs?.monthly?.fixed,
-          data: data, // Full PVGIS object
-          inclinaison,
-          azimut,
-          systemLosses,
-          panels,
-          obstacles,
-          voltageDropResult,
+          inclinaison: inclinaison,
+          azimut: azimut,
+          systemLosses: systemLosses,
+          panels: panels,
+          obstacles: obstacles,
+          voltageDropResult: voltageDropResult,
           calepinageImage: panels.find(p => p.imageUrl)?.imageUrl || null,
+          production: data?.outputs?.totals?.fixed.E_y || 0,
+          irradiation: data?.outputs?.totals?.fixed["H(i)_y"] || 0,
+          variabilite: data?.outputs?.totals?.fixed.SD_y || 0,
+          monthly: data?.outputs?.monthly?.fixed || [],
+          data: data || {},
+          l_aoi: data?.outputs?.totals?.fixed.l_aoi || 0,
+          l_spec: data?.outputs?.totals?.fixed.l_spec || "0",
+          l_tg: data?.outputs?.totals?.fixed.l_tg || 0,
+          l_total: data?.outputs?.totals?.fixed.l_total || 0,
         }}
       />
 
-{/* PDF Report Popup */}
-<ReportPDFPopup
-  isOpen={isPDFPopupOpen}
-  onClose={() => setIsPDFPopupOpen(false)}
-  data={data}
-  monthNames={["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"]}
-  azimut={azimut}
-  inclinaison={inclinaison}
-  clickedPosition={clickedPosition}
-  puissancePv={puissancePv}
-  systemLosses={systemLosses}
-  voltageDropResult={voltageDropResult}
-  panels={panels}
-  calepinageImage={panels.find(p => p.imageUrl)?.imageUrl || null}
-  obstacles={obstacles}  // Add this line
-/>
+      {/* PDF Report Popup */}
+      <ReportPDFPopup
+        isOpen={isPDFPopupOpen}
+        onClose={() => setIsPDFPopupOpen(false)}
+        data={data}
+        monthNames={["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"]}
+        azimut={azimut}
+        inclinaison={inclinaison}
+        clickedPosition={clickedPosition}
+        puissancePv={puissancePv}
+        systemLosses={systemLosses}
+        voltageDropResult={voltageDropResult}
+        panels={panels}
+        calepinageImage={panels.find(p => p.imageUrl)?.imageUrl || null}
+        obstacles={obstacles}
+      />
 
       <Footer />
     </div>
