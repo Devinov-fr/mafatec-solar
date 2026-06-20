@@ -132,10 +132,24 @@ function PublicRapportDetail() {
   }
 
   // Map database study structure back to what StudyReportContent expects
-  let reportData = study.results;
-  if (study.results?.data?.outputs) {
+  let reportData;
+  
+  // Check if we have the full PVGIS data with outputs
+  if (study.results?.fullData?.outputs) {
+    // Use the full data from the fullData field
+    reportData = study.results.fullData;
+    console.log('📊 Using fullData for report');
+  } else if (study.results?.data?.outputs) {
+    // Alternative location for full data
     reportData = study.results.data;
-  } else if (!study.results?.outputs) {
+    console.log('📊 Using data for report');
+  } else if (study.results?.outputs) {
+    // Data already has outputs at top level
+    reportData = study.results;
+    console.log('📊 Using results directly for report');
+  } else {
+    // Build from flat data
+    console.log('📊 Building report data from flat structure');
     reportData = {
       outputs: {
         totals: {
@@ -154,10 +168,24 @@ function PublicRapportDetail() {
         }
       },
       inputs: {
-        location: { latitude: study.lat || 0, longitude: study.lng || 0 }
+        location: { 
+          latitude: study.lat || 0, 
+          longitude: study.lng || 0 
+        }
       }
     };
   }
+
+  // Ensure the data has all required fields
+  if (!reportData.outputs) reportData.outputs = {};
+  if (!reportData.outputs.totals) reportData.outputs.totals = {};
+  if (!reportData.outputs.totals.fixed) reportData.outputs.totals.fixed = {};
+  if (!reportData.outputs.monthly) reportData.outputs.monthly = {};
+  if (!reportData.outputs.monthly.fixed) reportData.outputs.monthly.fixed = [];
+  if (!reportData.inputs) reportData.inputs = {};
+  if (!reportData.inputs.location) reportData.inputs.location = { latitude: 0, longitude: 0 };
+
+  console.log('📊 Final report data:', reportData);
 
   // Calculate days remaining for the link
   const daysRemaining = study.publicTokenExpires 
