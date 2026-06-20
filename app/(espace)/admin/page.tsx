@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, User as UserIcon, FileText, Download, Users, Zap, CheckCircle, ShieldCheck, Mail, Upload, FileSpreadsheet } from 'lucide-react';
+import { LogOut, Search, User as UserIcon, FileText, Download, Users, Zap, CheckCircle, ShieldCheck, Mail, Upload, FileSpreadsheet, X } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -17,6 +17,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFilter, setExportFilter] = useState<'all' | 'particulier' | 'pro'>('all');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -60,67 +62,88 @@ export default function AdminPage() {
   const handleExportEmails = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch('/api/admin/export-emails', {
-        credentials: 'include',
+      // Filter users based on selected type
+      let filteredUsers = users;
+      if (exportFilter === 'particulier') {
+        // Check for both 'part' and 'particulier' to be safe
+        filteredUsers = users.filter(user => user.type === 'part' || user.type === 'particulier' || user.type === 'personal');
+      } else if (exportFilter === 'pro') {
+        // Check for both 'pro' and 'professional' to be safe
+        filteredUsers = users.filter(user => user.type === 'pro' || user.type === 'professional');
+      }
+
+      console.log('Filter:', exportFilter);
+      console.log('Total users:', users.length);
+      console.log('Filtered users:', filteredUsers.length);
+      console.log('User types:', users.map(u => u.type));
+
+      if (filteredUsers.length === 0) {
+        toast.warning('Aucun client à exporter pour le filtre sélectionné');
+        setShowExportModal(false);
+        setIsExporting(false);
+        return;
+      }
+
+      // Prepare data for Excel with proper headers
+      const excelData = filteredUsers.map((user: any) => {
+        const row: any = {
+          'Nom': user.nom || '',
+          'Prénom': user.prenom || '',
+          'Adresse e-mail': user.email || ''
+        };
+
+        // Add Entreprise only for professional clients
+        const isPro = user.type === 'pro' || user.type === 'professional';
+        if (isPro) {
+          row['Entreprise'] = user.entreprise || '';
+        } else {
+          row['Entreprise'] = ''; // Empty for non-professional clients
+        }
+
+        return row;
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths for better readability
+      const cols = [
+        { wch: 20 }, // Nom
+        { wch: 20 }, // Prénom
+        { wch: 35 }, // Adresse e-mail
+        { wch: 30 }  // Entreprise
+      ];
+      ws['!cols'] = cols;
+
+      // Append sheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Clients');
+
+      // Generate Excel file as binary
+      const excelBuffer = XLSX.write(wb, { 
+        bookType: 'xlsx', 
+        type: 'array',
+        bookSST: false
       });
       
-      const data = await response.json();
+      // Create blob and download
+      const blob = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
       
-      if (data.success) {
-        // Prepare data for Excel with proper headers
-        const excelData = data.users.map((user: any) => ({
-          'Email': user.email,
-          'Prénom': user.prenom || '',
-          'Nom': user.nom || '',
-          'Type': user.type === 'pro' ? 'Professionnel' : 'Particulier',
-          'Entreprise': user.entreprise || '',
-          'Activé': user.activated ? 'Oui' : 'Non',
-          "Nombre d'études": user.studyCount || 0
-        }));
-
-        // Create workbook and worksheet
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(excelData);
-
-        // Set column widths for better readability
-        ws['!cols'] = [
-          { wch: 30 }, // Email
-          { wch: 15 }, // Prénom
-          { wch: 15 }, // Nom
-          { wch: 15 }, // Type
-          { wch: 20 }, // Entreprise
-          { wch: 10 }, // Activé
-          { wch: 18 }  // Nombre d'études
-        ];
-
-        // Append sheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Utilisateurs');
-
-        // Generate Excel file as binary
-        const excelBuffer = XLSX.write(wb, { 
-          bookType: 'xlsx', 
-          type: 'array',
-          bookSST: false
-        });
-        
-        // Create blob and download
-        const blob = new Blob([excelBuffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `export-utilisateurs-${new Date().toISOString().split('T')[0]}.xlsx`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success(`${data.users.length} utilisateurs exportés avec succès au format Excel`);
-      } else {
-        toast.error(data.error || 'Erreur lors de l\'export');
-      }
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const filterLabel = exportFilter === 'all' ? 'tous' : exportFilter === 'pro' ? 'professionnels' : 'particuliers';
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clients-${filterLabel}-${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`${filteredUsers.length} clients exportés avec succès au format Excel`);
+      setShowExportModal(false);
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Une erreur est survenue lors de l\'export');
@@ -132,6 +155,18 @@ export default function AdminPage() {
   const handleLogout = async () => {
     await signOut({ redirect: false });
     router.push('/login?role=admin');
+  };
+
+  // Helper function to get user type label
+  const getUserTypeLabel = (type: string) => {
+    if (type === 'pro' || type === 'professional') return 'PRO';
+    if (type === 'part' || type === 'particulier' || type === 'personal') return 'PART';
+    return type?.toUpperCase() || '?';
+  };
+
+  // Helper function to check if user is professional
+  const isProfessional = (type: string) => {
+    return type === 'pro' || type === 'professional';
   };
 
   if (status === 'loading' || (isLoading && studies.length === 0)) {
@@ -185,19 +220,12 @@ export default function AdminPage() {
             <p className="dh-sub text-[0.92rem] text-[#454a63] mt-[0.5rem]">Suivi des simulations et des clients ayant lancé une étude photovoltaïque.</p>
           </div>
           <button
-            onClick={handleExportEmails}
-            disabled={isExporting || users.length === 0}
+            onClick={() => setShowExportModal(true)}
+            disabled={users.length === 0}
             className="inline-flex items-center gap-3 px-6 py-3 bg-[#0b0e1d] text-white text-sm font-semibold rounded-lg hover:bg-[#1a1f3a] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             <FileSpreadsheet size={18} className="text-[#c93b18]" />
-            {isExporting ? (
-              <>
-                <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                Export en cours...
-              </>
-            ) : (
-              'Exporter vers Excel'
-            )}
+            Exporter vers Excel
           </button>
         </div>
 
@@ -265,6 +293,9 @@ export default function AdminPage() {
                   filteredStudies.map((study) => {
                     const user = users.find(u => u.email === study.userEmail) || {};
                     const initials = `${user.prenom?.[0] || ''}${user.nom?.[0] || ''}`.toUpperCase();
+                    const userType = user.type || '';
+                    const isPro = isProfessional(userType);
+                    
                     return (
                       <tr key={study._id} className="border-b border-[#e8e8ea] last:border-b-0 hover:bg-[#f5f5f7] transition-colors duration-200">
                         <td className="p-[1rem_1.3rem]">
@@ -279,8 +310,8 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="p-[1rem_1.3rem]">
-                          <span className={`badge-type inline-flex items-center gap-[0.35rem] text-[0.64rem] font-bold tracking-[0.06em] uppercase p-[0.28rem_0.6rem] rounded-[3px] ${user.type === 'pro' ? 'text-[#3a55b0] bg-[rgba(58,85,176,0.12)]' : 'text-[#a82e12] bg-[rgba(201,59,24,0.11)]'}`}>
-                            {user.type === 'pro' ? 'PRO' : 'PART'}
+                          <span className={`badge-type inline-flex items-center gap-[0.35rem] text-[0.64rem] font-bold tracking-[0.06em] uppercase p-[0.28rem_0.6rem] rounded-[3px] ${isPro ? 'text-[#3a55b0] bg-[rgba(58,85,176,0.12)]' : 'text-[#a82e12] bg-[rgba(201,59,24,0.11)]'}`}>
+                            {isPro ? 'PRO' : 'PART'}
                           </span>
                         </td>
                         <td className="p-[1rem_1.3rem]">
@@ -325,6 +356,99 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-[#15172b]">Exporter les clients</h3>
+                <p className="text-sm text-[#7a7e95] mt-1">Choisissez le type de clients à exporter</p>
+              </div>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-[#7a7e95] hover:text-[#15172b] transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 p-3 border border-[#e8e8ea] rounded-lg cursor-pointer hover:bg-[#f5f5f7] transition-colors">
+                <input
+                  type="radio"
+                  name="exportType"
+                  value="all"
+                  checked={exportFilter === 'all'}
+                  onChange={(e) => setExportFilter('all')}
+                  className="w-4 h-4 text-[#c93b18] border-[#d0d0d5] focus:ring-[#c93b18]"
+                />
+                <div>
+                  <div className="font-medium text-[#15172b]">Les deux</div>
+                  <div className="text-xs text-[#7a7e95]">Tous les clients (particuliers et professionnels)</div>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-[#e8e8ea] rounded-lg cursor-pointer hover:bg-[#f5f5f7] transition-colors">
+                <input
+                  type="radio"
+                  name="exportType"
+                  value="particulier"
+                  checked={exportFilter === 'particulier'}
+                  onChange={(e) => setExportFilter('particulier')}
+                  className="w-4 h-4 text-[#c93b18] border-[#d0d0d5] focus:ring-[#c93b18]"
+                />
+                <div>
+                  <div className="font-medium text-[#15172b]">Particuliers</div>
+                  <div className="text-xs text-[#7a7e95]">Clients particuliers uniquement</div>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-[#e8e8ea] rounded-lg cursor-pointer hover:bg-[#f5f5f7] transition-colors">
+                <input
+                  type="radio"
+                  name="exportType"
+                  value="pro"
+                  checked={exportFilter === 'pro'}
+                  onChange={(e) => setExportFilter('pro')}
+                  className="w-4 h-4 text-[#c93b18] border-[#d0d0d5] focus:ring-[#c93b18]"
+                />
+                <div>
+                  <div className="font-medium text-[#15172b]">Professionnels</div>
+                  <div className="text-xs text-[#7a7e95]">Clients professionnels uniquement</div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 px-4 py-2.5 border border-[#e8e8ea] rounded-lg text-[#7a7e95] hover:bg-[#f5f5f7] transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleExportEmails}
+                disabled={isExporting}
+                className="flex-1 px-4 py-2.5 bg-[#0b0e1d] text-white rounded-lg hover:bg-[#1a1f3a] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                    Export...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet size={18} />
+                    Exporter
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
