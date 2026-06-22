@@ -286,7 +286,6 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
     const isNew = submissionResult?.isNew;
     const isActivated = submissionResult?.user?.activated;
     const email = formData.email;
-    const tokenLink = submissionResult?.activationLink;
 
     let title = <>Étude <em className="not-italic text-[#c93b18]">envoyée</em>&thinsp;!</>;
     let msg = <>Votre étude photovoltaïque complète a été envoyée par email à <span className="font-bold text-[#15172b]">{email}</span>.</>;
@@ -297,40 +296,19 @@ const LeadModal = ({ isOpen, onClose, onUnlock, studyData }: LeadModalProps) => 
       msg = (
         <>
           Votre rapport a été envoyé par email à <span className="font-bold text-[#15172b]">{email}</span>.<br />
-          Comme c'est votre première étude, un <strong>compte a été créé</strong> : un email d'activation contenant un <strong>lien unique valable 3 jours</strong> vous permet de définir votre mot de passe.
+          Un <strong>compte a été créé</strong> avec votre adresse email.
         </>
       );
-
-      if (tokenLink) {
-        extra = (
-          <div className="bg-[#f5f5f7] border border-[#e8e8ea] rounded-xl p-6 text-left space-y-4 mt-6">
-            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7e95]">
-              <Mail size={14} /> Lien d'activation
-            </span>
-            <a href={tokenLink} className="w-full py-3.5 px-6 rounded-[6px] bg-[#c93b18] text-white font-bold text-[0.8rem] flex items-center justify-center gap-2 transition-all hover:brightness-105">
-              Activer mon compte <ArrowRight size={16} />
-            </a>
-          </div>
-        );
-      }
+      // No extra element - completely hide the activation link section
     } else if (!isActivated) {
       title = <>Étude <em className="not-italic text-[#3a55b0]">ajoutée</em> à votre compte</>;
       msg = (
         <>
-          Votre rapport a été envoyé par email à <span className="font-bold text-[#15172b]">{email}</span>. Cette étude a été enregistrée sur votre compte.<br />
-          Votre compte n'est <strong>pas encore activé</strong> — utilisez le lien d'activation (valable 3 jours) pour définir votre mot de passe.
+          Votre rapport a été envoyé par email à <span className="font-bold text-[#15172b]">{email}</span>.<br />
+          Cette étude a été enregistrée sur votre compte.
         </>
       );
-      extra = (
-        <div className="bg-[#f5f5f7] border border-[#e8e8ea] rounded-xl p-6 text-left space-y-4 mt-6">
-          <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7e95]">
-            <Mail size={14} /> Lien d'activation
-          </span>
-          <a href={`/login?email=${encodeURIComponent(email)}`} className="w-full py-3.5 px-6 rounded-[6px] bg-[#3a55b0] text-white font-bold text-[0.8rem] flex items-center justify-center gap-2 transition-all hover:bg-black">
-            Activer mon compte <ArrowRight size={16} />
-          </a>
-        </div>
-      );
+      // No extra element - completely hide the activation link section
     } else {
       title = <>Étude <em className="not-italic text-[#3a55b0]">ajoutée</em> à votre espace</>;
       msg = (

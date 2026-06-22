@@ -986,6 +986,9 @@ const handlePointChange = (
                   onChange={handleInputChange}
                   className={formErrors.latitude ? "border-[var(--red-500)]" : ""}
                 />
+                {formErrors.latitude && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">La latitude est requise</p>
+                )}
               </div>
               <div className="field-sm">
                 <label>Longitude <span className="text-[var(--red-500)]">*</span></label>
@@ -996,6 +999,9 @@ const handlePointChange = (
                   onChange={handleInputChange}
                   className={formErrors.longitude ? "border-[var(--red-500)]" : ""}
                 />
+                {formErrors.longitude && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">La longitude est requise</p>
+                )}
               </div>
             </div>
 
@@ -1027,6 +1033,9 @@ const handlePointChange = (
                   Non
                 </label>
               </div>
+              {formErrors.terrainShadows && (
+                <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">Veuillez sélectionner une option</p>
+              )}
             </div>
 
             {showObstacleInputs && (
@@ -1111,18 +1120,34 @@ const handlePointChange = (
               <input
                 className={formErrors.puissancePv ? "border-[var(--red-500)]" : ""}
                 value={puissancePv}
-                onChange={(e) => setPuissancePv(e.target.value)}
+                onChange={(e) => {
+                  setPuissancePv(e.target.value);
+                  if (e.target.value.trim() !== "") {
+                    setFormErrors(prev => ({ ...prev, puissancePv: false }));
+                  }
+                }}
                 placeholder="9"
               />
+              {formErrors.puissancePv && (
+                <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">La puissance PV est requise</p>
+              )}
             </div>
             <div className="field-sm">
               <label>Pertes du système [%] <span className="text-[var(--red-500)]">*</span></label>
               <input
                 className={formErrors.systemLosses ? "border-[var(--red-500)]" : ""}
                 value={systemLosses}
-                onChange={(e) => setSystemLosses(e.target.value)}
+                onChange={(e) => {
+                  setSystemLosses(e.target.value);
+                  if (e.target.value.trim() !== "") {
+                    setFormErrors(prev => ({ ...prev, systemLosses: false }));
+                  }
+                }}
                 placeholder="14"
               />
+              {formErrors.systemLosses && (
+                <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">Les pertes du système sont requises</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-[0.8rem]">
               <div className="field-sm">
@@ -1130,9 +1155,17 @@ const handlePointChange = (
                 <input
                   className={formErrors.inclinaison ? "border-[var(--red-500)]" : ""}
                   value={inclinaison}
-                  onChange={(e) => setInclinaison(e.target.value)}
+                  onChange={(e) => {
+                    setInclinaison(e.target.value);
+                    if (e.target.value.trim() !== "") {
+                      setFormErrors(prev => ({ ...prev, inclinaison: false }));
+                    }
+                  }}
                   placeholder="35"
                 />
+                {formErrors.inclinaison && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">L'inclinaison est requise</p>
+                )}
               </div>
               <div className="field-sm">
                 <label>Azimut [°] <span className="text-[var(--red-500)]">*</span></label>
@@ -1142,6 +1175,12 @@ const handlePointChange = (
                   onChange={handleAzimutChange}
                   placeholder="0"
                 />
+                {formErrors.azimut && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">L'azimut est requis</p>
+                )}
+                {errorAzimuth && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">{errorAzimuth}</p>
+                )}
               </div>
             </div>
 

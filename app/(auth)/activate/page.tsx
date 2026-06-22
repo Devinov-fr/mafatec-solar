@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Mail, Lock, Eye, EyeOff, Check, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Check, AlertCircle, ArrowLeft, X } from 'lucide-react';
 
 function ActivateForm() {
   const searchParams = useSearchParams();
@@ -20,7 +20,28 @@ function ActivateForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [userPrenom, setUserPrenom] = useState('');
-  const [strength, setStrength] = useState(0);
+  const [touched, setTouched] = useState(false);
+
+  // Password validation
+  const hasMinLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+  const isPasswordValid = hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+  const doPasswordsMatch = password === confirmPassword && password.length > 0;
+
+  const getPasswordStrength = () => {
+    let count = 0;
+    if (hasMinLength) count++;
+    if (hasUpperCase) count++;
+    if (hasLowerCase) count++;
+    if (hasNumber) count++;
+    if (hasSpecialChar) count++;
+    return count;
+  };
+
+  const strength = getPasswordStrength();
 
   useEffect(() => {
     if (!token || !emailParam) {
@@ -36,7 +57,6 @@ function ActivateForm() {
         if (!data.success) {
           setError(data.error || 'Lien invalide ou expiré');
         } else {
-          // If API doesn't return prenom yet, we'll just use a generic welcome
           setUserPrenom(data.prenom || '');
         }
       } catch (err) {
@@ -49,24 +69,16 @@ function ActivateForm() {
     validateToken();
   }, [token, emailParam]);
 
-  useEffect(() => {
-    let s = 0;
-    if (password.length >= 8) s++;
-    if (/[A-Z]/.test(password)) s++;
-    if (/[0-9]/.test(password)) s++;
-    if (/[^A-Za-z0-9]/.test(password)) s++;
-    setStrength(s);
-  }, [password]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password.length < 8) {
-      toast.error('Le mot de passe doit faire au moins 8 caractères');
+    setTouched(true);
+
+    if (!isPasswordValid) {
+      toast.error('Le mot de passe ne respecte pas les critères requis');
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (!doPasswordsMatch) {
       toast.error('Les mots de passe ne correspondent pas');
       return;
     }
@@ -160,7 +172,10 @@ function ActivateForm() {
               <input 
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setTouched(true);
+                }}
                 autoComplete="new-password" 
                 placeholder="Minimum 8 caractères" 
                 required 
@@ -174,21 +189,55 @@ function ActivateForm() {
                 {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
+
+            {/* Password requirements */}
+            {touched && password.length > 0 && (
+              <div className="mt-2 space-y-1 text-xs">
+                <div className={`flex items-center gap-2 ${hasMinLength ? 'text-green-600' : 'text-[#7a7e95]'}`}>
+                  {hasMinLength ? <Check size={14} /> : <X size={14} />}
+                  <span>Minimum 8 caractères</span>
+                </div>
+                <div className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-600' : 'text-[#7a7e95]'}`}>
+                  {hasUpperCase ? <Check size={14} /> : <X size={14} />}
+                  <span>Au moins une majuscule</span>
+                </div>
+                <div className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-600' : 'text-[#7a7e95]'}`}>
+                  {hasLowerCase ? <Check size={14} /> : <X size={14} />}
+                  <span>Au moins une minuscule</span>
+                </div>
+                <div className={`flex items-center gap-2 ${hasNumber ? 'text-green-600' : 'text-[#7a7e95]'}`}>
+                  {hasNumber ? <Check size={14} /> : <X size={14} />}
+                  <span>Au moins un chiffre</span>
+                </div>
+                <div className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-600' : 'text-[#7a7e95]'}`}>
+                  {hasSpecialChar ? <Check size={14} /> : <X size={14} />}
+                  <span>Au moins un caractère spécial (@, #, $, etc.)</span>
+                </div>
+              </div>
+            )}
+
             {/* Password strength meter */}
-            <div className="pw-meter flex gap-[0.3rem] mt-[0.5rem]">
-              {[1, 2, 3, 4].map((i) => (
-                <span 
-                  key={i} 
-                  className={`flex-1 h-[4px] rounded-[2px] transition-all duration-300 ${
-                    i <= strength 
-                      ? strength === 1 ? 'bg-[#c93b18]' 
-                        : strength === 2 ? 'bg-[#a8884a]' 
-                        : 'bg-[#1f8a5b]' 
-                      : 'bg-[#e8e8ea]'
-                  }`}
-                ></span>
-              ))}
-            </div>
+            {password.length > 0 && (
+              <>
+                <div className="pw-meter flex gap-[0.3rem] mt-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <span 
+                      key={i} 
+                      className={`flex-1 h-[4px] rounded-[2px] transition-all duration-300 ${
+                        i <= strength 
+                          ? strength <= 2 ? 'bg-[#c93b18]' 
+                            : strength <= 3 ? 'bg-[#e8a838]' 
+                            : 'bg-[#1f8a5b]'
+                          : 'bg-[#e8e8ea]'
+                      }`}
+                    ></span>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#7a7e95] mt-1">
+                  {strength <= 2 ? 'Mot de passe faible' : strength <= 3 ? 'Mot de passe moyen' : 'Mot de passe fort'}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="afield flex flex-col gap-[0.45rem]">
@@ -207,6 +256,11 @@ function ActivateForm() {
                 className="w-full p-[0.85rem_1rem_0.85rem_2.65rem] border border-[#e8e8ea] rounded-[8px] bg-[#ffffff] text-[0.92rem] text-[#15172b] font-sans outline-none transition-all duration-300 focus:border-[#c93b18] focus:shadow-[0_0_0_3px_rgba(201,59,24,0.15)]"
               />
             </div>
+            {confirmPassword.length > 0 && (
+              <p className={`text-xs mt-1 ${doPasswordsMatch ? 'text-green-600' : 'text-[#c93b18]'}`}>
+                {doPasswordsMatch ? '✅ Les mots de passe correspondent' : '❌ Les mots de passe ne correspondent pas'}
+              </p>
+            )}
           </div>
 
           <button 
