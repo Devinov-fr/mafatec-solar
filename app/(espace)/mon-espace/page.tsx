@@ -21,7 +21,8 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
