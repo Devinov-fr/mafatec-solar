@@ -392,7 +392,8 @@ const Home = () => {
       points: [{ azimuth: null, height: null }],
     },
   ]);
-    const [obstacleErrors, setObstacleErrors] = useState<{ [key: string]: boolean }>({});
+  const [obstacleErrors, setObstacleErrors] = useState<{ [key: string]: boolean }>({});
+  const [obstacleErrorMessages, setObstacleErrorMessages] = useState<{ [key: string]: string }>({});
   const [puissancePv, setPuissancePv] = useState("");
   const [systemLosses, setSystemLosses] = useState("14");
   const [inclinaison, setInclinaison] = useState("35");
@@ -400,6 +401,7 @@ const Home = () => {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [errorAzimuth, setErrorAzimuth] = useState("");
+  const [errorInclination, setErrorInclination] = useState("");
   const [isRoofPlannerOpen, setIsRoofPlannerOpen] = useState(false);
   const [formErrors, setFormErrors] = useState({
     puissancePv: false,
@@ -714,6 +716,7 @@ const handleGeneratePDF = async () => {
         },
       ]);
       setObstacleErrors({});
+      setObstacleErrorMessages({});
     } else {
       setObstacles([
         {
@@ -732,6 +735,7 @@ const handleGeneratePDF = async () => {
     if (useTerrainShadows !== "oui") return true;
     
     const errors: { [key: string]: boolean } = {};
+    const messages: { [key: string]: string } = {};
     let isValid = true;
     
     obstacles.forEach((obstacle, obsIdx) => {
@@ -739,23 +743,34 @@ const handleGeneratePDF = async () => {
         const azimuthKey = `obs_${obsIdx}_pt_${ptIdx}_azimuth`;
         const heightKey = `obs_${obsIdx}_pt_${ptIdx}_height`;
         
-        if (point.azimuth === null || point.azimuth === undefined || point.azimuth === 0) {
+        // Check azimuth
+        if (point.azimuth === null || point.azimuth === undefined || isNaN(point.azimuth)) {
           errors[azimuthKey] = true;
+          messages[azimuthKey] = "L'azimut est requis";
+          isValid = false;
+        } else if (point.azimuth < 0) {
+          errors[azimuthKey] = true;
+          messages[azimuthKey] = "L'azimut ne peut pas être négatif (doit être ≥ 0°)";
           isValid = false;
         } else {
           errors[azimuthKey] = false;
+          messages[azimuthKey] = "";
         }
         
-        if (point.height === null || point.height === undefined || point.height === 0) {
+        // Check height
+        if (point.height === null || point.height === undefined || isNaN(point.height) || point.height === 0) {
           errors[heightKey] = true;
+          messages[heightKey] = "La hauteur est requise et doit être > 0°";
           isValid = false;
         } else {
           errors[heightKey] = false;
+          messages[heightKey] = "";
         }
       });
     });
     
     setObstacleErrors(errors);
+    setObstacleErrorMessages(messages);
     return isValid;
   };
 
@@ -786,14 +801,70 @@ const handlePointChange = (
     value: string,
   ) => {
     const updated = [...obstacles];
-    const newValue = value === "" ? null : parseFloat(value);
-    updated[obsIdx].points[ptIdx][field] = newValue;
-    setObstacles(updated);
     
-    const errorKey = `obs_${obsIdx}_pt_${ptIdx}_${field}`;
-    if (obstacleErrors[errorKey]) {
+    // Handle empty string or just "-"
+    if (value === "" || value === "-") {
+      updated[obsIdx].points[ptIdx][field] = null;
+      setObstacles(updated);
+      
+      // Clear error for this field
+      const errorKey = `obs_${obsIdx}_pt_${ptIdx}_${field}`;
       setObstacleErrors(prev => ({ ...prev, [errorKey]: false }));
+      setObstacleErrorMessages(prev => ({ ...prev, [errorKey]: "" }));
+      return;
     }
+    
+    const numValue = parseFloat(value);
+    
+    // Check if it's a valid number
+    if (isNaN(numValue)) {
+      return;
+    }
+    
+    // Validation for azimuth: must be >= 0
+    if (field === "azimuth") {
+      if (numValue < 0) {
+        const errorKey = `obs_${obsIdx}_pt_${ptIdx}_azimuth`;
+        setObstacleErrors(prev => ({ ...prev, [errorKey]: true }));
+        setObstacleErrorMessages(prev => ({ 
+          ...prev, 
+          [errorKey]: "L'azimut ne peut pas être négatif (doit être ≥ 0°)" 
+        }));
+        // Still update the value but show error
+        updated[obsIdx].points[ptIdx][field] = numValue;
+        setObstacles(updated);
+        toast.error("L'azimut ne peut pas être négatif. Veuillez saisir une valeur positive.");
+        return;
+      } else {
+        // Clear error if valid
+        const errorKey = `obs_${obsIdx}_pt_${ptIdx}_azimuth`;
+        setObstacleErrors(prev => ({ ...prev, [errorKey]: false }));
+        setObstacleErrorMessages(prev => ({ ...prev, [errorKey]: "" }));
+      }
+    }
+    
+    // For height, check if > 0
+    if (field === "height") {
+      if (numValue <= 0) {
+        const errorKey = `obs_${obsIdx}_pt_${ptIdx}_height`;
+        setObstacleErrors(prev => ({ ...prev, [errorKey]: true }));
+        setObstacleErrorMessages(prev => ({ 
+          ...prev, 
+          [errorKey]: "La hauteur doit être supérieure à 0°" 
+        }));
+        updated[obsIdx].points[ptIdx][field] = numValue;
+        setObstacles(updated);
+        return;
+      } else {
+        // Clear error if valid
+        const errorKey = `obs_${obsIdx}_pt_${ptIdx}_height`;
+        setObstacleErrors(prev => ({ ...prev, [errorKey]: false }));
+        setObstacleErrorMessages(prev => ({ ...prev, [errorKey]: "" }));
+      }
+    }
+    
+    updated[obsIdx].points[ptIdx][field] = numValue;
+    setObstacles(updated);
   };
 
 
@@ -816,11 +887,31 @@ const handlePointChange = (
   };
 
   const handleVisualiserResultats = async () => {
+    // Validate inclination range
+    const inclValue = parseFloat(inclinaison);
+    if (!isNaN(inclValue) && (inclValue < 0 || inclValue > 90)) {
+      setErrorInclination("L'inclinaison doit être comprise entre 0° et 90°.");
+      setFormErrors(prev => ({ ...prev, inclinaison: true }));
+      setError("Veuillez corriger les erreurs du formulaire.");
+      return;
+    }
+    
+    // Validate azimuth range
+    const azimutValue = parseFloat(azimut);
+    if (!isNaN(azimutValue) && (azimutValue < -180 || azimutValue > 180)) {
+      setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
+      setFormErrors(prev => ({ ...prev, azimut: true }));
+      setError("Veuillez corriger les erreurs du formulaire.");
+      return;
+    }
+    
     if (!validateForm()) {
       setError("Veuillez remplir tous les champs obligatoires.");
       return;
     }
     setError("");
+    setErrorAzimuth("");
+    setErrorInclination("");
     setData(null);
     setHasSaved(false); // Reset saved state when starting a new calculation
     
@@ -885,13 +976,44 @@ const handlePointChange = (
     }
     let value = Number(rawValue);
     if (isNaN(value)) value = 0;
-    if (value > 180 || value < -180)
-      setErrorAzimuth("L'azimut doit être entre -180° et 180°.");
-    if (value > 180) value = 180;
-    if (value < -180) value = -180;
+    if (value > 180) {
+      setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
+      value = 180;
+    }
+    if (value < -180) {
+      setErrorAzimuth("L'azimut doit être compris entre -180° et 180°.");
+      value = -180;
+    }
     setAzimut(value.toString());
-    if (value.toString().trim() !== "") {
+    if (value.toString().trim() !== "" && value >= -180 && value <= 180) {
       setFormErrors(prev => ({ ...prev, azimut: false }));
+    }
+  };
+
+  const handleInclinaisonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    setError("");
+    setErrorInclination("");
+    
+    if (rawValue === "" || rawValue === "-") {
+      setInclinaison(rawValue);
+      return;
+    }
+    
+    let value = Number(rawValue);
+    if (isNaN(value)) value = 0;
+    
+    if (value < 0) {
+      setErrorInclination("L'inclinaison ne peut pas être négative. Veuillez saisir une valeur entre 0° et 90°.");
+      value = 0;
+    } else if (value > 90) {
+      setErrorInclination("L'inclinaison ne peut pas dépasser 90°. Veuillez saisir une valeur entre 0° et 90°.");
+      value = 90;
+    }
+    
+    setInclinaison(value.toString());
+    if (value.toString().trim() !== "" && value >= 0 && value <= 90) {
+      setFormErrors(prev => ({ ...prev, inclinaison: false }));
     }
   };
 
@@ -1008,7 +1130,10 @@ const handlePointChange = (
             <div className="cfg-divider h-px bg-[var(--line-warm)] my-[1.3rem]" />
 
             <h3>Gestion des ombrages</h3>
-            <p className="cfg-sub">Obstacles susceptibles de créer de l&apos;ombre sur les panneaux.</p>
+            <p className="cfg-sub">
+              Obstacles susceptibles de créer de l&apos;ombre sur les panneaux.
+              {showObstacleInputs && <span className="text-[var(--red-500)] ml-1">*</span>}
+            </p>
             <div className="field-sm">
               <label>Calcul automatique de l&apos;horizon <span className="text-[var(--red-500)]">*</span></label>
               <div className="radio-line flex items-center gap-[1.4rem] mt-[0.2rem]">
@@ -1038,83 +1163,101 @@ const handlePointChange = (
               )}
             </div>
 
-            {showObstacleInputs && (
-              <div className="mt-6 space-y-4">
-                {obstacles.map((obs, obsIdx) => (
-                  <div key={obsIdx} className="p-4 bg-[var(--paper-2)] rounded-xl border border-[var(--line-warm)] space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[0.64rem] font-bold uppercase tracking-widest text-[var(--text-soft)]">Obstacle {obsIdx + 1}</span>
-                      <button onClick={() => removeObstacle(obsIdx)} className="text-[var(--red-500)] hover:text-[var(--red-600)] text-[10px] font-bold uppercase flex items-center gap-1">
-                        <Trash2 size={12} /> Supprimer
-                      </button>
-                    </div>
-                    <input
-                      value={obs.name}
-                      onChange={(e) => handleObstacleNameChange(obsIdx, e.target.value)}
-                      className="w-full py-2 px-3 border border-[var(--line-warm)] rounded-[5px] bg-white text-[0.86rem]"
-                      placeholder="Nom de l'obstacle"
-                    />
-                    {obs.points.map((pt, ptIdx) => (
-                      <div key={ptIdx} className="space-y-2">
-                        <div className="flex gap-3">
-                          <div className="flex-1">
-                            <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-                              Azimut (°) <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                              className={`h-9 text-sm bg-white mt-1 ${obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_azimuth`] ? 'border-red-500' : ''}`}
-                              value={pt.azimuth ?? ""}
-                              onChange={(e) =>
-                                handlePointChange(
-                                  obsIdx,
-                                  ptIdx,
-                                  "azimuth",
-                                  e.target.value,
-                                )
-                              }
-                              placeholder="Ex: 45"
-                            />
-                            {obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_azimuth`] && (
-                              <p className="text-red-500 text-xs mt-1">L'azimut est requis</p>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-                              Hauteur (°) <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                              className={`h-9 text-sm bg-white mt-1 ${obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_height`] ? 'border-red-500' : ''}`}
-                              value={pt.height ?? ""}
-                              onChange={(e) =>
-                                handlePointChange(
-                                  obsIdx,
-                                  ptIdx,
-                                  "height",
-                                  e.target.value,
-                                )
-                              }
-                              placeholder="Ex: 30"
-                            />
-                            {obstacleErrors[`obs_${obsIdx}_pt_${ptIdx}_height`] && (
-                              <p className="text-red-500 text-xs mt-1">La hauteur est requise</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-                <button onClick={addObstacle} className="w-full py-2.5 border border-dashed border-[var(--line-warm)] rounded-[5px] text-[var(--muted)] hover:border-[var(--red-500)] hover:bg-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2">
-                  <Plus size={14} /> Ajouter un obstacle
-                </button>
+{showObstacleInputs && (
+  <div className="mt-6 space-y-4">
+    {obstacles.map((obs, obsIdx) => (
+      <div key={obsIdx} className="p-4 bg-[var(--paper-2)] rounded-xl border border-[var(--line-warm)] space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-[0.64rem] font-bold uppercase tracking-widest text-[var(--text-soft)]">Obstacle {obsIdx + 1}</span>
+          <button onClick={() => removeObstacle(obsIdx)} className="text-[var(--red-500)] hover:text-[var(--red-600)] text-[10px] font-bold uppercase flex items-center gap-1">
+            <Trash2 size={12} /> Supprimer
+          </button>
+        </div>
+        <input
+          value={obs.name}
+          onChange={(e) => handleObstacleNameChange(obsIdx, e.target.value)}
+          className="w-full py-2 px-3 border border-[var(--line-warm)] rounded-[5px] bg-white text-[0.86rem]"
+          placeholder="Nom de l'obstacle"
+        />
+        {obs.points.map((pt, ptIdx) => {
+          const azimuthErrorKey = `obs_${obsIdx}_pt_${ptIdx}_azimuth`;
+          const heightErrorKey = `obs_${obsIdx}_pt_${ptIdx}_height`;
+          const hasAzimuthError = obstacleErrors[azimuthErrorKey];
+          const hasHeightError = obstacleErrors[heightErrorKey];
+          const azimuthErrorMessage = obstacleErrorMessages[azimuthErrorKey];
+          const heightErrorMessage = obstacleErrorMessages[heightErrorKey];
+          
+          return (
+            <div key={ptIdx} className="space-y-2">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                    Azimut (°) <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-[9px] text-red-400 mt-0.5">Azimut doit être ≥ 0</p>
+                  <Input
+                    className={`h-9 text-sm bg-white mt-1 ${hasAzimuthError ? 'border-red-500' : ''}`}
+                    value={pt.azimuth !== null && !isNaN(pt.azimuth) ? pt.azimuth : ""}
+                    onChange={(e) =>
+                      handlePointChange(
+                        obsIdx,
+                        ptIdx,
+                        "azimuth",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="Ex: 45"
+                  />
+                  {hasAzimuthError && azimuthErrorMessage && (
+                    <p className="text-red-500 text-xs mt-1">{azimuthErrorMessage}</p>
+                  )}
+                  {hasAzimuthError && !azimuthErrorMessage && (
+                    <p className="text-red-500 text-xs mt-1">L'azimut est requis et doit être ≥ 0°</p>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                    Hauteur (°) <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-[9px] text-red-400 mt-0.5">Hauteur doit être > 0</p>
+                  <Input
+                    className={`h-9 text-sm bg-white mt-1 ${hasHeightError ? 'border-red-500' : ''}`}
+                    value={pt.height !== null && !isNaN(pt.height) ? pt.height : ""}
+                    onChange={(e) =>
+                      handlePointChange(
+                        obsIdx,
+                        ptIdx,
+                        "height",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="Ex: 30"
+                  />
+                  {hasHeightError && heightErrorMessage && (
+                    <p className="text-red-500 text-xs mt-1">{heightErrorMessage}</p>
+                  )}
+                  {hasHeightError && !heightErrorMessage && (
+                    <p className="text-red-500 text-xs mt-1">La hauteur est requise et doit être > 0°</p>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
+          );
+        })}
+      </div>
+    ))}
+    <button onClick={addObstacle} className="w-full py-2.5 border border-dashed border-[var(--line-warm)] rounded-[5px] text-[var(--muted)] hover:border-[var(--red-500)] hover:bg-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+      <Plus size={14} /> Ajouter un obstacle
+    </button>
+  </div>
+)}
           </div>
 
           {/* Col 3: PV Performance */}
           <div className="cfg-card">
             <h3>Performance du système PV</h3>
             <p className="cfg-sub">Puissance cible, orientation et pertes.</p>
+                            <p className="text-[12px] text-red-400 mt-[-12px] mb-4">Inclinaison doit être entre 0° et 90°</p>
             <div className="field-sm">
               <label>Puissance PV crête installée [kWc] <span className="text-[var(--red-500)]">*</span></label>
               <input
@@ -1150,21 +1293,21 @@ const handlePointChange = (
               )}
             </div>
             <div className="grid grid-cols-2 gap-[0.8rem]">
+              
               <div className="field-sm">
                 <label>Inclinaison [°] <span className="text-[var(--red-500)]">*</span></label>
+
                 <input
                   className={formErrors.inclinaison ? "border-[var(--red-500)]" : ""}
                   value={inclinaison}
-                  onChange={(e) => {
-                    setInclinaison(e.target.value);
-                    if (e.target.value.trim() !== "") {
-                      setFormErrors(prev => ({ ...prev, inclinaison: false }));
-                    }
-                  }}
-                  placeholder="35"
+                  onChange={handleInclinaisonChange}
+                  placeholder="Ex: 35"
                 />
                 {formErrors.inclinaison && (
                   <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">L'inclinaison est requise</p>
+                )}
+                {errorInclination && (
+                  <p className="text-[var(--red-500)] text-[10px] font-bold uppercase mt-1">{errorInclination}</p>
                 )}
               </div>
               <div className="field-sm">

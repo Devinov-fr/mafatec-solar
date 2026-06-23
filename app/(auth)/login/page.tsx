@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -40,8 +41,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
+    
     if (!email || !password) {
-      toast.error('Veuillez remplir tous les champs');
+      const errorMsg = 'Veuillez remplir tous les champs';
+      setLoginError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
@@ -54,43 +59,89 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      console.log('SignIn result:', result);
+
+      // Check if there's an error
       if (result?.error) {
-        if (result.error.includes('No user found')) {
-          toast.error('Aucun compte trouvé pour cette adresse. Lancez une étude pour créer votre compte.');
-        } else if (result.error.includes('activate')) {
-          toast.info("Votre compte n'est pas encore activé. Vérifiez l'email d'activation reçu lors de votre première étude.");
-        } else {
-          toast.error('Mot de passe incorrect ou erreur de connexion.');
-        }
-      } else {
-        toast.success('Connexion réussie');
+        let errorMsg = '';
         
-        // Wait a moment for session to be established
-        setTimeout(async () => {
+        // The error from NextAuth is typically "CredentialsSignin"
+        // We need to handle this and display a user-friendly message
+        if (result.error === 'CredentialsSignin') {
+          // Since we can't get the specific error from the backend,
+          // we'll try to fetch the user to determine if they exist
           try {
-            // Fetch user profile to check role
-            const res = await fetch('/api/me/profile');
-            const data = await res.json();
+            // Try to check if user exists by attempting to get their profile
+            const checkUserRes = await fetch('/api/auth/check-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email }),
+            });
             
-            if (data.success && data.user) {
-              // Redirect based on role
-              if (data.user.role === 'admin') {
-                router.push('/admin');
-              } else {
-                router.push('/mon-espace');
-              }
+            const userData = await checkUserRes.json();
+            
+            if (userData.exists === false) {
+              errorMsg = 'Aucun compte trouvé pour cette adresse email. Lancez une étude pour créer votre compte.';
+            } else if (userData.activated === false) {
+              errorMsg = "Votre compte n'est pas encore activé. Vérifiez l'email d'activation reçu lors de votre première étude.";
             } else {
-              // Fallback: redirect to mon-espace if we can't fetch profile
+              errorMsg = 'Mot de passe incorrect. Veuillez réessayer.';
+            }
+          } catch (checkError) {
+            // Fallback error message if we can't check the user status
+            errorMsg = 'Erreur de connexion. Veuillez vérifier vos identifiants.';
+          }
+        } else {
+          // Handle other types of errors
+          const errorLower = result.error.toLowerCase();
+          if (errorLower.includes('user') || errorLower.includes('found') || errorLower.includes('exist')) {
+            errorMsg = 'Aucun compte trouvé pour cette adresse email. Lancez une étude pour créer votre compte.';
+          } else if (errorLower.includes('activate') || errorLower.includes('active')) {
+            errorMsg = "Votre compte n'est pas encore activé. Vérifiez l'email d'activation reçu lors de votre première étude.";
+          } else if (errorLower.includes('password') || errorLower.includes('incorrect')) {
+            errorMsg = 'Mot de passe incorrect. Veuillez réessayer.';
+          } else {
+            errorMsg = 'Erreur de connexion. Veuillez vérifier vos identifiants.';
+          }
+        }
+        
+        setLoginError(errorMsg);
+        toast.error(errorMsg);
+        setIsLoading(false);
+        return;
+      }
+
+      // If no error, login was successful
+      toast.success('Connexion réussie');
+      
+      // Wait a moment for session to be established
+      setTimeout(async () => {
+        try {
+          // Fetch user profile to check role
+          const res = await fetch('/api/me/profile');
+          const data = await res.json();
+          
+          if (data.success && data.user) {
+            // Redirect based on role
+            if (data.user.role === 'admin') {
+              router.push('/admin');
+            } else {
               router.push('/mon-espace');
             }
-          } catch (error) {
-            console.error('Error fetching user profile:', error);
+          } else {
+            // Fallback: redirect to mon-espace if we can't fetch profile
             router.push('/mon-espace');
           }
-        }, 500);
-      }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          router.push('/mon-espace');
+        }
+      }, 500);
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      console.error('Login submission error:', error);
+      const errorMsg = 'Une erreur est survenue lors de la connexion. Veuillez réessayer.';
+      setLoginError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -98,8 +149,12 @@ export default function LoginPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
+    
     if (!email) {
-      toast.error('Veuillez saisir votre adresse email');
+      const errorMsg = 'Veuillez saisir votre adresse email';
+      setLoginError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
@@ -117,11 +172,16 @@ export default function LoginPage() {
       if (response.ok && data.success) {
         toast.success('Un email de réinitialisation vous a été envoyé.');
         setShowResetForm(false);
+        setLoginError(null);
       } else {
-        toast.error(data.error || 'Une erreur est survenue');
+        const errorMsg = data.error || 'Une erreur est survenue';
+        setLoginError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      const errorMsg = 'Une erreur est survenue';
+      setLoginError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsResetLoading(false);
     }
@@ -184,6 +244,14 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Display error message in the UI */}
+          {loginError && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              
+              <p>{loginError}</p>
+            </div>
+          )}
+
           {showResetForm ? (
             <form onSubmit={handleResetPassword} className="space-y-[1.15rem]">
               <div className="afield flex flex-col gap-[0.45rem]">
@@ -213,7 +281,10 @@ export default function LoginPage() {
               </button>
               <button 
                 type="button"
-                onClick={() => setShowResetForm(false)}
+                onClick={() => {
+                  setShowResetForm(false);
+                  setLoginError(null);
+                }}
                 className="w-full text-[0.8rem] text-[#454a63] hover:text-[#c93b18] transition-colors"
               >
                 ← Retour à la connexion
@@ -231,7 +302,10 @@ export default function LoginPage() {
                     <input 
                       type="email" 
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setLoginError(null);
+                      }}
                       autoComplete="email" 
                       placeholder="vous@exemple.fr" 
                       required 
@@ -248,7 +322,10 @@ export default function LoginPage() {
                     <input 
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setLoginError(null);
+                      }}
                       autoComplete="current-password" 
                       placeholder="••••••••" 
                       required 
@@ -266,7 +343,10 @@ export default function LoginPage() {
                 <div className="flex justify-end">
                   <button 
                     type="button"
-                    onClick={() => setShowResetForm(true)}
+                    onClick={() => {
+                      setShowResetForm(true);
+                      setLoginError(null);
+                    }}
                     className="text-[0.75rem] text-[#7a7e95] hover:text-[#c93b18] transition-colors"
                   >
                     Mot de passe oublié ?
