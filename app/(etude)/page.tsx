@@ -1219,7 +1219,7 @@ const handlePointChange = (
                   <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
                     Hauteur (°) <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-[9px] text-red-400 mt-0.5">Hauteur doit être > 0</p>
+                  <p className="text-[9px] text-red-400 mt-0.5">Hauteur doit être &gt; 0</p>
                   <Input
                     className={`h-9 text-sm bg-white mt-1 ${hasHeightError ? 'border-red-500' : ''}`}
                     value={pt.height !== null && !isNaN(pt.height) ? pt.height : ""}
@@ -1236,9 +1236,9 @@ const handlePointChange = (
                   {hasHeightError && heightErrorMessage && (
                     <p className="text-red-500 text-xs mt-1">{heightErrorMessage}</p>
                   )}
-                  {hasHeightError && !heightErrorMessage && (
-                    <p className="text-red-500 text-xs mt-1">La hauteur est requise et doit être > 0°</p>
-                  )}
+{hasHeightError && !heightErrorMessage && (
+  <p className="text-red-500 text-xs mt-1">La hauteur est requise et doit être &gt; 0°</p>
+)}
                 </div>
               </div>
             </div>
